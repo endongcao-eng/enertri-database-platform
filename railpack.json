@@ -6,7 +6,7 @@
   },
   "buildAptPackages": [
     "...",
-    "libmagic1",
+    "libmagic1t64",
     "tesseract-ocr",
     "tesseract-ocr-eng"
   ],
@@ -14,7 +14,7 @@
     "aptPackages": [
       "...",
       "ffmpeg",
-      "libmagic1",
+      "libmagic1t64",
       "poppler-utils",
       "postgresql-client",
       "tesseract-ocr",
