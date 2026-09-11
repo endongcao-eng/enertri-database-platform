@@ -4,7 +4,7 @@
     "builder": "RAILPACK"
   },
   "deploy": {
-    "preDeployCommand": ["python backend/scripts/bootstrap.py"],
+    "preDeployCommand": ["python /app/backend/scripts/bootstrap.py"],
     "startCommand": "bash deploy/railway_start.sh",
     "healthcheckPath": "/api/ready",
     "healthcheckTimeout": 300,

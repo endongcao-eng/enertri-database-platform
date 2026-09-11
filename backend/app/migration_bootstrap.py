@@ -9,7 +9,7 @@ from alembic import command
 from alembic.config import Config
 from sqlalchemy import inspect, text
 
-from .database import engine
+from .database import DATABASE_URL, engine
 
 BASELINE_REVISION = "v4_0_baseline"
 HEAD_REVISION = "v4_7_trial_controls"
@@ -41,7 +41,9 @@ def alembic_config() -> Config:
     backend_dir = Path(__file__).resolve().parents[1]
     config = Config(str(backend_dir / "alembic.ini"))
     config.set_main_option("script_location", str(backend_dir / "alembic"))
-    config.set_main_option("sqlalchemy.url", os.getenv("DATABASE_URL", str(engine.url)))
+    # Use the normalized URL so Railway's postgres:// / postgresql:// value
+    # selects the installed psycopg 3 driver during Alembic migrations.
+    config.set_main_option("sqlalchemy.url", DATABASE_URL)
     return config
 
 
