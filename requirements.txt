@@ -1,0 +1,2 @@
+# Railway/Railpack detects Python from this root-level file.
+-r backend/requirements.txt

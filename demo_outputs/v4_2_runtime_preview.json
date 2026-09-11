@@ -1,0 +1,265 @@
+{
+  "version": "4.2.0",
+  "migration_head": "v4_2_knowledge_system",
+  "runtime": {
+    "task_execution_mode": "database_worker",
+    "task_id": 3,
+    "task_status": "succeeded",
+    "progress": 100,
+    "worker_id": "774df8d3f8c0:4107:bf9ae71a",
+    "attempt_count": 1,
+    "timeout_seconds": 3600,
+    "events": [
+      {
+        "step": "等待调度",
+        "progress": 0,
+        "message": "任务已进入队列"
+      },
+      {
+        "step": "Worker 已抢占",
+        "progress": 3,
+        "message": "任务由独立 Worker 774df8d3f8c0:4107:bf9ae71a 原子抢占（第 1 次尝试）"
+      },
+      {
+        "step": "启动任务",
+        "progress": 3,
+        "message": "独立 Worker 774df8d3f8c0:4107:bf9ae71a 开始执行任务"
+      },
+      {
+        "step": "文本层检测",
+        "progress": 15,
+        "message": "正在检测 PDF 文本层并逐页解析"
+      },
+      {
+        "step": "页面解析 / OCR",
+        "progress": 35,
+        "message": "完成 2 页解析，其中 OCR 兜底 0 页"
+      },
+      {
+        "step": "识别标题与章节",
+        "progress": 47,
+        "message": "识别标题、摘要与 8 个章节区间"
+      },
+      {
+        "step": "表格提取",
+        "progress": 58,
+        "message": "提取到 1 个表格"
+      },
+      {
+        "step": "图片与图注",
+        "progress": 67,
+        "message": "提取到 0 个图片对象/图注关联"
+      },
+      {
+        "step": "参考文献与分块",
+        "progress": 76,
+        "message": "解析 2 条参考文献，生成 8 个证据分块"
+      },
+      {
+        "step": "向量化与结构化阅读",
+        "progress": 92,
+        "message": "完成 8 个本地向量和证据索引"
+      },
+      {
+        "step": "已完成",
+        "progress": 100,
+        "message": "任务执行成功"
+      }
+    ]
+  },
+  "literature": {
+    "adapters": [
+      "OpenAlex",
+      "Crossref"
+    ],
+    "source_rows": 3,
+    "publication_count": 2,
+    "cross_source_merged": 1,
+    "items": [
+      {
+        "title": "Keyhole Stability and Pore Formation During High-Power Laser Welding",
+        "doi": "10.1007/s00170-026-14242-1",
+        "sources": [
+          "Crossref"
+        ]
+      },
+      {
+        "title": "Laser Welding Parameter Optimization and Porosity Control in Q355 Steel",
+        "doi": "10.1016/j.jmatprotec.2026.118999",
+        "sources": [
+          "OpenAlex",
+          "Crossref"
+        ]
+      }
+    ]
+  },
+  "paper": {
+    "document_id": 3,
+    "status": "ready",
+    "title": "Laser Welding Parameter Optimization and Porosity",
+    "page_count": 2,
+    "table_count": 1,
+    "figure_count": 0,
+    "key_facts": [
+      {
+        "type": "laser_power",
+        "value": "2.4",
+        "unit": "kW",
+        "page": 1,
+        "evidence": "laser power was 2.4 kW"
+      },
+      {
+        "type": "laser_power",
+        "value": "2.4",
+        "unit": "kW",
+        "page": 2,
+        "evidence": "laser power of 2.4 kW"
+      },
+      {
+        "type": "tensile_strength",
+        "value": "612",
+        "unit": "MPa",
+        "page": 2,
+        "evidence": "tensile strength was 612 MPa"
+      },
+      {
+        "type": "travel_speed",
+        "value": "12",
+        "unit": "mm/s",
+        "page": 1,
+        "evidence": "travel speed was 12 mm/s"
+      }
+    ],
+    "sections": [
+      {
+        "title": "Front Matter",
+        "page_start": 1,
+        "page_end": 1
+      },
+      {
+        "title": "Abstract",
+        "page_start": 1,
+        "page_end": 1
+      },
+      {
+        "title": "Introduction",
+        "page_start": 1,
+        "page_end": 1
+      },
+      {
+        "title": "Materials and Methods",
+        "page_start": 1,
+        "page_end": 1
+      },
+      {
+        "title": "Results",
+        "page_start": 2,
+        "page_end": 2
+      },
+      {
+        "title": "Discussion",
+        "page_start": 2,
+        "page_end": 2
+      },
+      {
+        "title": "Conclusions",
+        "page_start": 2,
+        "page_end": 2
+      },
+      {
+        "title": "References",
+        "page_start": 2,
+        "page_end": 2
+      }
+    ]
+  },
+  "qa": {
+    "激光功率是多少？": {
+      "answer": "论文原文给出的激光功率为 2.4 kW。",
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "section": "Materials and Methods",
+          "excerpt": "The laser power was 2.4 kW and travel speed was 12 mm/s.",
+          "score": 0.4518,
+          "page_url": "/api/files/3/download#page=1"
+        },
+        {
+          "page": 2,
+          "section": "Conclusions",
+          "excerpt": "Conclusions A laser power of 2.4 kW produced the best combined mechanical performance in this experiment.",
+          "score": 0.3299,
+          "page_url": "/api/files/3/download#page=2"
+        }
+      ]
+    },
+    "最高抗拉强度对应哪组参数？": {
+      "answer": "论文报告的最高抗拉强度为 612 MPa，对应参数组 B。",
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 2,
+          "section": "Results",
+          "excerpt": "Results The highest tensile strength was 612 MPa for parameter group B.",
+          "score": 0.6164,
+          "page_url": "/api/files/3/download#page=2"
+        },
+        {
+          "page": 1,
+          "section": "Front Matter",
+          "excerpt": "Laser Welding Parameter Optimization and Porosity Control",
+          "score": 0.1309,
+          "page_url": "/api/files/3/download#page=1"
+        }
+      ]
+    },
+    "这篇论文使用了什么母材？": {
+      "answer": "论文原文描述的母材为：Q355 steel with a thickness of 3 mm。",
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "section": "Materials and Methods",
+          "excerpt": "Materials and Methods The base material was Q355 steel with a thickness of 3 mm.",
+          "score": 0.3154,
+          "page_url": "/api/files/3/download#page=1"
+        },
+        {
+          "page": 1,
+          "section": "Introduction",
+          "excerpt": "Introduction Laser welding quality depends on heat input, shielding gas and keyhole stability.",
+          "score": 0.1291,
+          "page_url": "/api/files/3/download#page=1"
+        }
+      ]
+    },
+    "作者如何解释气孔形成？": {
+      "answer": "作者将气孔形成解释为：不稳定小孔塌陷过程中保护气体被困（shielding gas was trapped）；稳定的小孔行为可减少气孔形成。",
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 2,
+          "section": "Discussion",
+          "excerpt": "Discussion Porosity formed because shielding gas was trapped during unstable keyhole collapse; stable keyhole behavior reduced pore formation.",
+          "score": 0.4614,
+          "page_url": "/api/files/3/download#page=2"
+        },
+        {
+          "page": 2,
+          "section": "References",
+          "excerpt": "Keyhole stability and pore formation.",
+          "score": 0.1749,
+          "page_url": "/api/files/3/download#page=2"
+        }
+      ]
+    }
+  },
+  "validation": {
+    "foundation_blocker_tests": "5/5 passed",
+    "v4_smoke_matrix": "1/1 passed",
+    "malformed_legacy_baseline": "refused as expected",
+    "javascript_syntax": "passed",
+    "docker_compose_end_to_end": "not run: Docker CLI/Engine unavailable in build environment"
+  }
+}

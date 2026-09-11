@@ -1,0 +1,24 @@
+{
+  "$schema": "https://schema.railpack.com",
+  "provider": "python",
+  "packages": {
+    "python": "3.12"
+  },
+  "buildAptPackages": [
+    "...",
+    "libmagic1",
+    "tesseract-ocr",
+    "tesseract-ocr-eng"
+  ],
+  "deploy": {
+    "aptPackages": [
+      "...",
+      "ffmpeg",
+      "libmagic1",
+      "poppler-utils",
+      "postgresql-client",
+      "tesseract-ocr",
+      "tesseract-ocr-eng"
+    ]
+  }
+}

@@ -1,0 +1,172 @@
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade  -> v4_0_baseline, V4.0 schema baseline.
+INFO  [alembic.runtime.migration] Running upgrade v4_0_baseline -> v4_1_foundation, V4.1 engineering foundation.
+INFO  [alembic.runtime.migration] Running upgrade v4_1_foundation -> v4_2_knowledge_system, V4.2 literature and paper knowledge system.
+INFO  [alembic.runtime.migration] Running upgrade v4_2_knowledge_system -> v4_3_capability_standard_library, V4.3 stage 1 research capability standard library.
+INFO  [alembic.runtime.migration] Running upgrade v4_3_capability_standard_library -> v4_4_student_research_profile, V4.4 stage 2 evidence-backed student research profile.
+INFO  [alembic.runtime.migration] Running upgrade v4_4_student_research_profile -> v4_5_project_talent_matching, V4.5 stage 3 project requirement and talent matching foundation.
+INFO  [alembic.runtime.migration] Running upgrade v4_5_project_talent_matching -> v4_6_development_planning, V4.6 stage 4 development planning and research-direction gap analysis.
+INFO  [alembic.runtime.migration] Running upgrade v4_6_development_planning -> v4_7_dynamic_development_loop, V4.7 stage 5 integrated roadmap and dynamic evidence closed loop.
+INFO  [alembic.runtime.migration] Running upgrade v4_7_dynamic_development_loop -> v4_7_web_trial, Shared quiz state for multi-process web deployment.
+/tmp/enertri-venv/lib/python3.12/site-packages/jose/jwt.py:311: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  now = timegm(datetime.utcnow().utctimetuple())
+/tmp/enertri-venv/lib/python3.12/site-packages/jose/jwt.py:311: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  now = timegm(datetime.utcnow().utctimetuple())
+/tmp/enertri-venv/lib/python3.12/site-packages/jose/jwt.py:311: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  now = timegm(datetime.utcnow().utctimetuple())
+/tmp/enertri-venv/lib/python3.12/site-packages/jose/jwt.py:311: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  now = timegm(datetime.utcnow().utctimetuple())
+/tmp/enertri-venv/lib/python3.12/site-packages/jose/jwt.py:311: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  now = timegm(datetime.utcnow().utctimetuple())
+/tmp/enertri-venv/lib/python3.12/site-packages/jose/jwt.py:311: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  now = timegm(datetime.utcnow().utctimetuple())
+/tmp/enertri-venv/lib/python3.12/site-packages/jose/jwt.py:311: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  now = timegm(datetime.utcnow().utctimetuple())
+./tmp/enertri-venv/lib/python3.12/site-packages/jose/jwt.py:311: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  now = timegm(datetime.utcnow().utctimetuple())
+./tmp/enertri-venv/lib/python3.12/site-packages/jose/jwt.py:311: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  now = timegm(datetime.utcnow().utctimetuple())
+/tmp/enertri-venv/lib/python3.12/site-packages/jose/jwt.py:311: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  now = timegm(datetime.utcnow().utctimetuple())
+..warning: The `fitz` API is deprecated and will be removed in future. Use `import pymupdf` instead.
+/tmp/enertri-venv/lib/python3.12/site-packages/jose/jwt.py:311: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  now = timegm(datetime.utcnow().utctimetuple())
+.
+----------------------------------------------------------------------
+Ran 5 tests in 3.952s
+
+OK
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade  -> v4_0_baseline, V4.0 schema baseline.
+INFO  [alembic.runtime.migration] Running upgrade v4_0_baseline -> v4_1_foundation, V4.1 engineering foundation.
+INFO  [alembic.runtime.migration] Running upgrade v4_1_foundation -> v4_2_knowledge_system, V4.2 literature and paper knowledge system.
+INFO  [alembic.runtime.migration] Running upgrade v4_2_knowledge_system -> v4_3_capability_standard_library, V4.3 stage 1 research capability standard library.
+INFO  [alembic.runtime.migration] Running upgrade v4_3_capability_standard_library -> v4_4_student_research_profile, V4.4 stage 2 evidence-backed student research profile.
+INFO  [alembic.runtime.migration] Running upgrade v4_4_student_research_profile -> v4_5_project_talent_matching, V4.5 stage 3 project requirement and talent matching foundation.
+INFO  [alembic.runtime.migration] Running upgrade v4_5_project_talent_matching -> v4_6_development_planning, V4.6 stage 4 development planning and research-direction gap analysis.
+INFO  [alembic.runtime.migration] Running upgrade v4_6_development_planning -> v4_7_dynamic_development_loop, V4.7 stage 5 integrated roadmap and dynamic evidence closed loop.
+INFO  [alembic.runtime.migration] Running upgrade v4_7_dynamic_development_loop -> v4_7_web_trial, Shared quiz state for multi-process web deployment.
+/tmp/enertri-venv/lib/python3.12/site-packages/jose/jwt.py:311: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  now = timegm(datetime.utcnow().utctimetuple())
+..
+----------------------------------------------------------------------
+Ran 2 tests in 2.157s
+
+OK
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade  -> v4_0_baseline, V4.0 schema baseline.
+INFO  [alembic.runtime.migration] Running upgrade v4_0_baseline -> v4_1_foundation, V4.1 engineering foundation.
+INFO  [alembic.runtime.migration] Running upgrade v4_1_foundation -> v4_2_knowledge_system, V4.2 literature and paper knowledge system.
+INFO  [alembic.runtime.migration] Running upgrade v4_2_knowledge_system -> v4_3_capability_standard_library, V4.3 stage 1 research capability standard library.
+INFO  [alembic.runtime.migration] Running upgrade v4_3_capability_standard_library -> v4_4_student_research_profile, V4.4 stage 2 evidence-backed student research profile.
+INFO  [alembic.runtime.migration] Running upgrade v4_4_student_research_profile -> v4_5_project_talent_matching, V4.5 stage 3 project requirement and talent matching foundation.
+INFO  [alembic.runtime.migration] Running upgrade v4_5_project_talent_matching -> v4_6_development_planning, V4.6 stage 4 development planning and research-direction gap analysis.
+INFO  [alembic.runtime.migration] Running upgrade v4_6_development_planning -> v4_7_dynamic_development_loop, V4.7 stage 5 integrated roadmap and dynamic evidence closed loop.
+INFO  [alembic.runtime.migration] Running upgrade v4_7_dynamic_development_loop -> v4_7_web_trial, Shared quiz state for multi-process web deployment.
+/tmp/enertri-venv/lib/python3.12/site-packages/jose/jwt.py:311: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  now = timegm(datetime.utcnow().utctimetuple())
+...
+----------------------------------------------------------------------
+Ran 3 tests in 2.247s
+
+OK
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade  -> v4_0_baseline, V4.0 schema baseline.
+INFO  [alembic.runtime.migration] Running upgrade v4_0_baseline -> v4_1_foundation, V4.1 engineering foundation.
+INFO  [alembic.runtime.migration] Running upgrade v4_1_foundation -> v4_2_knowledge_system, V4.2 literature and paper knowledge system.
+INFO  [alembic.runtime.migration] Running upgrade v4_2_knowledge_system -> v4_3_capability_standard_library, V4.3 stage 1 research capability standard library.
+INFO  [alembic.runtime.migration] Running upgrade v4_3_capability_standard_library -> v4_4_student_research_profile, V4.4 stage 2 evidence-backed student research profile.
+INFO  [alembic.runtime.migration] Running upgrade v4_4_student_research_profile -> v4_5_project_talent_matching, V4.5 stage 3 project requirement and talent matching foundation.
+INFO  [alembic.runtime.migration] Running upgrade v4_5_project_talent_matching -> v4_6_development_planning, V4.6 stage 4 development planning and research-direction gap analysis.
+INFO  [alembic.runtime.migration] Running upgrade v4_6_development_planning -> v4_7_dynamic_development_loop, V4.7 stage 5 integrated roadmap and dynamic evidence closed loop.
+INFO  [alembic.runtime.migration] Running upgrade v4_7_dynamic_development_loop -> v4_7_web_trial, Shared quiz state for multi-process web deployment.
+/tmp/enertri-venv/lib/python3.12/site-packages/jose/jwt.py:311: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  now = timegm(datetime.utcnow().utctimetuple())
+...
+----------------------------------------------------------------------
+Ran 3 tests in 2.291s
+
+OK
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade  -> v4_0_baseline, V4.0 schema baseline.
+INFO  [alembic.runtime.migration] Running upgrade v4_0_baseline -> v4_1_foundation, V4.1 engineering foundation.
+INFO  [alembic.runtime.migration] Running upgrade v4_1_foundation -> v4_2_knowledge_system, V4.2 literature and paper knowledge system.
+INFO  [alembic.runtime.migration] Running upgrade v4_2_knowledge_system -> v4_3_capability_standard_library, V4.3 stage 1 research capability standard library.
+INFO  [alembic.runtime.migration] Running upgrade v4_3_capability_standard_library -> v4_4_student_research_profile, V4.4 stage 2 evidence-backed student research profile.
+INFO  [alembic.runtime.migration] Running upgrade v4_4_student_research_profile -> v4_5_project_talent_matching, V4.5 stage 3 project requirement and talent matching foundation.
+INFO  [alembic.runtime.migration] Running upgrade v4_5_project_talent_matching -> v4_6_development_planning, V4.6 stage 4 development planning and research-direction gap analysis.
+INFO  [alembic.runtime.migration] Running upgrade v4_6_development_planning -> v4_7_dynamic_development_loop, V4.7 stage 5 integrated roadmap and dynamic evidence closed loop.
+INFO  [alembic.runtime.migration] Running upgrade v4_7_dynamic_development_loop -> v4_7_web_trial, Shared quiz state for multi-process web deployment.
+/tmp/enertri-venv/lib/python3.12/site-packages/jose/jwt.py:311: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  now = timegm(datetime.utcnow().utctimetuple())
+...
+----------------------------------------------------------------------
+Ran 3 tests in 2.264s
+
+OK
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade  -> v4_0_baseline, V4.0 schema baseline.
+INFO  [alembic.runtime.migration] Running upgrade v4_0_baseline -> v4_1_foundation, V4.1 engineering foundation.
+INFO  [alembic.runtime.migration] Running upgrade v4_1_foundation -> v4_2_knowledge_system, V4.2 literature and paper knowledge system.
+INFO  [alembic.runtime.migration] Running upgrade v4_2_knowledge_system -> v4_3_capability_standard_library, V4.3 stage 1 research capability standard library.
+INFO  [alembic.runtime.migration] Running upgrade v4_3_capability_standard_library -> v4_4_student_research_profile, V4.4 stage 2 evidence-backed student research profile.
+INFO  [alembic.runtime.migration] Running upgrade v4_4_student_research_profile -> v4_5_project_talent_matching, V4.5 stage 3 project requirement and talent matching foundation.
+INFO  [alembic.runtime.migration] Running upgrade v4_5_project_talent_matching -> v4_6_development_planning, V4.6 stage 4 development planning and research-direction gap analysis.
+INFO  [alembic.runtime.migration] Running upgrade v4_6_development_planning -> v4_7_dynamic_development_loop, V4.7 stage 5 integrated roadmap and dynamic evidence closed loop.
+INFO  [alembic.runtime.migration] Running upgrade v4_7_dynamic_development_loop -> v4_7_web_trial, Shared quiz state for multi-process web deployment.
+/tmp/enertri-venv/lib/python3.12/site-packages/jose/jwt.py:311: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  now = timegm(datetime.utcnow().utctimetuple())
+...
+----------------------------------------------------------------------
+Ran 3 tests in 2.281s
+
+OK
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade  -> v4_0_baseline, V4.0 schema baseline.
+INFO  [alembic.runtime.migration] Running upgrade v4_0_baseline -> v4_1_foundation, V4.1 engineering foundation.
+INFO  [alembic.runtime.migration] Running upgrade v4_1_foundation -> v4_2_knowledge_system, V4.2 literature and paper knowledge system.
+INFO  [alembic.runtime.migration] Running upgrade v4_2_knowledge_system -> v4_3_capability_standard_library, V4.3 stage 1 research capability standard library.
+INFO  [alembic.runtime.migration] Running upgrade v4_3_capability_standard_library -> v4_4_student_research_profile, V4.4 stage 2 evidence-backed student research profile.
+INFO  [alembic.runtime.migration] Running upgrade v4_4_student_research_profile -> v4_5_project_talent_matching, V4.5 stage 3 project requirement and talent matching foundation.
+INFO  [alembic.runtime.migration] Running upgrade v4_5_project_talent_matching -> v4_6_development_planning, V4.6 stage 4 development planning and research-direction gap analysis.
+INFO  [alembic.runtime.migration] Running upgrade v4_6_development_planning -> v4_7_dynamic_development_loop, V4.7 stage 5 integrated roadmap and dynamic evidence closed loop.
+INFO  [alembic.runtime.migration] Running upgrade v4_7_dynamic_development_loop -> v4_7_web_trial, Shared quiz state for multi-process web deployment.
+/tmp/enertri-venv/lib/python3.12/site-packages/jose/jwt.py:311: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  now = timegm(datetime.utcnow().utctimetuple())
+/tmp/enertri-venv/lib/python3.12/site-packages/jose/jwt.py:311: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  now = timegm(datetime.utcnow().utctimetuple())
+/tmp/enertri-venv/lib/python3.12/site-packages/jose/jwt.py:311: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  now = timegm(datetime.utcnow().utctimetuple())
+/tmp/enertri-venv/lib/python3.12/site-packages/jose/jwt.py:311: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  now = timegm(datetime.utcnow().utctimetuple())
+/tmp/enertri-venv/lib/python3.12/site-packages/jose/jwt.py:311: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  now = timegm(datetime.utcnow().utctimetuple())
+.
+----------------------------------------------------------------------
+Ran 1 test in 2.833s
+
+OK
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade  -> v4_0_baseline, V4.0 schema baseline.
+INFO  [alembic.runtime.migration] Running upgrade v4_0_baseline -> v4_1_foundation, V4.1 engineering foundation.
+INFO  [alembic.runtime.migration] Running upgrade v4_1_foundation -> v4_2_knowledge_system, V4.2 literature and paper knowledge system.
+INFO  [alembic.runtime.migration] Running upgrade v4_2_knowledge_system -> v4_3_capability_standard_library, V4.3 stage 1 research capability standard library.
+INFO  [alembic.runtime.migration] Running upgrade v4_3_capability_standard_library -> v4_4_student_research_profile, V4.4 stage 2 evidence-backed student research profile.
+INFO  [alembic.runtime.migration] Running upgrade v4_4_student_research_profile -> v4_5_project_talent_matching, V4.5 stage 3 project requirement and talent matching foundation.
+INFO  [alembic.runtime.migration] Running upgrade v4_5_project_talent_matching -> v4_6_development_planning, V4.6 stage 4 development planning and research-direction gap analysis.
+INFO  [alembic.runtime.migration] Running upgrade v4_6_development_planning -> v4_7_dynamic_development_loop, V4.7 stage 5 integrated roadmap and dynamic evidence closed loop.
+INFO  [alembic.runtime.migration] Running upgrade v4_7_dynamic_development_loop -> v4_7_web_trial, Shared quiz state for multi-process web deployment.
+......
+----------------------------------------------------------------------
+Ran 6 tests in 2.114s
+
+OK
+Failed modules: []

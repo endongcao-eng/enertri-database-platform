@@ -1,0 +1,29 @@
+{$SITE_DOMAIN} {
+    encode zstd gzip
+    request_body {
+        max_size 64MB
+    }
+    header {
+        X-Content-Type-Options nosniff
+        Referrer-Policy same-origin
+        X-Frame-Options DENY
+        -Server
+    }
+    handle /api/* {
+        reverse_proxy backend:8000 {
+            header_up X-Forwarded-For {remote_host}
+        }
+    }
+    handle /media/videos/* {
+        reverse_proxy backend:8000 {
+            header_up X-Forwarded-For {remote_host}
+        }
+    }
+    handle /media/* {
+        respond 404
+    }
+    handle {
+        root * /srv/frontend
+        file_server
+    }
+}

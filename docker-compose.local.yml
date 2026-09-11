@@ -1,0 +1,120 @@
+x-backend-image: &backend-image
+  image: enertri-v44-backend:local
+  build:
+    context: ./backend
+    args:
+      PYTHON_BASE_IMAGE: ${PYTHON_BASE_IMAGE:-python:3.12-slim-bookworm}
+      APT_MIRROR: ${APT_MIRROR:-}
+      APT_SECURITY_MIRROR: ${APT_SECURITY_MIRROR:-}
+
+services:
+  db:
+    image: postgres:16
+    container_name: enertri_db_local
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: enertri
+      POSTGRES_USER: enertri_user
+      POSTGRES_PASSWORD: local_dev_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data_local:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U enertri_user -d enertri"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  init:
+    <<: *backend-image
+    restart: "no"
+    environment:
+      DATABASE_URL: postgresql+psycopg://enertri_user:local_dev_password@db:5432/enertri
+      SECRET_KEY: local-dev-secret-change-before-production
+      MEDIA_DIR: /app/media
+      FILE_STORE_DIR: /app/media/files
+      APP_ENV: development
+    volumes:
+      - ./uploads:/app/media
+    depends_on:
+      db:
+        condition: service_healthy
+    command: ["python", "scripts/bootstrap.py"]
+
+  backend:
+    <<: *backend-image
+    container_name: enertri_backend_local
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql+psycopg://enertri_user:local_dev_password@db:5432/enertri
+      SECRET_KEY: local-dev-secret-change-before-production
+      ACCESS_TOKEN_EXPIRE_MINUTES: 1440
+      MEDIA_DIR: /app/media
+      CORS_ORIGINS: http://127.0.0.1:8080,http://localhost:8080
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-5.1}
+      OPENAI_BASE_URL: ${OPENAI_BASE_URL:-https://api.openai.com/v1}
+      AI_REQUEST_TIMEOUT_SECONDS: ${AI_REQUEST_TIMEOUT_SECONDS:-180}
+      OPENALEX_API_KEY: ${OPENALEX_API_KEY:-}
+      LITERATURE_CONTACT_EMAIL: ${LITERATURE_CONTACT_EMAIL:-}
+      LITERATURE_TIMEOUT_SECONDS: ${LITERATURE_TIMEOUT_SECONDS:-30}
+      ARTIFACT_DIR: /app/media/artifacts
+      WORKSPACE_DIR: /app/media/workspace
+      WORKSPACE_MAX_FILE_MB: ${WORKSPACE_MAX_FILE_MB:-30}
+      WORKSPACE_MAX_FILES: ${WORKSPACE_MAX_FILES:-8}
+      FILE_STORE_DIR: /app/media/files
+      TASK_STEP_DELAY_SECONDS: ${TASK_STEP_DELAY_SECONDS:-0.15}
+      TASK_EXECUTION_MODE: database_worker
+      SIMULATION_EXECUTION_ENABLED: ${SIMULATION_EXECUTION_ENABLED:-false}
+      SIM_HYPERMESH_COMMAND: ${SIM_HYPERMESH_COMMAND:-}
+      SIM_ANSYS_MAPDL_COMMAND: ${SIM_ANSYS_MAPDL_COMMAND:-}
+      SIM_ANSYS_FLUENT_COMMAND: ${SIM_ANSYS_FLUENT_COMMAND:-}
+      SIM_MARC_COMMAND: ${SIM_MARC_COMMAND:-}
+      SIM_FLOW3D_COMMAND: ${SIM_FLOW3D_COMMAND:-}
+    volumes:
+      - ./uploads:/app/media
+    depends_on:
+      init:
+        condition: service_completed_successfully
+    expose:
+      - "8000"
+
+  worker:
+    <<: *backend-image
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql+psycopg://enertri_user:local_dev_password@db:5432/enertri
+      SECRET_KEY: local-dev-secret-change-before-production
+      MEDIA_DIR: /app/media
+      ARTIFACT_DIR: /app/media/artifacts
+      WORKSPACE_DIR: /app/media/workspace
+      FILE_STORE_DIR: /app/media/files
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-5.1}
+      TASK_EXECUTION_MODE: database_worker
+      TASK_LEASE_SECONDS: ${TASK_LEASE_SECONDS:-90}
+      TASK_HEARTBEAT_SECONDS: ${TASK_HEARTBEAT_SECONDS:-20}
+      TASK_POLL_SECONDS: ${TASK_POLL_SECONDS:-1}
+      OCR_LANG: ${OCR_LANG:-eng}
+    volumes:
+      - ./uploads:/app/media
+    depends_on:
+      init:
+        condition: service_completed_successfully
+    command: ["python", "scripts/task_worker.py"]
+
+  caddy:
+    image: caddy:2
+    container_name: enertri_caddy_local
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./frontend_api_demo:/srv/frontend:ro
+      - ./caddy/Caddyfile.local:/etc/caddy/Caddyfile:ro
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data_local:

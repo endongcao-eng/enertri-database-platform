@@ -1,0 +1,375 @@
+{
+  "stage": "V4.7 Stage 5",
+  "goal": {
+    "id": 1,
+    "user_id": 2,
+    "goal_type": "student_growth",
+    "title": "芯片热管理与微纳热输运成长目标",
+    "description": "希望后续参与芯片热管理、微纳尺度传热与数值模拟方向项目，强化材料热物性、芯片热设计和科研计算能力。"
+  },
+  "current_fit": {
+    "match_score": 76.5,
+    "raw_fit": 81.1,
+    "capability_fit": 90.4,
+    "knowledge_fit": 43.9,
+    "evidence_confidence": 80.7,
+    "critical_gap_count": 2
+  },
+  "items": [
+    {
+      "id": 1,
+      "goal_id": 1,
+      "user_id": 2,
+      "item_type": "course",
+      "source_resource_id": 12,
+      "source_publication_id": null,
+      "source_project_id": null,
+      "title": "芯片热管理与电子封装热设计",
+      "phase": "基础补齐",
+      "priority_score": 100.0,
+      "status": "planned",
+      "progress_percent": 0,
+      "rationale": "补齐芯片热管理（当前满足 0.0%）；补齐材料热物性（当前满足 36.7%）；补齐传热理论分析（当前满足 85.6%）",
+      "gap_targets": [
+        {
+          "type": "knowledge",
+          "id": 20,
+          "name_zh": "芯片热管理",
+          "current_satisfaction": 0.0,
+          "standard_level": 4.5,
+          "potential_gap_closure": 72.0
+        },
+        {
+          "type": "knowledge",
+          "id": 4,
+          "name_zh": "材料热物性",
+          "current_satisfaction": 36.7,
+          "standard_level": 3.4,
+          "potential_gap_closure": 60.4
+        },
+        {
+          "type": "capability",
+          "id": 1,
+          "name_zh": "传热理论分析",
+          "current_satisfaction": 85.6,
+          "standard_level": 3.5,
+          "potential_gap_closure": 14.4
+        }
+      ],
+      "completion_note": null,
+      "created_at": "2026-08-28T14:26:22",
+      "updated_at": "2026-08-28T14:26:22"
+    },
+    {
+      "id": 2,
+      "goal_id": 1,
+      "user_id": 2,
+      "item_type": "book",
+      "source_resource_id": 15,
+      "source_publication_id": null,
+      "source_project_id": null,
+      "title": "电子设备热管理基础与工程方法",
+      "phase": "系统深化",
+      "priority_score": 100.0,
+      "status": "planned",
+      "progress_percent": 0,
+      "rationale": "补齐芯片热管理（当前满足 0.0%）；补齐材料热物性（当前满足 36.7%）；补齐传热理论分析（当前满足 85.6%）",
+      "gap_targets": [
+        {
+          "type": "knowledge",
+          "id": 20,
+          "name_zh": "芯片热管理",
+          "current_satisfaction": 0.0,
+          "standard_level": 4.2,
+          "potential_gap_closure": 52.0
+        },
+        {
+          "type": "knowledge",
+          "id": 4,
+          "name_zh": "材料热物性",
+          "current_satisfaction": 36.7,
+          "standard_level": 3.2,
+          "potential_gap_closure": 40.9
+        },
+        {
+          "type": "capability",
+          "id": 1,
+          "name_zh": "传热理论分析",
+          "current_satisfaction": 85.6,
+          "standard_level": 3.2,
+          "potential_gap_closure": 14.4
+        }
+      ],
+      "completion_note": null,
+      "created_at": "2026-08-28T14:26:22",
+      "updated_at": "2026-08-28T14:26:22"
+    },
+    {
+      "id": 3,
+      "goal_id": 1,
+      "user_id": 2,
+      "item_type": "project_task",
+      "source_resource_id": 14,
+      "source_publication_id": null,
+      "source_project_id": null,
+      "title": "芯片热点与封装热阻数值分析任务",
+      "phase": "科研实践",
+      "priority_score": 100.0,
+      "status": "planned",
+      "progress_percent": 0,
+      "rationale": "补齐芯片热管理（当前满足 0.0%）；补齐材料热物性（当前满足 36.7%）；补齐传热理论分析（当前满足 85.6%）",
+      "gap_targets": [
+        {
+          "type": "knowledge",
+          "id": 20,
+          "name_zh": "芯片热管理",
+          "current_satisfaction": 0.0,
+          "standard_level": 4.6,
+          "potential_gap_closure": 95.0
+        },
+        {
+          "type": "knowledge",
+          "id": 4,
+          "name_zh": "材料热物性",
+          "current_satisfaction": 36.7,
+          "standard_level": 3.8,
+          "potential_gap_closure": 63.3
+        },
+        {
+          "type": "capability",
+          "id": 1,
+          "name_zh": "传热理论分析",
+          "current_satisfaction": 85.6,
+          "standard_level": 4.2,
+          "potential_gap_closure": 14.4
+        },
+        {
+          "type": "capability",
+          "id": 2,
+          "name_zh": "数值建模与求解",
+          "current_satisfaction": 94.6,
+          "standard_level": 3.8,
+          "potential_gap_closure": 5.4
+        }
+      ],
+      "completion_note": null,
+      "created_at": "2026-08-28T14:26:22",
+      "updated_at": "2026-08-28T14:26:22"
+    },
+    {
+      "id": 4,
+      "goal_id": 1,
+      "user_id": 2,
+      "item_type": "research_project",
+      "source_resource_id": null,
+      "source_publication_id": null,
+      "source_project_id": 2,
+      "title": "芯片热管理多物理场建模实践",
+      "phase": "科研转化",
+      "priority_score": 63.0,
+      "status": "planned",
+      "progress_percent": 0,
+      "rationale": "项目方向与当前成长目标和关键缺口重合，可作为把知识转成科研证据的真实载体。",
+      "gap_targets": [
+        {
+          "type": "project",
+          "name_zh": "芯片热管理",
+          "potential_gap_closure": 20.0
+        }
+      ],
+      "completion_note": null,
+      "created_at": "2026-08-28T14:26:22",
+      "updated_at": "2026-08-28T14:26:22"
+    },
+    {
+      "id": 5,
+      "goal_id": 1,
+      "user_id": 2,
+      "item_type": "research_project",
+      "source_resource_id": null,
+      "source_publication_id": null,
+      "source_project_id": 1,
+      "title": "基于机器学习的材料热物性预测",
+      "phase": "科研转化",
+      "priority_score": 59.0,
+      "status": "planned",
+      "progress_percent": 0,
+      "rationale": "项目方向与当前成长目标和关键缺口重合，可作为把知识转成科研证据的真实载体。",
+      "gap_targets": [
+        {
+          "type": "project",
+          "name_zh": "材料热物性 × 人工智能",
+          "potential_gap_closure": 10.0
+        }
+      ],
+      "completion_note": null,
+      "created_at": "2026-08-28T14:26:22",
+      "updated_at": "2026-08-28T14:26:22"
+    },
+    {
+      "id": 6,
+      "goal_id": 1,
+      "user_id": 2,
+      "item_type": "publication",
+      "source_resource_id": null,
+      "source_publication_id": 3,
+      "source_project_id": null,
+      "title": "内部演示文献：芯片热管理多物理场建模知识框架",
+      "phase": "文献桥接",
+      "priority_score": 57.0,
+      "status": "planned",
+      "progress_percent": 0,
+      "rationale": "命中当前目标方向与知识缺口关键词；用于在进入课程/项目之前建立研究路线与方法认知。（内部演示文献记录）",
+      "gap_targets": [
+        {
+          "type": "literature",
+          "name_zh": "目标方向文献认知",
+          "potential_gap_closure": 20.0
+        }
+      ],
+      "completion_note": null,
+      "created_at": "2026-08-28T14:26:22",
+      "updated_at": "2026-08-28T14:26:22"
+    },
+    {
+      "id": 7,
+      "goal_id": 1,
+      "user_id": 2,
+      "item_type": "publication",
+      "source_resource_id": null,
+      "source_publication_id": 1,
+      "source_project_id": null,
+      "title": "内部演示文献：图神经网络与材料性质预测方法综述",
+      "phase": "文献桥接",
+      "priority_score": 52.5,
+      "status": "planned",
+      "progress_percent": 0,
+      "rationale": "命中当前目标方向与知识缺口关键词；用于在进入课程/项目之前建立研究路线与方法认知。（内部演示文献记录）",
+      "gap_targets": [
+        {
+          "type": "literature",
+          "name_zh": "目标方向文献认知",
+          "potential_gap_closure": 10.0
+        }
+      ],
+      "completion_note": null,
+      "created_at": "2026-08-28T14:26:22",
+      "updated_at": "2026-08-28T14:26:22"
+    },
+    {
+      "id": 8,
+      "goal_id": 1,
+      "user_id": 2,
+      "item_type": "project_task",
+      "source_resource_id": 13,
+      "source_publication_id": null,
+      "source_project_id": null,
+      "title": "图神经网络材料热导率预测任务",
+      "phase": "科研实践",
+      "priority_score": 29.3,
+      "status": "planned",
+      "progress_percent": 0,
+      "rationale": "补齐材料热物性（当前满足 36.7%）；补齐文献调研与证据综合（当前满足 71.8%）",
+      "gap_targets": [
+        {
+          "type": "knowledge",
+          "id": 4,
+          "name_zh": "材料热物性",
+          "current_satisfaction": 36.7,
+          "standard_level": 3.3,
+          "potential_gap_closure": 63.3
+        },
+        {
+          "type": "capability",
+          "id": 6,
+          "name_zh": "文献调研与证据综合",
+          "current_satisfaction": 71.8,
+          "standard_level": 2.8,
+          "potential_gap_closure": 28.2
+        }
+      ],
+      "completion_note": null,
+      "created_at": "2026-08-28T14:26:22",
+      "updated_at": "2026-08-28T14:26:22"
+    },
+    {
+      "id": 9,
+      "goal_id": 1,
+      "user_id": 2,
+      "item_type": "course",
+      "source_resource_id": 8,
+      "source_publication_id": null,
+      "source_project_id": null,
+      "title": "统计物理与输运基础",
+      "phase": "基础补齐",
+      "priority_score": 12.4,
+      "status": "planned",
+      "progress_percent": 0,
+      "rationale": "补齐传热理论分析（当前满足 85.6%）",
+      "gap_targets": [
+        {
+          "type": "capability",
+          "id": 1,
+          "name_zh": "传热理论分析",
+          "current_satisfaction": 85.6,
+          "standard_level": 2.5,
+          "potential_gap_closure": 14.4
+        }
+      ],
+      "completion_note": null,
+      "created_at": "2026-08-28T14:26:22",
+      "updated_at": "2026-08-28T14:26:22"
+    },
+    {
+      "id": 10,
+      "goal_id": 1,
+      "user_id": 2,
+      "item_type": "course",
+      "source_resource_id": 9,
+      "source_publication_id": null,
+      "source_project_id": null,
+      "title": "分子动力学模拟方法",
+      "phase": "基础补齐",
+      "priority_score": 6.6,
+      "status": "planned",
+      "progress_percent": 0,
+      "rationale": "补齐数值建模与求解（当前满足 94.6%）",
+      "gap_targets": [
+        {
+          "type": "capability",
+          "id": 2,
+          "name_zh": "数值建模与求解",
+          "current_satisfaction": 94.6,
+          "standard_level": 3.1,
+          "potential_gap_closure": 5.4
+        }
+      ],
+      "completion_note": null,
+      "created_at": "2026-08-28T14:26:22",
+      "updated_at": "2026-08-28T14:26:22"
+    }
+  ],
+  "summary": {
+    "total": 10,
+    "completed": 0,
+    "in_progress": 0,
+    "progress_percent": 0.0,
+    "baseline_match_score": 76.5,
+    "latest_snapshot_score": 76.5,
+    "pending_evidence_count": 1
+  },
+  "snapshots": [
+    {
+      "id": 1,
+      "goal_id": 1,
+      "snapshot_type": "baseline",
+      "match_score": 76.5,
+      "capability_fit": 90.4,
+      "knowledge_fit": 43.9,
+      "evidence_confidence": 80.7,
+      "critical_gap_count": 2,
+      "created_at": "2026-08-28T14:26:22"
+    }
+  ],
+  "closed_loop": "路线图完成项不会直接写能力分；完成后生成低可信的待核验证据，可形成临时画像变化；教师核验后才升级为高可信证据，并重新计算目标匹配。"
+}

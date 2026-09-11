@@ -1,0 +1,48 @@
+{
+  "item": {
+    "id": 1,
+    "goal_id": 1,
+    "user_id": 2,
+    "item_type": "course",
+    "source_resource_id": 12,
+    "source_publication_id": null,
+    "source_project_id": null,
+    "title": "芯片热管理与电子封装热设计",
+    "phase": "基础补齐",
+    "priority_score": 100.0,
+    "status": "completed",
+    "progress_percent": 100,
+    "rationale": "补齐芯片热管理（当前满足 0.0%）；补齐材料热物性（当前满足 36.7%）；补齐传热理论分析（当前满足 85.6%）",
+    "gap_targets": [
+      {
+        "type": "knowledge",
+        "id": 20,
+        "name_zh": "芯片热管理",
+        "current_satisfaction": 0.0,
+        "standard_level": 4.5,
+        "potential_gap_closure": 72.0
+      },
+      {
+        "type": "knowledge",
+        "id": 4,
+        "name_zh": "材料热物性",
+        "current_satisfaction": 36.7,
+        "standard_level": 3.4,
+        "potential_gap_closure": 60.4
+      },
+      {
+        "type": "capability",
+        "id": 1,
+        "name_zh": "传热理论分析",
+        "current_satisfaction": 85.6,
+        "standard_level": 3.5,
+        "potential_gap_closure": 14.4
+      }
+    ],
+    "completion_note": "浏览器验收：完成路线项并提交待核验证据。",
+    "created_at": "2026-08-28T14:26:22",
+    "updated_at": "2026-08-28T14:26:30"
+  },
+  "generated_pending_evidence_id": 19,
+  "message": "标准学习资源完成后仅生成待核验证据，不直接修改能力分。"
+}

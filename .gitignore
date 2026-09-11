@@ -1,0 +1,10 @@
+.env
+backend/.env
+*.db
+__pycache__/
+*.pyc
+uploads/
+backups/
+trial-accounts.csv
+.sites-runtime/
+~$*.xlsx

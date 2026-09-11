@@ -1,0 +1,193 @@
+{
+  "version": "4.0.0",
+  "runtime_checks": 34,
+  "runtime_checks_passed": 34,
+  "sample_weldability": {
+    "material_name": "Q355",
+    "material_group": "carbon_low_alloy_steel",
+    "thickness_mm": 20.0,
+    "composition": {
+      "C": 0.18,
+      "Mn": 1.45,
+      "Si": 0.35,
+      "Cr": 0.12,
+      "Ni": 0.15,
+      "Cu": 0.15,
+      "Mo": 0.02,
+      "V": 0.01,
+      "P": 0.025,
+      "S": 0.02
+    },
+    "limitations": [
+      "本结果是前期工艺筛选，不替代材料标准、WPS/PQR、焊接性试验和责任工程师批准。"
+    ],
+    "carbon_equivalent_iiw": 0.4717,
+    "pcm": 0.2825,
+    "weldability": "一般",
+    "cold_cracking_risk": "较高",
+    "possible_problems": [
+      "热影响区硬化",
+      "氢致冷裂纹",
+      "焊后延迟裂纹"
+    ],
+    "preheat_celsius": {
+      "min": 85,
+      "max": 135
+    },
+    "mechanical_property_outlook": "随碳当量和冷却速度升高，强度/硬度可能上升，但冲击韧性和塑性可能下降。"
+  },
+  "sample_process_plan": {
+    "assessment": {
+      "material_name": "Q355",
+      "material_group": "carbon_low_alloy_steel",
+      "thickness_mm": 20.0,
+      "composition": {
+        "C": 0.18,
+        "Mn": 1.45,
+        "Si": 0.35,
+        "Cr": 0.12,
+        "Ni": 0.15,
+        "Cu": 0.15,
+        "Mo": 0.02,
+        "V": 0.01,
+        "P": 0.025,
+        "S": 0.02
+      },
+      "limitations": [
+        "本结果是前期工艺筛选，不替代材料标准、WPS/PQR、焊接性试验和责任工程师批准。"
+      ],
+      "carbon_equivalent_iiw": 0.4717,
+      "pcm": 0.2825,
+      "weldability": "一般",
+      "cold_cracking_risk": "较高",
+      "possible_problems": [
+        "热影响区硬化",
+        "氢致冷裂纹",
+        "焊后延迟裂纹"
+      ],
+      "preheat_celsius": {
+        "min": 85,
+        "max": 135
+      },
+      "mechanical_property_outlook": "随碳当量和冷却速度升高，强度/硬度可能上升，但冲击韧性和塑性可能下降。"
+    },
+    "preliminary_wps": {
+      "joint_type": "butt",
+      "position": "flat",
+      "recommended_process": "MAG/FCAW；根焊可采用 GTAW",
+      "current_range": "160–300 A",
+      "voltage_range": "22–32 V",
+      "travel_speed_range": "180–450 mm/min",
+      "groove": "单 V 形坡口，角度约 50–70°，钝边与间隙按工艺评定确定",
+      "filler_principle": "低氢型、强度匹配或略低匹配焊材；具体牌号按母材强度级别与服役温度选择",
+      "preheat_celsius": {
+        "min": 85,
+        "max": 135
+      },
+      "interpass_temperature": "约 100–250 °C，最终以材料规范和 WPS 为准",
+      "postheat_pwht": "当高碳当量、高拘束、厚板、Cr-Mo 钢或法规要求时，评估消氢后热和 PWHT。",
+      "shielding_and_cleaning": "采用匹配保护气体；清除油、水、锈、氧化膜并控制焊材烘干和保温。"
+    },
+    "predicted_joint_performance": "随碳当量和冷却速度升高，强度/硬度可能上升，但冲击韧性和塑性可能下降。",
+    "validation": [
+      "必须通过 WPS/PQR、试板力学性能、硬度和必要的无损检测确认。"
+    ]
+  },
+  "sample_defect_analysis": {
+    "defect_type": "裂纹",
+    "observations": "根部纵向裂纹",
+    "likely_causes": [
+      "高碳当量和淬硬组织",
+      "扩散氢与高拘束",
+      "焊缝成分/形状导致凝固裂纹",
+      "收弧坑未填满"
+    ],
+    "corrective_actions": [
+      "采用低氢工艺、预热和缓冷",
+      "降低拘束并优化焊接顺序",
+      "调整焊材成分和焊道宽深比",
+      "填满弧坑并采用引弧/熄弧板"
+    ],
+    "verification": [
+      "按适用验收标准确认缺陷性质和允许等级",
+      "通过复验焊、NDT 和必要的金相/断口分析验证根因"
+    ]
+  },
+  "sample_telemetry": {
+    "session_id": "demo-gmaw-001",
+    "process": "GMAW",
+    "sample_count": 4,
+    "ignored_samples": 0,
+    "channel_count": 3,
+    "sampling_rate_hz_estimate": 10.0,
+    "duration_s": 0.3,
+    "channel_statistics": {
+      "current_a": {
+        "count": 4,
+        "mean": 220.0,
+        "std": 1.581139,
+        "min": 218.0,
+        "max": 222.0,
+        "rms": 220.005682,
+        "cv": 0.007187,
+        "three_sigma_anomalies": 0
+      },
+      "voltage_v": {
+        "count": 4,
+        "mean": 24.025,
+        "std": 0.147902,
+        "min": 23.8,
+        "max": 24.2,
+        "rms": 24.025455,
+        "cv": 0.006156,
+        "three_sigma_anomalies": 0
+      },
+      "travel_speed_mm_s": {
+        "count": 4,
+        "mean": 5.0,
+        "std": 0.070711,
+        "min": 4.9,
+        "max": 5.1,
+        "rms": 5.0005,
+        "cv": 0.014142,
+        "three_sigma_anomalies": 0
+      }
+    },
+    "derived_features": {
+      "heat_input_kj_mm_estimate": 0.8457,
+      "efficiency_assumption": 0.8,
+      "three_sigma_anomaly_ratio": 0.0,
+      "stability_findings": [
+        {
+          "signal": "焊接电流",
+          "cv": 0.007187,
+          "assessment": "稳定",
+          "threshold": 0.1
+        },
+        {
+          "signal": "电弧电压",
+          "cv": 0.006156,
+          "assessment": "稳定",
+          "threshold": 0.08
+        },
+        {
+          "signal": "焊接速度",
+          "cv": 0.014142,
+          "assessment": "稳定",
+          "threshold": 0.1
+        }
+      ]
+    },
+    "preliminary_quality": {
+      "score": 100.0,
+      "grade": "稳定",
+      "known_quality": null
+    },
+    "limitations": [
+      "评分基于通用统计稳定性规则，不等同于产品验收结论。",
+      "通道名称、量纲、标定、同步和工件位置必须由采集网关保证。",
+      "缺陷判定需结合图像、声学、温度场、焊缝几何和 NDT/破坏性试验标注验证。"
+    ]
+  },
+  "note": "以上结果由 V4.0 实际 Python/FastAPI 代码路径生成；AI 与外部文献服务结果在无密钥测试中采用接口模拟。"
+}

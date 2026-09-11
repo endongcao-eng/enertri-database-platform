@@ -1,0 +1,13 @@
+.env
+backend/.env
+backups/
+uploads/
+*.zip
+*.sql
+*.tar
+*.tar.gz
+__pycache__/
+*.pyc
+.venv/
+backend/.venv/
+.git/

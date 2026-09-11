@@ -1,0 +1,23 @@
+{
+  "name": "EnerTri 网页试用部署准备版",
+  "version": "4.7.0-webprep.3",
+  "api_business_version": "4.7.0",
+  "date": "2026-09-11",
+  "status": "preparation_candidate_not_public_ready",
+  "database_head": "v4_7_trial_controls",
+  "validation": {
+    "isolated_sqlite_tests": 36,
+    "test_modules": 8,
+    "python_compile": "passed",
+    "javascript_syntax": "passed",
+    "yaml_parse": "passed",
+    "postgresql_docker_https": "not_run",
+    "browser_preview": "unavailable",
+    "external_ai": "not_run",
+    "load_test": "not_run",
+    "dependency_audit": "target-environment-required",
+    "railway_railpack": "configured_not_run",
+    "trial_controls_tests": 10
+  },
+  "prior_manifest": "review/input_release_manifest.json"
+}

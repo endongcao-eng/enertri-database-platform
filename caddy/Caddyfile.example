@@ -1,0 +1,20 @@
+# 把 enertri.example.com 改成你的真实域名，并确保域名 A 记录已指向服务器公网 IP。
+enertri.example.com {
+    encode gzip zstd
+
+    root * /srv/frontend
+    file_server
+
+    # 后端 API：保留 /api 前缀，因为 FastAPI 路由本身就是 /api/...
+    handle /api/* {
+        reverse_proxy backend:8000
+    }
+
+    # 上传视频/图片等媒体文件由后端提供
+    handle /media/* {
+        reverse_proxy backend:8000
+    }
+
+    # 单页静态前端兜底
+    try_files {path} /index.html
+}
