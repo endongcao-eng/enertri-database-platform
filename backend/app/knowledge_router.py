@@ -13,7 +13,7 @@ from sqlalchemy.orm import Session
 from .audit import write_audit
 from .database import get_db
 from .file_service import InvalidStoredUpload, store_upload
-from .models import KnowledgeBase, KnowledgeDocument, KnowledgeFigure, KnowledgePage, KnowledgeTable, Publication, PublicationSource, TaskEvent, User, WorkspaceTask
+from .models import KnowledgeBase, KnowledgeDocument, KnowledgeFigure, KnowledgePage, KnowledgeTable, Publication, PublicationSource, TaskEvent, User, WorkspaceFile, WorkspaceTask
 from .paper_pipeline import answer_question
 from .permissions import has_permission
 from .publication_service import ADAPTERS, publication_to_dict, search_publications, upsert_search_results
@@ -181,7 +181,7 @@ def upload_paper_to_knowledge(
     if not kb or not _kb_access(kb, user, manage=True):
         raise HTTPException(status_code=404, detail="knowledge base not found")
     try:
-        record, duplicate = store_upload(db, user, file, confidentiality=confidentiality, external_ai_allowed=allow_external_ai, allowed_suffixes={".pdf"})
+        record, duplicate = store_upload(db, user, file, confidentiality=confidentiality, external_ai_allowed=allow_external_ai, allowed_suffixes={".pdf", ".docx"})
     except InvalidStoredUpload as exc:
         doc = KnowledgeDocument(file_id=exc.record.id, knowledge_base_id=kb.id, title=exc.record.original_name, source_type="upload", owner_user_id=user.id, status="failed", page_count=0, metadata_json=json.dumps({"validation": exc.validation}, ensure_ascii=False))
         db.add(doc); db.commit(); db.refresh(doc)
@@ -193,7 +193,7 @@ def upload_paper_to_knowledge(
         return {**task_to_dict(task), "document_id": doc.id, "file_id": exc.record.id, "file_parse_status": "failed"}
     doc = KnowledgeDocument(file_id=record.id, knowledge_base_id=kb.id, title=record.original_name, source_type="upload", owner_user_id=user.id, status="pending", metadata_json=json.dumps({"knowledge_base_policy": {"allow_ai": kb.allow_ai, "allow_export": kb.allow_export, "retain_original": kb.retain_original}}, ensure_ascii=False))
     db.add(doc); db.commit(); db.refresh(doc)
-    task = create_task(db, user_id=user.id, task_type="paper_ingest", title=f"论文知识化：{record.original_name}", input_data={"file_id": record.id, "document_id": doc.id, "duplicate_detected": duplicate}, model_name="local-evidence-pipeline", model_version="V4.2", software_name="PyMuPDF/pdfplumber/Tesseract/local-vector", software_version="4.2.0", timeout_seconds=3600)
+    task = create_task(db, user_id=user.id, task_type="paper_ingest", title=f"文档知识化：{record.original_name}", input_data={"file_id": record.id, "document_id": doc.id, "duplicate_detected": duplicate}, model_name="local-evidence-pipeline", model_version="V4.7", software_name="PyMuPDF/python-docx/local-vector", software_version="4.7.0", timeout_seconds=3600)
     link_file(db, task.id, record.id, "input")
     write_audit(db, action="paper.knowledge_ingest.queued", resource_type="knowledge_document", resource_id=doc.id, actor=user, details={"task_id": task.id, "file_id": record.id, "knowledge_base_id": kb.id, "duplicate": duplicate}, **_meta(request))
     submit_task(task.id)
@@ -208,7 +208,8 @@ def list_documents(knowledge_base_id: int | None = None, db: Session = Depends(g
     for doc in db.scalars(stmt).all():
         try: _document_access(db, doc.id, user)
         except HTTPException: continue
-        rows.append({"id": doc.id, "title": doc.title, "status": doc.status, "page_count": doc.page_count, "knowledge_base_id": doc.knowledge_base_id, "file_id": doc.file_id, "created_at": doc.created_at})
+        source = db.get(WorkspaceFile, doc.file_id) if doc.file_id else None
+        rows.append({"id": doc.id, "title": doc.title, "status": doc.status, "page_count": doc.page_count, "knowledge_base_id": doc.knowledge_base_id, "file_id": doc.file_id, "file_type": Path(source.original_name).suffix.lower() if source else None, "created_at": doc.created_at})
     return rows
 
 
@@ -221,7 +222,7 @@ def get_document(document_id: int, db: Session = Depends(get_db), user: User = D
     structure = json.loads(doc.structure_json or "{}")
     metadata = json.loads(doc.metadata_json or "{}")
     return {
-        "id": doc.id, "title": doc.title, "status": doc.status, "page_count": doc.page_count, "file_id": doc.file_id, "knowledge_base_id": doc.knowledge_base_id,
+        "id": doc.id, "title": doc.title, "status": doc.status, "page_count": doc.page_count, "file_id": doc.file_id, "file_type": (Path((db.get(WorkspaceFile, doc.file_id).original_name)).suffix.lower() if doc.file_id and db.get(WorkspaceFile, doc.file_id) else None), "knowledge_base_id": doc.knowledge_base_id,
         "structure": structure, "metadata": metadata,
         "pages": [{"page_number": p.page_number, "text": p.text, "ocr_used": p.ocr_used, "extraction_method": p.extraction_method, "page_url": f"/api/files/{doc.file_id}/download#page={p.page_number}" if doc.file_id else None} for p in pages],
         "tables": [{"id": t.id, "table_number": t.table_number, "page_number": t.page_number, "title": t.title, "data": json.loads(t.data_json), "markdown": t.markdown} for t in tables],

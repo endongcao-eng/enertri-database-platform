@@ -10,6 +10,8 @@ from collections import Counter
 from pathlib import Path
 from typing import Any, Callable
 
+from docx import Document as DocxDocument
+
 from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
@@ -330,6 +332,108 @@ def ingest_pdf_document(
     db.commit()
     emit(92, "向量化与结构化阅读", f"完成 {len(chunks)} 个本地向量和证据索引")
     return {"document_id": document.id, "title": title, "page_count": len(pages), "ocr_pages": ocr_pages, "sections": sections, "tables": [{k: v for k, v in t.items() if k != "data"} for t in tables], "figures": figures[:30], "reference_count": len(refs), "chunk_count": len(chunks), "structured_reading": structured}
+
+
+def ingest_docx_document(
+    db: Session,
+    document: KnowledgeDocument,
+    file_record: WorkspaceFile,
+    *,
+    progress: Callable[[int, str, str], None] | None = None,
+) -> dict[str, Any]:
+    """Extract a DOCX into the same evidence index used by PDF documents.
+
+    DOCX has no reliable physical-page model until it is rendered by a word
+    processor. Explicit page breaks are therefore retained when present; in
+    their absence the document is represented as one logical source page.
+    """
+    path = Path(file_record.storage_path)
+    if path.suffix.lower() != ".docx":
+        raise RuntimeError("DOCX 流水线收到的文件类型不正确")
+
+    def emit(p: int, step: str, msg: str) -> None:
+        if progress:
+            progress(p, step, msg)
+
+    emit(18, "读取 Word 文档", "正在提取段落、标题与表格")
+    docx = DocxDocument(str(path))
+    pages: list[dict[str, Any]] = []
+    current: list[str] = []
+    page_number = 1
+
+    def flush_page() -> None:
+        nonlocal current, page_number
+        text = "\n".join(current).strip()
+        if text or not pages:
+            pages.append({"page_number": page_number, "text": text, "extraction_method": "docx-text", "ocr_used": False})
+        current = []
+        page_number += 1
+
+    for paragraph in docx.paragraphs:
+        text = paragraph.text.strip()
+        if text:
+            current.append(text)
+        has_page_break = any(
+            br.get("{http://schemas.openxmlformats.org/wordprocessingml/2006/main}type") == "page"
+            for run in paragraph._p.findall(".//{http://schemas.openxmlformats.org/wordprocessingml/2006/main}br")
+        )
+        if has_page_break:
+            flush_page()
+    flush_page()
+    if pages and not pages[-1]["text"] and len(pages) > 1:
+        pages.pop()
+    emit(40, "识别标题与章节", f"完成 {len(pages)} 个逻辑页解析")
+
+    tables: list[dict[str, Any]] = []
+    for index, table in enumerate(docx.tables, start=1):
+        rows = [[cell.text.strip() for cell in row.cells] for row in table.rows]
+        if not rows:
+            continue
+        page = 1
+        if pages:
+            table_text = "\n".join(" | ".join(row) for row in rows)
+            page = next((p["page_number"] for p in pages if table_text[:80] in p["text"]), 1)
+        tables.append({"table_number": f"Table {index}", "page_number": page, "title": "", "data": rows, "markdown": _markdown_table(rows)})
+    emit(58, "表格提取", f"提取到 {len(tables)} 个表格")
+
+    sections = _section_map(pages)
+    all_text = "\n".join(p["text"] for p in pages)
+    first_lines = [line.strip() for line in pages[0]["text"].splitlines() if line.strip()] if pages else []
+    title = _page_title(first_lines) or file_record.original_name
+    abstract = _extract_abstract(all_text)
+    refs = _extract_references(pages, sections)
+    chunks = _chunk_pages(pages, sections)
+    emit(76, "参考文献与分块", f"解析 {len(refs)} 条参考文献，生成 {len(chunks)} 个证据分块")
+
+    db.execute(delete(KnowledgeChunk).where(KnowledgeChunk.document_id == document.id))
+    db.execute(delete(KnowledgePage).where(KnowledgePage.document_id == document.id))
+    db.execute(delete(KnowledgeTable).where(KnowledgeTable.document_id == document.id))
+    db.execute(delete(KnowledgeFigure).where(KnowledgeFigure.document_id == document.id))
+    for p in pages:
+        db.add(KnowledgePage(document_id=document.id, page_number=p["page_number"], text=p["text"], extraction_method=p["extraction_method"], ocr_used=False, metadata_json=json.dumps({"source_format": "docx"}, ensure_ascii=False)))
+    for table in tables:
+        db.add(KnowledgeTable(document_id=document.id, table_number=table["table_number"], page_number=table["page_number"], title=table["title"], data_json=json.dumps(table["data"], ensure_ascii=False), markdown=table["markdown"]))
+    for chunk in chunks:
+        db.add(KnowledgeChunk(document_id=document.id, chunk_index=chunk["chunk_index"], content=chunk["content"], token_count=len(_tokenize(chunk["content"])), page_start=chunk["page_start"], page_end=chunk["page_end"], section=chunk["section"], embedding_model=f"enertri-hash-v1-{EMBED_DIM}", embedding_json=json.dumps(local_embedding(chunk["content"])), metadata_json=json.dumps({"evidence_excerpt": chunk["content"][:500], "source_format": "docx"}, ensure_ascii=False)))
+    structured = _structured_reading(title, abstract, pages, sections, tables, [], refs)
+    document.title = title[:512]
+    document.page_count = len(pages)
+    document.status = "ready"
+    document.structure_json = json.dumps(structured, ensure_ascii=False, default=str)
+    document.metadata_json = json.dumps({"source_format": "docx", "references": refs, "logical_pages": len(pages), "page_position_note": "Word 文档页码取显式分页符；无分页符时按逻辑页呈现。"}, ensure_ascii=False, default=str)
+    file_record.parse_status = "parsed"
+    db.commit()
+    emit(92, "向量化与结构化阅读", f"完成 {len(chunks)} 个 Word 文档证据分块")
+    return {"document_id": document.id, "title": title, "page_count": len(pages), "ocr_pages": 0, "sections": sections, "tables": [{k: v for k, v in table.items() if k != "data"} for table in tables], "figures": [], "reference_count": len(refs), "chunk_count": len(chunks), "structured_reading": structured, "source_format": "docx"}
+
+
+def ingest_document(db: Session, document: KnowledgeDocument, file_record: WorkspaceFile, *, progress: Callable[[int, str, str], None] | None = None) -> dict[str, Any]:
+    suffix = Path(file_record.storage_path).suffix.lower()
+    if suffix == ".pdf":
+        return ingest_pdf_document(db, document, file_record, progress=progress)
+    if suffix == ".docx":
+        return ingest_docx_document(db, document, file_record, progress=progress)
+    raise RuntimeError("知识库仅支持 PDF 或 DOCX 文档")
 
 
 def _expanded_query(question: str) -> str:

@@ -70,6 +70,7 @@ function renderKnowledgeSystem() {
     <div class="pub-top"><div>${(p.sources||[]).map(s=>`<span class="badge primary">${escapeHtml(s)}</span>`).join(' ')}</div><span class="badge ${p.open_access?'success':''}">${p.open_access?'OA':'Metadata'}</span></div>
     <h3>${escapeHtml(p.title)}</h3><p class="muted">${escapeHtml((p.authors||[]).slice(0,4).join(', ') || '作者信息待补充')} · ${escapeHtml(p.journal||'期刊待补充')} · ${escapeHtml(p.year||'—')}</p>
     <div class="pub-meta"><span>DOI ${escapeHtml(p.doi||'—')}</span><span>引用 ${p.citation_count||0}</span>${(p.sources||[]).length>1?'<strong class="dedup-pill">跨源已合并</strong>':''}</div>
+    <div class="inline-actions publication-actions">${p.open_url?`<a class="btn small primary" href="${escapeHtml(p.open_url)}" target="_blank" rel="noopener noreferrer">打开论文地址</a>`:''}${p.fulltext_url&&p.fulltext_url!==p.open_url?`<a class="btn small secondary" href="${escapeHtml(p.fulltext_url)}" target="_blank" rel="noopener noreferrer">打开全文</a>`:''}${p.doi_url?`<a class="btn small ghost" href="${escapeHtml(p.doi_url)}" target="_blank" rel="noopener noreferrer">DOI</a>`:''}</div>
   </article>`).join('');
   const docRows = docs.map(d => `<button class="doc-row ${Number(d.id)===Number(State.selectedKnowledgeDocumentId)?'active':''} js-knowledge-doc" data-id="${d.id}"><span><strong>${escapeHtml(d.title)}</strong><small>${d.page_count||0} 页 · ${escapeHtml(d.status)}</small></span><span class="badge ${d.status==='ready'?'success':d.status==='failed'?'danger':'warning'}">${escapeHtml(d.status)}</span></button>`).join('');
   const facts = (doc?.structure?.key_facts || []).map(f => `<button class="fact-card js-focus-page" data-page="${f.page}"><span>${escapeHtml(f.type.replaceAll('_',' '))}</span><strong>${escapeHtml(f.value)} ${escapeHtml(f.unit||'')}</strong><small>第 ${f.page} 页 · ${escapeHtml(f.evidence||'')}</small></button>`).join('');
@@ -78,12 +79,13 @@ function renderKnowledgeSystem() {
   const pageEvidence = (doc?.pages || []).map(p => `<button class="page-evidence js-focus-page" data-page="${p.page_number}"><strong>P${p.page_number}</strong><span>${escapeHtml((p.text||'').replace(/\s+/g,' ').slice(0,160))}</span><small>${p.ocr_used?'OCR':'文本层'} · ${escapeHtml(p.extraction_method||'')}</small></button>`).join('');
   const qa = State.paperQaResult;
   const qaEvidence = (qa?.evidence || []).map(e => `<button class="evidence-card js-focus-page" data-page="${e.page}"><span class="badge primary">第 ${e.page} 页</span><strong>${escapeHtml(e.section||'原文证据')}</strong><p>${escapeHtml(e.excerpt||'')}</p><small>相关度 ${escapeHtml(e.score)}</small></button>`).join('');
-  const pdfSrc = State.knowledgePdfUrl ? `${State.knowledgePdfUrl}#page=${State.focusPage||1}&view=FitH` : '';
+  const isPdf = doc?.file_type === '.pdf';
+  const pdfSrc = isPdf && State.knowledgePdfUrl ? `${State.knowledgePdfUrl}#page=${State.focusPage||1}&view=FitH` : '';
   const qaBlock = qa
     ? `<div class="qa-answer"><div><span class="badge ${qa.confidence==='high'?'success':'warning'}">${escapeHtml(qa.confidence)} confidence</span><h3>答案</h3><p>${escapeHtml(qa.answer)}</p></div><div class="qa-evidence-grid">${qaEvidence}</div></div>`
     : '<div class="empty-box compact-empty">输入问题后，系统会返回答案、页码、章节与原文片段。</div>';
   const documentMain = doc ? `<section class="card panel document-overview"><div class="section-head"><div><span class="eyebrow">03 · Evidence-first Paper Reading</span><h2>${escapeHtml(doc.title)}</h2><p class="muted">${doc.page_count} 页 · ${escapeHtml(doc.status)}</p></div><span class="badge success">${doc.status==='ready'?'结构化完成':escapeHtml(doc.status)}</span></div><div class="section-strip">${sections}</div>${facts?`<div class="facts-grid">${facts}</div>`:''}</section>
-      <section class="paper-split"><div class="card pdf-panel"><div class="section-head"><div><h2>PDF 原文</h2><p class="muted">当前定位：第 ${State.focusPage||1} 页</p></div><div class="page-nav"><button class="btn small secondary" id="prevPdfPage">上一页</button><span>P${State.focusPage||1} / ${doc.page_count}</span><button class="btn small secondary" id="nextPdfPage">下一页</button></div></div>${pdfSrc?`<iframe id="paperPdfFrame" class="paper-pdf-frame" src="${escapeHtml(pdfSrc)}"></iframe>`:'<div class="empty-box">无法加载 PDF 原文预览</div>'}</div>
+      <section class="paper-split"><div class="card pdf-panel"><div class="section-head"><div><h2>${isPdf?'PDF 原文':'Word 原文'}</h2><p class="muted">${isPdf?`当前定位：第 ${State.focusPage||1} 页`:'DOCX 已完成结构化；页码按文档显式分页符记录'}</p></div><div class="page-nav">${isPdf?`<button class="btn small secondary" id="prevPdfPage">上一页</button><span>P${State.focusPage||1} / ${doc.page_count}</span><button class="btn small secondary" id="nextPdfPage">下一页</button>`:''}</div></div>${pdfSrc?`<iframe id="paperPdfFrame" class="paper-pdf-frame" src="${escapeHtml(pdfSrc)}"></iframe>`:`<div class="empty-box">${isPdf?'无法加载 PDF 原文预览':'Word 原文不在浏览器内嵌渲染，点击下方按钮打开原文件。'}${doc.file_id?'<br><button class="btn small primary" id="openOriginalDocument">打开原文件</button>':''}</div>`}</div>
       <div class="card panel evidence-panel"><div class="section-head"><div><h2>结构化结果</h2><p class="muted">点击任意证据直接定位左侧原文页</p></div></div><div class="page-evidence-list">${pageEvidence}</div></div></section>
       <section class="card panel"><div class="section-head"><div><span class="eyebrow">04 · Table Extraction</span><h2>表格数据提取</h2></div><span class="badge primary">${doc.tables?.length||0} 个表格</span></div>${tables || '<div class="empty-box">当前论文未检测到可结构化表格。</div>'}</section>
       <section class="card panel paper-qa"><div class="section-head"><div><span class="eyebrow">05 · Paper QA</span><h2>基于论文的原文问答</h2><p class="muted">答案仅来自已解析证据；每条证据可点击回到原文页。</p></div></div><div class="qa-row"><input class="input" id="paperQaQuestion" value="${escapeHtml(State.paperQaQuestion||'激光功率是多少？')}" placeholder="例如：最高抗拉强度对应哪组参数？"><button class="btn primary" id="paperQaBtn">基于原文回答</button></div>${qaBlock}</section>`
@@ -103,7 +105,7 @@ function renderKnowledgeSystem() {
       <label class="label">当前知识库</label><select class="select" id="knowledgeBaseSelect">${bases.map(k=>`<option value="${k.id}" ${Number(k.id)===Number(selectedKb?.id)?'selected':''}>${escapeHtml(k.name)} · ${knowledgeScopeLabel(k.scope_type)}</option>`).join('')}</select>
       ${selectedKb?`<div class="kb-policy"><span>${knowledgeScopeLabel(selectedKb.scope_type)}</span><span>团队检索 ${selectedKb.allow_team_search?'✓':'—'}</span><span>AI 使用 ${selectedKb.allow_ai?'✓':'—'}</span><span>导出 ${selectedKb.allow_export?'✓':'—'}</span><span>保留原文 ${selectedKb.retain_original?'✓':'—'}</span></div>`:''}
       <details class="kb-create"><summary>＋ 新建知识库</summary><div class="form-grid"><input class="input" id="newKbName" placeholder="例如：激光焊接项目"><select class="select" id="newKbScope"><option value="personal">个人</option><option value="group">课题组</option><option value="project" selected>项目</option><option value="enterprise">企业</option><option value="public_terms">公共术语</option></select><label class="check-row"><input type="checkbox" id="newKbTeam">允许团队检索</label><label class="check-row"><input type="checkbox" id="newKbAi" checked>允许 AI 使用</label><label class="check-row"><input type="checkbox" id="newKbExport" checked>允许导出</label><label class="check-row"><input type="checkbox" id="newKbRetain" checked>保留原文</label><button class="btn secondary" id="createKbBtn">创建</button></div></details>
-      <div class="upload-paper-box"><label class="label">上传 PDF 到当前知识库</label><input type="file" class="input" id="paperKnowledgeFile" accept=".pdf,application/pdf"><div class="form-row-2"><select class="select" id="paperConf"><option value="internal">内部</option><option value="confidential">保密</option><option value="restricted">严格保密</option><option value="public">公开</option></select><label class="check-row"><input type="checkbox" id="paperExternal">允许外部 AI</label></div><button class="btn primary" id="paperKnowledgeUploadBtn">上传并结构化</button><div id="paperUploadNotice"></div></div>
+      <div class="upload-paper-box"><label class="label">上传 PDF / Word 到当前知识库</label><input type="file" class="input" id="paperKnowledgeFile" accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"><div class="form-row-2"><select class="select" id="paperConf"><option value="internal">内部</option><option value="confidential">保密</option><option value="restricted">严格保密</option><option value="public">公开</option></select><label class="check-row"><input type="checkbox" id="paperExternal">允许外部 AI</label></div><button class="btn primary" id="paperKnowledgeUploadBtn">上传并结构化</button><div id="paperUploadNotice"></div></div>
       <div class="document-list">${docRows || '<div class="empty-box compact-empty">当前知识库暂无论文</div>'}</div>
     </aside>
     <main class="knowledge-main">${documentMain}</main></section>
@@ -133,6 +135,12 @@ function bindKnowledgeSystem() {
   });
   document.querySelectorAll('.js-knowledge-doc').forEach(b => b.onclick = async () => { State.paperQaResult=null; await loadKnowledgeDocument(b.dataset.id); });
   document.querySelectorAll('.js-focus-page').forEach(b => b.onclick = () => focusKnowledgePage(b.dataset.page));
+  document.getElementById('openOriginalDocument')?.addEventListener('click', async () => {
+    try {
+      const url = await knowledgePdfBlobUrl(State.knowledgeDocument?.file_id);
+      if (url) window.open(url, '_blank', 'noopener');
+    } catch (e) { State.knowledgeError = e.message; renderKnowledgeSystem(); }
+  });
   document.getElementById('prevPdfPage')?.addEventListener('click',()=>focusKnowledgePage((State.focusPage||1)-1));
   document.getElementById('nextPdfPage')?.addEventListener('click',()=>focusKnowledgePage((State.focusPage||1)+1));
   document.getElementById('literatureSearchBtn')?.addEventListener('click', async () => {
@@ -151,7 +159,7 @@ function bindKnowledgeSystem() {
     } catch(e){State.knowledgeError=e.message;renderKnowledgeSystem();}
   });
   document.getElementById('paperKnowledgeUploadBtn')?.addEventListener('click', async()=>{
-    const file=document.getElementById('paperKnowledgeFile').files[0]; if(!file)return alert('请选择 PDF 论文');
+    const file=document.getElementById('paperKnowledgeFile').files[0]; if(!file)return alert('请选择 PDF 或 Word 文档');
     const notice=document.getElementById('paperUploadNotice'); notice.innerHTML='<div class="notice">已提交，等待独立 Worker 处理…</div>';
     const fd=new FormData();fd.append('file',file);fd.append('knowledge_base_id',String(State.selectedKnowledgeBaseId));fd.append('confidentiality',document.getElementById('paperConf').value);fd.append('allow_external_ai',document.getElementById('paperExternal').checked);
     try {

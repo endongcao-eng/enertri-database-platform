@@ -3,8 +3,8 @@ function routeFromLocationHash() {
   const value = String(window.location.hash || '').replace(/^#\/?/, '').trim();
   return value || 'home';
 }
-const initialPathRoute = window.location.pathname === '/login' ? 'login' : routeFromLocationHash();
-const initialRoute = ['home', 'login', 'workspace', 'admin'].includes(initialPathRoute)
+const initialPathRoute = window.location.pathname === '/login' ? 'login' : window.location.pathname === '/register' ? 'register' : routeFromLocationHash();
+const initialRoute = ['home', 'login', 'register', 'workspace', 'admin'].includes(initialPathRoute)
   ? initialPathRoute
   : 'home';
 const State = {
@@ -31,6 +31,7 @@ const State = {
   quizAnswers: {},
   quizChecked: false,
   quizResult: null,
+  registerMessage: '',
 };
 
 function syncRouteHash(route, replace = false) {
@@ -70,6 +71,7 @@ window.addEventListener('hashchange', () => {
   if (route === State.route) return;
   if (route === 'home') return goHome();
   if (['login', 'workspace', 'admin'].includes(route)) return goToRoute(route, { replace: true });
+  if (route === 'register') return goToRoute(route, { replace: true });
   const loaders = {
     'task-center': () => openTaskCenter(),
     'file-center': () => openFileCenter(),
@@ -155,6 +157,7 @@ function render() {
   if (State.error) { app.innerHTML = `<div class="page-shell"><div class="card panel"><h2>无法连接 API</h2><p>${escapeHtml(State.error)}</p><p class="muted">服务暂时不可用，请稍后刷新；持续失败时请联系试用管理员。</p></div></div>`; return; }
   if (State.user?.must_change_password || State.route === 'password') return renderPasswordChange();
   if (State.route === 'login') return renderLogin();
+  if (State.route === 'register') return renderRegister();
   if (State.route === 'admin') return renderAdmin();
   if (State.route === 'workspace') return renderWorkspace();
   if (State.route === 'task-center') return renderTaskCenter();
@@ -223,11 +226,27 @@ function renderHome() {
 }
 function renderLogin(message = '') {
   syncRouteHash('login', true);
-  app.innerHTML = `<div class="login-wrap"><section class="login-showcase"><div class="login-brand"><div class="brand-mark">ET</div><div><h1>EnerTri</h1><p>能源专业三语术语、科研与焊接平台</p></div></div><div class="login-intro"><span class="eyebrow">SECURE WORKSPACE</span><h2>从术语学习到科研与生产协同</h2><p>登录后可使用个人学习记录、科研工具、生产分析和任务成果管理。</p><div class="login-feature-list"><span>术语与专题学习</span><span>科研资料与知识库</span><span>焊接生产分析</span></div></div><button class="btn secondary login-home-link" id="loginHomeBtn">浏览能源术语</button></section><section class="login-card-wrap"><div class="card login-card"><span class="eyebrow">ACCOUNT ACCESS</span><h2>账户登录</h2><p>请使用管理员分配的个人试用账号登录。</p>${message ? `<div class="notice">${escapeHtml(message)}</div>` : ''}<div class="form-grid"><div><label class="label" for="loginUser">用户名</label><input class="input" id="loginUser" autocomplete="username"></div><div><label class="label" for="loginPass">密码</label><input class="input" id="loginPass" type="password" autocomplete="current-password"></div><div class="inline-actions"><button class="btn primary" id="loginSubmit">登录</button><button class="btn secondary" id="backHomeBtn">返回能源术语</button></div></div></div></section></div>`;
+  app.innerHTML = `<div class="login-wrap"><section class="login-showcase"><div class="login-brand"><div class="brand-mark">ET</div><div><h1>EnerTri</h1><p>能源专业三语术语、科研与焊接平台</p></div></div><div class="login-intro"><span class="eyebrow">SECURE WORKSPACE</span><h2>从术语学习到科研与生产协同</h2><p>登录后可使用个人学习记录、科研工具、生产分析和任务成果管理。</p><div class="login-feature-list"><span>术语与专题学习</span><span>科研资料与知识库</span><span>焊接生产分析</span></div></div><button class="btn secondary login-home-link" id="loginHomeBtn">浏览能源术语</button></section><section class="login-card-wrap"><div class="card login-card"><span class="eyebrow">ACCOUNT ACCESS</span><h2>账户登录</h2><p>请使用个人试用账号登录。</p>${message ? `<div class="notice">${escapeHtml(message)}</div>` : ''}<div class="form-grid"><div><label class="label" for="loginUser">用户名</label><input class="input" id="loginUser" autocomplete="username"></div><div><label class="label" for="loginPass">密码</label><input class="input" id="loginPass" type="password" autocomplete="current-password"></div><div class="inline-actions"><button class="btn primary" id="loginSubmit">登录</button><button class="btn secondary" id="toRegisterBtn">创建账号</button><button class="btn secondary" id="backHomeBtn">返回能源术语</button></div></div></div></section></div>`;
   document.getElementById('loginSubmit').onclick = doLogin;
+  document.getElementById('toRegisterBtn').onclick = () => goToRoute('register');
   const backHome = () => goHome();
   document.getElementById('backHomeBtn').onclick = backHome;
   document.getElementById('loginHomeBtn').onclick = backHome;
+}
+function renderRegister() {
+  syncRouteHash('register', true);
+  app.innerHTML = `<div class="login-wrap"><section class="login-showcase"><div class="login-brand"><div class="brand-mark">ET</div><div><h1>EnerTri</h1><p>能源专业三语术语、科研与焊接平台</p></div></div><div class="login-intro"><span class="eyebrow">PERSONAL TRIAL ACCOUNT</span><h2>创建个人试用账号</h2><p>新账号默认仅拥有普通学习权限；科研、生产和管理权限由管理员分配。</p><div class="login-feature-list"><span>个人学习记录</span><span>论文知识库</span><span>任务成果管理</span></div></div><button class="btn secondary login-home-link" id="registerHomeBtn">浏览能源术语</button></section><section class="login-card-wrap"><div class="card login-card"><span class="eyebrow">CREATE ACCOUNT</span><h2>创建账号</h2><p>密码至少 16 个字符。</p><div id="registerNotice"></div><div class="form-grid"><div><label class="label" for="registerName">显示名称</label><input class="input" id="registerName" autocomplete="name"></div><div><label class="label" for="registerUser">用户名</label><input class="input" id="registerUser" autocomplete="username" pattern="[A-Za-z0-9_.-]+"></div><div><label class="label" for="registerPass">密码</label><input class="input" id="registerPass" type="password" autocomplete="new-password"></div><div><label class="label" for="registerPassConfirm">确认密码</label><input class="input" id="registerPassConfirm" type="password" autocomplete="new-password"></div><div class="inline-actions"><button class="btn primary" id="registerSubmit">创建账号</button><button class="btn secondary" id="backLoginBtn">返回登录</button></div></div></div></section></div>`;
+  document.getElementById('registerHomeBtn').onclick = () => goHome();
+  document.getElementById('backLoginBtn').onclick = () => goToRoute('login');
+  document.getElementById('registerSubmit').onclick = async () => {
+    const button = document.getElementById('registerSubmit');
+    const notice = document.getElementById('registerNotice');
+    const payload = { display_name: document.getElementById('registerName').value.trim(), username: document.getElementById('registerUser').value.trim(), password: document.getElementById('registerPass').value, password_confirm: document.getElementById('registerPassConfirm').value };
+    if (!payload.display_name || !payload.username || !payload.password || !payload.password_confirm) { notice.innerHTML = '<div class="notice error">请完整填写注册信息。</div>'; return; }
+    button.disabled = true;
+    try { const result = await api('/auth/register', { method: 'POST', body: JSON.stringify(payload) }); State.registerMessage = result.message || '账号创建成功，请登录'; goToRoute('login'); renderLogin(State.registerMessage); }
+    catch (e) { notice.innerHTML = `<div class="notice error">${escapeHtml(e.message)}</div>`; button.disabled = false; }
+  };
 }
 function renderAdmin() {
   if (!['admin','system_admin'].includes(State.user?.role)) { beginNavigation('login'); return renderLogin('请先以管理员身份登录。'); }
@@ -248,6 +267,7 @@ function bindCommon() {
   document.getElementById('searchBtn')?.addEventListener('click', () => { State.searchText = document.getElementById('searchInput').value.trim(); const r = searchTerms(State.searchText)[0]; if (r) { State.selectedTermId = r.id; State.selectedCategoryId = r.categoryId; } clearQuiz(); render(); });
   document.getElementById('searchInput')?.addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('searchBtn').click(); });
   document.getElementById('toLoginBtn')?.addEventListener('click', () => goToRoute('login'));
+  document.getElementById('toRegisterBtn')?.addEventListener('click', () => goToRoute('register'));
   document.getElementById('toAdminBtn')?.addEventListener('click', () => goToRoute('admin'));
   document.getElementById('toWorkspaceBtn')?.addEventListener('click', () => goToRoute('workspace'));
   document.getElementById('toKnowledgeBtn')?.addEventListener('click', () => openKnowledgeSystem());

@@ -315,10 +315,14 @@ def upsert_search_results(db: Session, result: dict[str, Any]) -> list[Publicati
 
 def publication_to_dict(db: Session, row: Publication) -> dict[str, Any]:
     sources = db.scalars(select(PublicationSource).where(PublicationSource.publication_id == row.id)).all()
+    doi_url = f"https://doi.org/{row.doi}" if row.doi else None
+    landing_url = row.landing_page_url or doi_url
+    fulltext_url = row.fulltext_url or landing_url
     return {
         "id": row.id, "doi": row.doi, "title": row.title, "authors": json.loads(row.authors_json or "[]"),
         "institutions": json.loads(row.institutions_json or "[]"), "abstract": row.abstract, "keywords": json.loads(row.keywords_json or "[]"),
         "journal": row.journal, "year": row.year, "citation_count": row.citation_count, "open_access": row.open_access,
-        "primary_source": row.primary_source, "sources": [s.source_name for s in sources], "landing_page_url": row.landing_page_url,
-        "fulltext_url": row.fulltext_url, "updated_at": row.updated_at,
+        "primary_source": row.primary_source, "sources": [s.source_name for s in sources], "landing_page_url": landing_url,
+        "fulltext_url": fulltext_url, "doi_url": doi_url, "open_url": fulltext_url or landing_url or doi_url,
+        "updated_at": row.updated_at,
     }

@@ -25,7 +25,7 @@ from .database import ARTIFACT_DIR, WORKSPACE_DIR, SessionLocal
 from .file_service import register_generated_file
 from .file_validation import FileValidationError, validate_file_bytes
 from .task_queue import recover_expired_tasks
-from .paper_pipeline import ingest_pdf_document
+from .paper_pipeline import ingest_document
 from .models import AIUsageRecord, KnowledgeDocument, SimulationArtifact, SimulationJob, TaskEvent, TaskFile, WorkspaceFile, WorkspaceTask
 from .simulation import SUPPORTED_SOFTWARE, create_simulation_package
 
@@ -544,7 +544,7 @@ def _paper_ingest_handler(db: Session, task: WorkspaceTask, payload: dict[str, A
     db.commit()
     try:
         _revalidate_record(db, record)
-        result = ingest_pdf_document(
+        result = ingest_document(
             db, document, record,
             progress=lambda progress, step, message: add_event(db, task, progress=progress, step=step, message=message),
         )
@@ -659,4 +659,3 @@ def submit_task(task_id: int) -> None:
 def recover_interrupted_tasks() -> int:
     # Backward-compatible name: V4.2 only recovers actually expired leases.
     return recover_expired_tasks()
-
