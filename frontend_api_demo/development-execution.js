@@ -3,8 +3,8 @@ function dxTypeLabel(type){return ({course:'课程',book:'专业书',project_tas
 function dxStatusLabel(s){return ({planned:'计划中',in_progress:'进行中',completed:'已完成',skipped:'已跳过'})[s]||s;}
 function dxPhaseOrder(p){return ({'基础补齐':1,'系统深化':2,'文献桥接':3,'科研实践':4,'科研转化':5})[p]||9;}
 async function openDevelopmentExecution(goalId=null){
-  clearInterval(Foundation?.poller); clearInterval(KnowledgeUI?.poller);
-  State.route='development-execution'; DevelopmentExecutionUI.busy=true; render();
+  const navigationId = beginNavigation('development-execution');
+  DevelopmentExecutionUI.busy=true; render();
   try{
     const goals=await api('/development-planning/goals');
     State.dxGoals=goals;
@@ -15,7 +15,8 @@ async function openDevelopmentExecution(goalId=null){
       if(!roadmap.items?.length) roadmap=await api(`/development-execution/goals/${selected.id}/roadmap/generate`,{method:'POST'});
       State.dxRoadmap=roadmap; State.dxError='';
     }else State.dxRoadmap=null;
-  }catch(e){State.dxError=e.message;}
+  }catch(e){if (isCurrentNavigation(navigationId, 'development-execution')) State.dxError=e.message;}
+  if (!isCurrentNavigation(navigationId, 'development-execution')) return;
   DevelopmentExecutionUI.busy=false; render();
 }
 async function updateDevelopmentItem(itemId,status,progress=null){

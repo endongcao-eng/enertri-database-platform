@@ -7,7 +7,7 @@ function renderPasswordChange(message='') {
     if(next!==document.getElementById('confirmPassword').value)return renderPasswordChange('两次新密码不一致');
     if(new TextEncoder().encode(next).length>72)return renderPasswordChange('新密码超过72个UTF-8字节');
     const button=e.currentTarget.querySelector('button');button.disabled=true;
-    try {await api('/auth/password',{method:'POST',body:JSON.stringify({current_password:current,new_password:next})});saveAuth(null,null);State.user=null;State.route='login';renderLogin('密码已修改，请使用新密码登录。');}
-    catch(err){if(err.status===401){State.user=null;State.route='login';renderLogin('会话已失效，请重新登录。');}else renderPasswordChange(err.message);}
+    try {await api('/auth/password',{method:'POST',body:JSON.stringify({current_password:current,new_password:next})});saveAuth(null,null);State.user=null;beginNavigation('login');renderLogin('密码已修改，请使用新密码登录。');}
+    catch(err){if(err.status===401){State.user=null;beginNavigation('login');renderLogin('会话已失效，请重新登录。');}else renderPasswordChange(err.message);}
   };
 }

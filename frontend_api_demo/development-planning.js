@@ -8,8 +8,7 @@ function planningTypeLabel(type){return ({course:'课程',book:'专业书',proje
 function planningGapLabel(type){return type==='capability'?'能力缺口':'知识缺口';}
 
 async function openDevelopmentPlanning(mode=null, targetUserId=null, goalId=null) {
-  clearInterval(Foundation?.poller); clearInterval(KnowledgeUI?.poller);
-  State.route='development-planning';
+  const navigationId = beginNavigation('development-planning');
   const isAdmin=['admin','system_admin'].includes(State.user?.role);
   const previousMode=State.developmentPlanningMode;
   const nextMode=mode || previousMode || (isAdmin?'teacher':'student');
@@ -35,7 +34,8 @@ async function openDevelopmentPlanning(mode=null, targetUserId=null, goalId=null
     State.dpSelectedGoalId=selectedGoal?.id||null;
     State.developmentPlan = selectedGoal ? await api(`/development-planning/goals/${selectedGoal.id}/analysis`) : null;
     State.developmentPlanningError='';
-  } catch(e){ State.developmentPlanningError=e.message; }
+  } catch(e){ if (isCurrentNavigation(navigationId, 'development-planning')) State.developmentPlanningError=e.message; }
+  if (!isCurrentNavigation(navigationId, 'development-planning')) return;
   DevelopmentPlanningUI.busy=false; render();
 }
 

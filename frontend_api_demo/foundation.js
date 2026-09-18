@@ -12,7 +12,7 @@ function formatBytes(bytes) {
 function formatTime(value) { if (!value) return '—'; try { return new Date(value).toLocaleString('zh-CN', {hour12:false}); } catch { return value; } }
 
 async function openTaskCenter(taskId = null) {
-  State.route = 'task-center';
+  const navigationId = beginNavigation('task-center');
   State.foundationBusy = true; render();
   try {
     State.tasks = await api('/tasks?limit=200');
@@ -20,33 +20,38 @@ async function openTaskCenter(taskId = null) {
     State.selectedTaskId ||= State.tasks[0]?.id || null;
     if (State.selectedTaskId) State.taskDetail = await api(`/tasks/${State.selectedTaskId}`);
     State.foundationError = '';
-  } catch (e) { State.foundationError = e.message; }
+  } catch (e) { if (isCurrentNavigation(navigationId, 'task-center')) State.foundationError = e.message; }
+  if (!isCurrentNavigation(navigationId, 'task-center')) return;
   State.foundationBusy = false; render(); startTaskPolling();
 }
 function startTaskPolling() {
   clearInterval(Foundation.poller);
   if (State.route !== 'task-center') return;
+  const navigationId = State.navigationId;
   Foundation.poller = setInterval(async () => {
-    if (State.route !== 'task-center') return clearInterval(Foundation.poller);
+    if (!isCurrentNavigation(navigationId, 'task-center')) return clearInterval(Foundation.poller);
     if (!(State.tasks || []).some(t => ['queued','running'].includes(t.status))) return;
     try {
       State.tasks = await api('/tasks?limit=200');
       if (State.selectedTaskId) State.taskDetail = await api(`/tasks/${State.selectedTaskId}`);
+      if (!isCurrentNavigation(navigationId, 'task-center')) return clearInterval(Foundation.poller);
       render();
     } catch {}
   }, 700);
 }
 async function openFileCenter() {
-  clearInterval(Foundation.poller); State.route = 'file-center'; State.foundationBusy = true; render();
-  try { State.files = await api('/files?limit=500'); State.foundationError = ''; } catch (e) { State.foundationError = e.message; }
+  const navigationId = beginNavigation('file-center'); State.foundationBusy = true; render();
+  try { State.files = await api('/files?limit=500'); State.foundationError = ''; } catch (e) { if (isCurrentNavigation(navigationId, 'file-center')) State.foundationError = e.message; }
+  if (!isCurrentNavigation(navigationId, 'file-center')) return;
   State.foundationBusy = false; render();
 }
 async function openAuditCenter() {
-  clearInterval(Foundation.poller); State.route = 'audit-center'; State.foundationBusy = true; render();
+  const navigationId = beginNavigation('audit-center'); State.foundationBusy = true; render();
   try {
     [State.auditLogs, State.migrationStatus, State.adminUsers] = await Promise.all([api('/admin/audit-logs?limit=300'), api('/admin/migrations'), api('/admin/users')]);
     State.foundationError = '';
-  } catch (e) { State.foundationError = e.message; }
+  } catch (e) { if (isCurrentNavigation(navigationId, 'audit-center')) State.foundationError = e.message; }
+  if (!isCurrentNavigation(navigationId, 'audit-center')) return;
   State.foundationBusy = false; render();
 }
 

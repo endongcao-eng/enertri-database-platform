@@ -1,8 +1,8 @@
 {
   "name": "EnerTri 网页试用部署准备版",
-  "version": "4.7.0-webprep.3",
+  "version": "4.7.0-webprep.9",
   "api_business_version": "4.7.0",
-  "date": "2026-09-11",
+  "date": "2026-09-18",
   "status": "preparation_candidate_not_public_ready",
   "database_head": "v4_7_trial_controls",
   "validation": {
@@ -19,5 +19,10 @@
     "railway_railpack": "configured_not_run",
     "trial_controls_tests": 10
   },
-  "prior_manifest": "review/input_release_manifest.json"
+  "prior_manifest": "review/input_release_manifest.json",
+  "changes": [
+    "独立登录页与能源术语入口互通",
+    "异步页面导航令牌，避免旧请求覆盖当前页面",
+    "焊接性、工艺窗口、合金元素、焊材和缺陷结果结构化展示"
+  ]
 }

@@ -12,9 +12,7 @@ function pmReqHtml(req) {
 }
 
 async function openProjectMatching(projectId=null) {
-  clearInterval(Foundation?.poller);
-  clearInterval(KnowledgeUI?.poller);
-  State.route='project-matching';
+  const navigationId = beginNavigation('project-matching');
   ProjectMatchingUI.busy=true;
   render();
   try {
@@ -31,7 +29,8 @@ async function openProjectMatching(projectId=null) {
       State.projectTeams=teams;
       State.projectMatchingError='';
     }
-  } catch(e) { State.projectMatchingError=e.message; }
+  } catch(e) { if (isCurrentNavigation(navigationId, 'project-matching')) State.projectMatchingError=e.message; }
+  if (!isCurrentNavigation(navigationId, 'project-matching')) return;
   ProjectMatchingUI.busy=false;
   render();
 }

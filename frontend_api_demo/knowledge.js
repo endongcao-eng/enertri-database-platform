@@ -13,9 +13,7 @@ async function knowledgePdfBlobUrl(fileId) {
 }
 
 async function openKnowledgeSystem(documentId = null) {
-  clearInterval(Foundation?.poller);
-  clearInterval(KnowledgeUI.poller);
-  State.route = 'knowledge';
+  const navigationId = beginNavigation('knowledge');
   State.knowledgeBusy = true;
   render();
   try {
@@ -30,18 +28,20 @@ async function openKnowledgeSystem(documentId = null) {
     State.selectedKnowledgeDocumentId ||= documents.find(d => d.status === 'ready')?.id || documents[0]?.id || null;
     if (State.selectedKnowledgeDocumentId) await loadKnowledgeDocument(State.selectedKnowledgeDocumentId, false);
     State.knowledgeError = '';
-  } catch (e) { State.knowledgeError = e.message; }
+  } catch (e) { if (isCurrentNavigation(navigationId, 'knowledge')) State.knowledgeError = e.message; }
+  if (!isCurrentNavigation(navigationId, 'knowledge')) return;
   State.knowledgeBusy = false;
   render();
 }
 
 async function loadKnowledgeDocument(documentId, rerender = true) {
+  const navigationId = State.navigationId;
   State.selectedKnowledgeDocumentId = Number(documentId);
   State.knowledgeDocument = await api(`/knowledge/documents/${documentId}`);
   State.focusPage = 1;
   try { State.knowledgePdfUrl = await knowledgePdfBlobUrl(State.knowledgeDocument.file_id); }
   catch (e) { State.knowledgePdfUrl = null; }
-  if (rerender) renderKnowledgeSystem();
+  if (rerender && isCurrentNavigation(navigationId, 'knowledge')) renderKnowledgeSystem();
 }
 
 function knowledgeScopeLabel(scope) {
@@ -157,7 +157,8 @@ function bindKnowledgeSystem() {
     try {
       const task=await api('/knowledge/documents/upload',{method:'POST',body:fd}); State.selectedKnowledgeDocumentId=task.document_id;
       if(['failed','cancelled','succeeded'].includes(task.status)){await openKnowledgeSystem(task.document_id);return;}
-      clearInterval(KnowledgeUI.poller); KnowledgeUI.poller=setInterval(async()=>{try{const t=await api(`/tasks/${task.id}`);notice.innerHTML=`<div class="notice">${escapeHtml(t.current_step||t.status)} · ${t.progress||0}%</div>`;if(['failed','cancelled','succeeded'].includes(t.status)){clearInterval(KnowledgeUI.poller);await openKnowledgeSystem(task.document_id);}}catch{}},850);
+      const navigationId=State.navigationId;
+      clearInterval(KnowledgeUI.poller); KnowledgeUI.poller=setInterval(async()=>{if(!isCurrentNavigation(navigationId,'knowledge'))return clearInterval(KnowledgeUI.poller);try{const t=await api(`/tasks/${task.id}`);if(!isCurrentNavigation(navigationId,'knowledge'))return clearInterval(KnowledgeUI.poller);notice.innerHTML=`<div class="notice">${escapeHtml(t.current_step||t.status)} · ${t.progress||0}%</div>`;if(['failed','cancelled','succeeded'].includes(t.status)){clearInterval(KnowledgeUI.poller);await openKnowledgeSystem(task.document_id);}}catch{}},850);
     } catch(e){notice.innerHTML=`<div class="notice error">${escapeHtml(e.message)}</div>`;}
   });
   document.getElementById('paperQaBtn')?.addEventListener('click', async()=>{

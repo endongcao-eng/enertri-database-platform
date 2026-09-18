@@ -18,9 +18,7 @@ function profileResourceTypeToEvidence(type) {
 }
 
 async function openResearchProfile(targetUserId = null) {
-  clearInterval(Foundation?.poller);
-  clearInterval(KnowledgeUI?.poller);
-  State.route = 'research-profile';
+  const navigationId = beginNavigation('research-profile');
   ResearchProfileUI.busy = true;
   render();
   try {
@@ -43,8 +41,9 @@ async function openResearchProfile(targetUserId = null) {
     State.profileResources = resources;
     State.researchProfileError = '';
   } catch (e) {
-    State.researchProfileError = e.message;
+    if (isCurrentNavigation(navigationId, 'research-profile')) State.researchProfileError = e.message;
   }
+  if (!isCurrentNavigation(navigationId, 'research-profile')) return;
   ResearchProfileUI.busy = false;
   render();
 }

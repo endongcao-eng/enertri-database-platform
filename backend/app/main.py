@@ -9,6 +9,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from fastapi import Depends, FastAPI, File, HTTPException, Query, Request, UploadFile
+from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy import or_, select
@@ -681,4 +682,8 @@ def import_excel(file: UploadFile = File(...), db: Session = Depends(get_db), us
 # the /api and /media mounts above therefore keep precedence.
 FRONTEND_DIR = Path(__file__).resolve().parents[2] / "frontend_api_demo"
 if FRONTEND_DIR.exists():
+    @app.get("/login", include_in_schema=False)
+    def login_page():
+        return FileResponse(FRONTEND_DIR / "index.html")
+
     app.mount("/", StaticFiles(directory=str(FRONTEND_DIR), html=True), name="frontend")

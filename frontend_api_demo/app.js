@@ -1,8 +1,17 @@
 const app = document.getElementById('app');
+function routeFromLocationHash() {
+  const value = String(window.location.hash || '').replace(/^#\/?/, '').trim();
+  return value || 'home';
+}
+const initialPathRoute = window.location.pathname === '/login' ? 'login' : routeFromLocationHash();
+const initialRoute = ['home', 'login', 'workspace', 'admin'].includes(initialPathRoute)
+  ? initialPathRoute
+  : 'home';
 const State = {
   loading: true,
   error: '',
-  route: 'home',
+  route: initialRoute,
+  navigationId: 0,
   user: getSavedUser(),
   categories: [],
   terms: [],
@@ -23,6 +32,57 @@ const State = {
   quizChecked: false,
   quizResult: null,
 };
+
+function syncRouteHash(route, replace = false) {
+  if (route === 'login' && window.location.pathname === '/login' && !window.location.hash) return;
+  const next = `#/${route}`;
+  if (window.location.hash === next) return;
+  const method = replace ? 'replaceState' : 'pushState';
+  const pathname = window.location.pathname === '/login' ? '/' : window.location.pathname;
+  window.history[method]({}, '', `${pathname}${window.location.search}${next}`);
+}
+function beginNavigation(route, { replace = false } = {}) {
+  State.navigationId = (State.navigationId || 0) + 1;
+  State.route = route;
+  syncRouteHash(route, replace);
+  if (typeof Foundation !== 'undefined') clearInterval(Foundation.poller);
+  if (typeof KnowledgeUI !== 'undefined') clearInterval(KnowledgeUI.poller);
+  return State.navigationId;
+}
+function isCurrentNavigation(id, route) {
+  return State.navigationId === id && State.route === route;
+}
+function goToRoute(route, options = {}) {
+  beginNavigation(route, options);
+  render();
+}
+async function goHome() {
+  const navigationId = beginNavigation('home');
+  clearQuiz();
+  render();
+  try { await refreshData(); }
+  catch (e) { if (isCurrentNavigation(navigationId, 'home')) State.error = e.message; }
+  if (isCurrentNavigation(navigationId, 'home')) render();
+}
+
+window.addEventListener('hashchange', () => {
+  const route = routeFromLocationHash();
+  if (route === State.route) return;
+  if (route === 'home') return goHome();
+  if (['login', 'workspace', 'admin'].includes(route)) return goToRoute(route, { replace: true });
+  const loaders = {
+    'task-center': () => openTaskCenter(),
+    'file-center': () => openFileCenter(),
+    'audit-center': () => openAuditCenter(),
+    knowledge: () => openKnowledgeSystem(),
+    'capability-standards': () => openCapabilityStandards(),
+    'research-profile': () => openResearchProfile(),
+    'project-matching': () => openProjectMatching(),
+    'development-planning': () => openDevelopmentPlanning(),
+    'development-execution': () => openDevelopmentExecution(),
+  };
+  if (loaders[route]) loaders[route]();
+});
 
 boot();
 async function boot() {
@@ -162,12 +222,15 @@ function renderHome() {
   bindCommon();
 }
 function renderLogin(message = '') {
-  app.innerHTML = `<div class="login-wrap"><section class="login-showcase"><div>${topbar('EnerTri 登录','数据库平台')}</div></section><section class="login-card-wrap"><div class="card login-card"><h2>账户登录</h2><p>请使用管理员分配的个人试用账号登录。</p>${message ? `<div class="notice">${escapeHtml(message)}</div>` : ''}<div class="form-grid"><div><label class="label">用户名</label><input class="input" id="loginUser" autocomplete="username"></div><div><label class="label">密码</label><input class="input" id="loginPass" type="password" autocomplete="current-password"></div><div class="inline-actions"><button class="btn primary" id="loginSubmit">登录</button><button class="btn secondary" id="backHomeBtn">返回首页</button></div></div></div></section></div>`;
+  syncRouteHash('login', true);
+  app.innerHTML = `<div class="login-wrap"><section class="login-showcase"><div class="login-brand"><div class="brand-mark">ET</div><div><h1>EnerTri</h1><p>能源专业三语术语、科研与焊接平台</p></div></div><div class="login-intro"><span class="eyebrow">SECURE WORKSPACE</span><h2>从术语学习到科研与生产协同</h2><p>登录后可使用个人学习记录、科研工具、生产分析和任务成果管理。</p><div class="login-feature-list"><span>术语与专题学习</span><span>科研资料与知识库</span><span>焊接生产分析</span></div></div><button class="btn secondary login-home-link" id="loginHomeBtn">浏览能源术语</button></section><section class="login-card-wrap"><div class="card login-card"><span class="eyebrow">ACCOUNT ACCESS</span><h2>账户登录</h2><p>请使用管理员分配的个人试用账号登录。</p>${message ? `<div class="notice">${escapeHtml(message)}</div>` : ''}<div class="form-grid"><div><label class="label" for="loginUser">用户名</label><input class="input" id="loginUser" autocomplete="username"></div><div><label class="label" for="loginPass">密码</label><input class="input" id="loginPass" type="password" autocomplete="current-password"></div><div class="inline-actions"><button class="btn primary" id="loginSubmit">登录</button><button class="btn secondary" id="backHomeBtn">返回能源术语</button></div></div></div></section></div>`;
   document.getElementById('loginSubmit').onclick = doLogin;
-  document.getElementById('backHomeBtn').onclick = () => { State.route = 'home'; render(); };
+  const backHome = () => goHome();
+  document.getElementById('backHomeBtn').onclick = backHome;
+  document.getElementById('loginHomeBtn').onclick = backHome;
 }
 function renderAdmin() {
-  if (!['admin','system_admin'].includes(State.user?.role)) { State.route = 'login'; return renderLogin('请先以管理员身份登录。'); }
+  if (!['admin','system_admin'].includes(State.user?.role)) { beginNavigation('login'); return renderLogin('请先以管理员身份登录。'); }
   const q = normalize(State.adminFilter);
   const filtered = terms().filter(t => (State.adminStatus === 'all' || t.reviewStatus === State.adminStatus) && (!q || [t.term.zh,t.term.en,t.term.ru,...t.keywords].map(normalize).some(x => x.includes(q))));
   const editing = getTerm(State.editingId);
@@ -184,9 +247,9 @@ function bindCommon() {
   document.querySelectorAll('.js-article-keyword').forEach(btn => btn.onclick = () => { State.searchText = btn.dataset.keyword; const r = searchTerms(State.searchText)[0]; if (r) { State.selectedTermId = r.id; State.selectedCategoryId = r.categoryId; } clearQuiz(); render(); });
   document.getElementById('searchBtn')?.addEventListener('click', () => { State.searchText = document.getElementById('searchInput').value.trim(); const r = searchTerms(State.searchText)[0]; if (r) { State.selectedTermId = r.id; State.selectedCategoryId = r.categoryId; } clearQuiz(); render(); });
   document.getElementById('searchInput')?.addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('searchBtn').click(); });
-  document.getElementById('toLoginBtn')?.addEventListener('click', () => { State.route = 'login'; render(); });
-  document.getElementById('toAdminBtn')?.addEventListener('click', () => { State.route = 'admin'; render(); });
-  document.getElementById('toWorkspaceBtn')?.addEventListener('click', () => { clearInterval(Foundation.poller); State.route = 'workspace'; render(); });
+  document.getElementById('toLoginBtn')?.addEventListener('click', () => goToRoute('login'));
+  document.getElementById('toAdminBtn')?.addEventListener('click', () => goToRoute('admin'));
+  document.getElementById('toWorkspaceBtn')?.addEventListener('click', () => goToRoute('workspace'));
   document.getElementById('toKnowledgeBtn')?.addEventListener('click', () => openKnowledgeSystem());
   document.getElementById('toCapabilityStandardsBtn')?.addEventListener('click', () => openCapabilityStandards());
   document.getElementById('toResearchProfileBtn')?.addEventListener('click', () => openResearchProfile());
@@ -196,9 +259,9 @@ function bindCommon() {
   document.getElementById('toTasksBtn')?.addEventListener('click', () => openTaskCenter());
   document.getElementById('toFilesBtn')?.addEventListener('click', () => openFileCenter());
   document.getElementById('toAuditBtn')?.addEventListener('click', () => openAuditCenter());
-  document.getElementById('toHomeBtn')?.addEventListener('click', async () => { clearInterval(Foundation.poller); State.route = 'home'; clearQuiz(); await refreshData(); render(); });
-  document.getElementById('changePasswordBtn')?.addEventListener('click', () => { State.route='password'; render(); });
-  document.getElementById('logoutBtn')?.addEventListener('click', async () => { try { await api('/auth/logout',{method:'POST'}); } catch(e) { if(e.status!==401) { alert('退出失败，请重试'); return; } } saveAuth(null, null); State.user=null; State.progressMap={}; State.route='home'; await refreshData(); render(); });
+  document.getElementById('toHomeBtn')?.addEventListener('click', goHome);
+  document.getElementById('changePasswordBtn')?.addEventListener('click', () => goToRoute('password'));
+  document.getElementById('logoutBtn')?.addEventListener('click', async () => { try { await api('/auth/logout',{method:'POST'}); } catch(e) { if(e.status!==401) { alert('退出失败，请重试'); return; } } saveAuth(null, null); State.user=null; State.progressMap={}; await goHome(); });
   document.querySelectorAll('.js-favorite').forEach(btn => btn.onclick = () => toggleFavorite(Number(btn.dataset.id)));
   document.querySelectorAll('.js-learned').forEach(btn => btn.onclick = () => toggleLearned(Number(btn.dataset.id)));
   document.getElementById('loadQuizBtn')?.addEventListener('click', loadCurrentQuiz);
@@ -267,21 +330,21 @@ async function submitCurrentQuiz() {
   render();
 }
 async function toggleFavorite(termId) {
-  if (!State.user) { State.route = 'login'; return renderLogin('请先登录再收藏术语。'); }
+  if (!State.user) { beginNavigation('login'); return renderLogin('请先登录再收藏术语。'); }
   const now = progressFor(termId);
   const updated = await updateTermProgress(termId, { is_favorite: !now.is_favorite });
   State.progressMap[termId] = updated;
   render();
 }
 async function toggleLearned(termId) {
-  if (!State.user) { State.route = 'login'; return renderLogin('请先登录再记录学习进度。'); }
+  if (!State.user) { beginNavigation('login'); return renderLogin('请先登录再记录学习进度。'); }
   const now = progressFor(termId);
   const updated = await updateTermProgress(termId, { learned: !now.learned_at });
   State.progressMap[termId] = updated;
   render();
 }
 async function doLogin() {
-  try { State.user = await loginApi(document.getElementById('loginUser').value.trim(), document.getElementById('loginPass').value); if(State.user.must_change_password) {State.route='password';return render();} await refreshData(); State.route = ['admin','system_admin'].includes(State.user.role) ? 'admin' : 'home'; render(); }
+  try { State.user = await loginApi(document.getElementById('loginUser').value.trim(), document.getElementById('loginPass').value); if(State.user.must_change_password) {goToRoute('password');return;} const nextRoute = ['admin','system_admin'].includes(State.user.role) ? 'admin' : 'home'; const navigationId = beginNavigation(nextRoute); await refreshData(); if (isCurrentNavigation(navigationId, nextRoute)) render(); }
   catch(e) { renderLogin(e.message); }
 }
 async function saveTerm(e) {

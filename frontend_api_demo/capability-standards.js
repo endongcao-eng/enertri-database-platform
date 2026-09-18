@@ -11,9 +11,7 @@ function standardKnowledgeTypeLabel(type) {
 }
 
 async function openCapabilityStandards() {
-  clearInterval(Foundation?.poller);
-  clearInterval(KnowledgeUI?.poller);
-  State.route = 'capability-standards';
+  const navigationId = beginNavigation('capability-standards');
   State.capabilityStandardsBusy = true;
   render();
   try {
@@ -37,20 +35,21 @@ async function openCapabilityStandards() {
       ].filter(Boolean);
       State.selectedStandardResourceIds = preferred.map(r => r.id);
     }
-    await runStandardSimulation(false);
+    await runStandardSimulation(false, navigationId);
     State.capabilityStandardsError = '';
   } catch (e) {
-    State.capabilityStandardsError = e.message;
+    if (isCurrentNavigation(navigationId, 'capability-standards')) State.capabilityStandardsError = e.message;
   }
+  if (!isCurrentNavigation(navigationId, 'capability-standards')) return;
   State.capabilityStandardsBusy = false;
   render();
 }
 
-async function runStandardSimulation(rerender = true) {
+async function runStandardSimulation(rerender = true, navigationId = State.navigationId) {
   const ids = (State.selectedStandardResourceIds || []).map(Number).filter(Boolean);
   if (!ids.length) {
     State.standardSimulation = null;
-    if (rerender) renderCapabilityStandards();
+    if (rerender && isCurrentNavigation(navigationId, 'capability-standards')) renderCapabilityStandards();
     return;
   }
   CapabilityStandardsUI.simulationBusy = true;
@@ -61,10 +60,10 @@ async function runStandardSimulation(rerender = true) {
     });
     State.capabilityStandardsError = '';
   } catch (e) {
-    State.capabilityStandardsError = e.message;
+    if (isCurrentNavigation(navigationId, 'capability-standards')) State.capabilityStandardsError = e.message;
   }
   CapabilityStandardsUI.simulationBusy = false;
-  if (rerender) renderCapabilityStandards();
+  if (rerender && isCurrentNavigation(navigationId, 'capability-standards')) renderCapabilityStandards();
 }
 
 function standardScoreBar(score, compact=false) {
