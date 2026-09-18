@@ -48,7 +48,7 @@ async function openFileCenter() {
 async function openAuditCenter() {
   const navigationId = beginNavigation('audit-center'); State.foundationBusy = true; render();
   try {
-    [State.auditLogs, State.migrationStatus, State.adminUsers] = await Promise.all([api('/admin/audit-logs?limit=300'), api('/admin/migrations'), api('/admin/users')]);
+    [State.auditLogs, State.migrationStatus, State.adminUsers, State.currentPermissions] = await Promise.all([api('/admin/audit-logs?limit=300'), api('/admin/migrations'), api('/admin/users'), api('/auth/permissions')]);
     State.foundationError = '';
   } catch (e) { if (isCurrentNavigation(navigationId, 'audit-center')) State.foundationError = e.message; }
   if (!isCurrentNavigation(navigationId, 'audit-center')) return;
@@ -68,7 +68,7 @@ function renderTaskCenter() {
     <td><span class="badge ${taskStatusClass(t.status)}">${taskStatusLabel(t.status)}</span></td>
     <td><div class="task-progress"><span style="width:${Number(t.progress||0)}%"></span></div><small>${t.progress||0}% · ${escapeHtml(t.current_step||'')}</small></td>
     <td>${formatTime(t.created_at)}</td>
-    <td class="actions">${['succeeded','failed','cancelled'].includes(t.status)?`<button class="btn small secondary js-task-retry" data-id="${t.id}">重新执行</button>`:''}${t.result?.download_url?`<button class="btn small primary js-task-download" data-url="${escapeHtml(t.result.download_url)}">下载成果</button>`:''}</td>
+    <td class="actions">${['queued','running'].includes(t.status)?`<button class="btn small danger js-task-cancel" data-id="${t.id}">取消</button>`:''}${['succeeded','failed','cancelled'].includes(t.status)?`<button class="btn small secondary js-task-retry" data-id="${t.id}">重新执行</button>`:''}${t.result?.download_url?`<button class="btn small primary js-task-download" data-url="${escapeHtml(t.result.download_url)}">下载成果</button>`:''}</td>
   </tr>`).join('');
   const eventRows = (selected?.events || []).slice().reverse().map(e => `<tr><td>${formatTime(e.created_at)}</td><td>${e.progress ?? '—'}%</td><td>${escapeHtml(e.step||'')}</td><td><span class="event-${escapeHtml(e.level)}">${escapeHtml(e.message)}</span></td></tr>`).join('');
   const result = selected?.result?.analysis_markdown ? `<pre class="result-pre compact-pre">${escapeHtml(selected.result.analysis_markdown)}</pre>` : selected?.result ? `<pre class="result-pre compact-pre">${escapeHtml(JSON.stringify(selected.result,null,2))}</pre>` : '<div class="empty-box compact-empty">任务尚未产生结果。</div>';
@@ -83,6 +83,7 @@ function bindTaskCenter() {
   document.getElementById('taskRefreshBtn')?.addEventListener('click', () => openTaskCenter(State.selectedTaskId));
   document.querySelectorAll('.js-task-open').forEach(b => b.onclick = async () => { State.selectedTaskId=Number(b.dataset.id); State.taskDetail=await api(`/tasks/${b.dataset.id}`); renderTaskCenter(); });
   document.querySelectorAll('.js-task-retry').forEach(b => b.onclick = async () => { const t=await api(`/tasks/${b.dataset.id}/retry`,{method:'POST'}); await openTaskCenter(t.id); });
+  document.querySelectorAll('.js-task-cancel').forEach(b => b.onclick = async () => { if (!confirm('确定取消该任务吗？')) return; await api(`/tasks/${b.dataset.id}/cancel`,{method:'POST'}); await openTaskCenter(Number(b.dataset.id)); });
   document.querySelectorAll('.js-task-download').forEach(b => b.onclick = () => apiDownload(b.dataset.url,'task-output.bin'));
 }
 
@@ -118,10 +119,11 @@ function renderAuditCenter() {
     const options = roleOptions.map(([value,label]) => `<option value="${value}" ${u.role===value?'selected':''} ${value==='system_admin'&&State.user?.role!=='system_admin'?'disabled':''}>${label}</option>`).join('');
     return `<tr><td>${u.id}</td><td><strong>${escapeHtml(u.display_name)}</strong><small>${escapeHtml(u.username)}</small></td><td><select class="select compact-select js-user-role" data-id="${u.id}" ${systemLocked?'disabled':''}>${options}</select></td><td><label class="check-row"><input type="checkbox" class="js-user-active" data-id="${u.id}" ${u.is_active?'checked':''} ${u.id===State.user?.id?'disabled':''}>启用</label></td><td><button class="btn small primary js-user-save" data-id="${u.id}" ${systemLocked?'disabled':''}>保存</button></td></tr>`;
   }).join('');
+  const permissionPanel = State.currentPermissions ? `<section class="card panel"><div class="section-head"><h2>当前账号权限</h2><span class="badge primary">${escapeHtml(State.currentPermissions.role_label || State.currentPermissions.role)}</span></div><div class="support-tags">${(State.currentPermissions.permissions || []).map(p=>`<span class="chip">${escapeHtml(p)}</span>`).join('') || '<span class="muted">未返回权限</span>'}</div></section>` : '';
   app.innerHTML = `<div class="page-shell">${topbar('EnerTri 管理审计','操作留痕、迁移状态、角色权限与系统治理')}
     <section class="card migration-card"><div><span class="badge success">数据库迁移</span><h2>${escapeHtml(migration.current_revision||'未知')}</h2><p>期望版本：${escapeHtml(migration.expected_revision||'v4_7_dynamic_development_loop')}</p></div><div class="migration-ok">${migration.status==='succeeded'?'✓ 迁移成功':'! 需要检查'}</div></section>
     <section class="card panel"><div class="section-head"><h2>用户角色与状态</h2><span class="muted">六级角色权限；系统管理员账户受保护，高权限变更需要目标用户名二次确认</span></div><div class="table-wrap"><table class="table"><thead><tr><th>ID</th><th>用户</th><th>角色</th><th>状态</th><th>操作</th></tr></thead><tbody>${userRows||'<tr><td colspan="5" class="muted">暂无用户</td></tr>'}</tbody></table></div><div id="roleUpdateNotice"></div></section>
-    <section class="card panel"><div class="section-head"><h2>管理员审计日志</h2><button class="btn small secondary" id="auditRefreshBtn">刷新</button></div><div class="table-wrap"><table class="table"><thead><tr><th>ID</th><th>时间</th><th>操作者</th><th>动作</th><th>资源</th><th>结果</th><th>IP</th></tr></thead><tbody>${rows||'<tr><td colspan="7" class="muted">暂无审计日志</td></tr>'}</tbody></table></div></section></div>`;
+    ${permissionPanel}<section class="card panel"><div class="section-head"><h2>管理员审计日志</h2><button class="btn small secondary" id="auditRefreshBtn">刷新</button></div><div class="table-wrap"><table class="table"><thead><tr><th>ID</th><th>时间</th><th>操作者</th><th>动作</th><th>资源</th><th>结果</th><th>IP</th></tr></thead><tbody>${rows||'<tr><td colspan="7" class="muted">暂无审计日志</td></tr>'}</tbody></table></div></section></div>`;
   bindCommon();
   document.getElementById('auditRefreshBtn')?.addEventListener('click',openAuditCenter);
   document.querySelectorAll('.js-user-save').forEach(button => button.addEventListener('click', async () => {

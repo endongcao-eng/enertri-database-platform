@@ -115,7 +115,7 @@ function renderCapabilityStandards() {
   const simCapabilities = (sim?.capabilities || []).slice(0, 8).map(item => `<div class="simulation-row capability"><div class="simulation-label"><strong>${escapeHtml(item.name_zh)}</strong><small>${standardCapabilityCategoryLabel(item.category)}</small></div>${standardScoreBar(item.mapping_score)}<details><summary>来源 ${item.trace.length}</summary>${item.trace.map(t=>`<p>${escapeHtml(standardResourceTypeLabel(t.resource_type))} · ${escapeHtml(t.title)} → ${t.mapping_contribution}%</p>`).join('')}</details></div>`).join('');
 
   const isAdmin = ['admin','system_admin'].includes(State.user?.role);
-  const adminHint = isAdmin ? `<div class="standard-admin-hint"><span class="badge success">管理员维护已开放</span><p></p></div>` : '';
+  const adminHint = isAdmin ? `<div class="standard-admin-hint"><span class="badge success">管理员视图</span><p>标准库的初始化与关系维护通过受控接口完成，页面提供查询、映射演算和个人画像使用入口。</p></div>` : '';
 
   app.innerHTML = `<div class="page-shell standards-shell">${topbar('EnerTri 科研知识与能力标准库','V4.4 · Stage 1 标准底座持续服务个人科研画像')}
     <section class="standards-hero"><div><span class="eyebrow">Research Capability Standard Library</span><h2>科研知识与能力标准库</h2><p></p></div><div class="stage-badge"><span>01</span><strong>底层标准库</strong><small>已接入数据库</small></div></section>

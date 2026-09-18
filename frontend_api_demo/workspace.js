@@ -36,7 +36,14 @@ function wsMetric(label, value, tone='') {
 }
 function wsList(items, className='result-list') {
   const values = Array.isArray(items) ? items : [];
-  return values.length ? `<ul class="${className}">${values.map(item => `<li>${escapeHtml(typeof item === 'string' ? item : wsPretty(item))}</li>`).join('')}</ul>` : '<div class="result-empty">暂无记录</div>';
+  const renderItem = item => {
+    if (item && typeof item === 'object' && (item.landing_page_url || item.fulltext_url || item.url)) {
+      const open = item.fulltext_url || item.landing_page_url || item.url;
+      return `<li><strong>${escapeHtml(item.title || item.display_name || '文献记录')}</strong><span>${escapeHtml(item.journal || item.source || item.year || '')}</span><div class="inline-actions"><a class="btn small primary" href="${escapeHtml(open)}" target="_blank" rel="noopener noreferrer">打开论文地址</a>${item.fulltext_url && item.fulltext_url !== open ? `<a class="btn small secondary" href="${escapeHtml(item.fulltext_url)}" target="_blank" rel="noopener noreferrer">打开全文</a>` : ''}</div></li>`;
+    }
+    return `<li>${escapeHtml(typeof item === 'string' ? item : wsPretty(item))}</li>`;
+  };
+  return values.length ? `<ul class="${className}">${values.map(renderItem).join('')}</ul>` : '<div class="result-empty">暂无记录</div>';
 }
 function wsTextBlock(label, value) {
   if (value == null || value === '') return '';

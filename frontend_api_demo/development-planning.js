@@ -104,7 +104,7 @@ function renderDevelopmentPlanning(){
   app.innerHTML=`<div class="page-shell development-planning-shell">${topbar('EnerTri 科研成长与方向规划','V4.6 Stage 4 · 目标方向 → 知识能力差距 → 课程/书籍/科研实践 → 合作匹配')}
     <section class="dp-hero"><div><span class="eyebrow">Goal-to-Gap Development Engine</span><h2>${teacher?'教师新科研方向差距分析':'学生选课与科研成长路径'}</h2><p>${teacher?'':''}</p></div><div>${modeSwitch}<span class="stage-badge"><span>04</span><strong>发展路径规划</strong><small>Gap-driven · Explainable</small></span></div></section>
     ${State.developmentPlanningError?`<div class="notice error">${escapeHtml(State.developmentPlanningError)}</div>`:''}
-    <section class="dp-control card panel"><div>${userPicker}${goalPicker}</div><div class="dp-current-goal"><span>${escapeHtml(goal.goal_type==='teacher_research_direction'?'教师方向':'成长目标')}</span><h3>${escapeHtml(goal.title||'尚未选择目标')}</h3><p>${escapeHtml(goal.description||'可在页面底部输入一个新的科研方向进行即时差距分析。')}</p></div></section>
+    <section class="dp-control card panel"><div>${userPicker}${goalPicker}</div><div class="dp-current-goal"><span>${escapeHtml(goal.goal_type==='teacher_research_direction'?'教师方向':'成长目标')}</span><h3>${escapeHtml(goal.title||'尚未选择目标')}</h3><p>${escapeHtml(goal.description||'可在页面底部输入一个新的科研方向进行即时差距分析。')}</p>${goal.id?'<button class="btn small danger" id="dpArchiveGoalBtn">归档当前目标</button>':''}</div></section>
     <section class="hero-grid dp-kpis"><div class="stat-card"><strong>${Number(fit.match_score||0).toFixed(1)}%</strong><span>当前目标匹配</span><small>考虑证据可信度与关键缺口</small></div><div class="stat-card"><strong>${Number(fit.capability_fit||0).toFixed(1)}%</strong><span>能力准备度</span><small>目标能力逐项比较</small></div><div class="stat-card"><strong>${Number(fit.knowledge_fit||0).toFixed(1)}%</strong><span>知识准备度</span><small>当前知识体系 vs 目标知识</small></div><div class="stat-card"><strong>${Number(fit.critical_gap_count||0)}</strong><span>关键缺口</span><small>优先进入成长路径</small></div></section>
     <section class="card panel"><div class="section-head"><div><span class="eyebrow">01 · Gap Diagnosis</span><h2>从目标方向反推当前缺什么</h2><p class="muted"></p></div></div><div class="dp-gap-grid">${gapsHtml}</div></section>
     <section class="card panel"><div class="section-head"><div><span class="eyebrow">02 · Course & Resource Matching</span><h2>${teacher?'补知识资源优先级':'选课 / 读书 / 实践推荐'}</h2><p class="muted"></p></div></div><div class="dp-rec-grid">${recHtml}</div></section>
@@ -123,4 +123,8 @@ function bindDevelopmentPlanning(){
   document.getElementById('dpGoalSelect')?.addEventListener('change',e=>openDevelopmentPlanning(State.developmentPlanningMode,State.dpSelectedUserId,Number(e.target.value)));
   document.getElementById('dpGoalForm')?.addEventListener('submit',previewDevelopmentGoal);
   document.getElementById('dpSaveGoalBtn')?.addEventListener('click',saveDevelopmentGoal);
+  document.getElementById('dpArchiveGoalBtn')?.addEventListener('click',async()=>{
+    if(!confirm('归档当前目标？归档后不再出现在目标列表中。'))return;
+    try{await api(`/development-planning/goals/${State.dpSelectedGoalId}`,{method:'DELETE'});State.dpSelectedGoalId=null;await openDevelopmentPlanning(State.developmentPlanningMode,State.dpSelectedUserId);}catch(e){State.developmentPlanningError=e.message;renderDevelopmentPlanning();}
+  });
 }

@@ -56,10 +56,11 @@ async function loginApi(username, password) {
   return data.user;
 }
 async function loadDbFromApi(status = 'all') {
+  const articleStatus = status === 'all' ? 'all' : 'approved';
   const [categories, terms, articles] = await Promise.all([
     api('/categories'),
     api(`/terms?status=${encodeURIComponent(status)}`),
-    api('/articles?status=approved'),
+    api(`/articles?status=${articleStatus}`),
   ]);
   let progress = [];
   if (getToken()) {
