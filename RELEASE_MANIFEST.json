@@ -1,6 +1,6 @@
 {
   "name": "EnerTri 网页试用部署准备版",
-  "version": "4.7.0-webprep.11",
+  "version": "4.7.0-webprep.12",
   "api_business_version": "4.7.0",
   "date": "2026-09-18",
   "status": "preparation_candidate_not_public_ready",
@@ -29,6 +29,7 @@
     "登录页支持创建普通学习账号",
     "管理后台补齐专题文章、分类、任务取消和目标归档入口",
     "审计页面展示当前账号的实际权限清单",
-    "静态前端资源增加版本号，避免 Railway/浏览器继续使用旧缓存"
+    "静态前端资源增加版本号，避免 Railway/浏览器继续使用旧缓存",
+    "密码策略调整为至少 8 位并包含大写字母和数字"
   ]
 }
