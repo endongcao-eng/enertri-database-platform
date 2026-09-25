@@ -1,4 +1,4 @@
-> 网页试用部署准备版（2026-09-10）：请优先阅读 [架构审查](review/ARCHITECTURE_REVIEW.md)、[部署手册](deploy/DEPLOYMENT.md)、[Railway 部署](deploy/RAILWAY_DEPLOYMENT.md) 和 [本次验证](review/VALIDATION.md)。当前尚未通过公网放行门槛；下文原版本说明保留作历史参考，演示账号仅用于开发环境。
+> 网页试用部署准备版（2026-09-10）：请优先阅读 [架构审查](review/ARCHITECTURE_REVIEW.md)、[部署手册](deploy/DEPLOYMENT.md)、[Railway 部署](deploy/RAILWAY_DEPLOYMENT.md) 和 [本次验证](review/VALIDATION.md)。当前尚未通过公网放行门槛；
 
 # EnerTri 科研与焊接智能平台 V4.7
 
