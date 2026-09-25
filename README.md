@@ -36,57 +36,6 @@ PDF / OCR / Tables / Vector / QA / Artifacts
 
 Web Worker 不再创建 `ThreadPoolExecutor`，也不再在启动时执行任务恢复、默认数据初始化或迁移审计。Docker Compose 使用一次性 `init` 服务完成迁移与初始化，长任务由独立 `worker` 服务消费数据库队列。
 
-## 阻断项修复
-
-### 1. 多 Gunicorn Worker 与异步执行器冲突
-
-- 移除 Web 进程内线程池。
-- `workspace_tasks` 新增 `worker_id`、`attempt_count`、`heartbeat_at`、`lease_expires_at`、`last_claimed_at`、`timeout_seconds`。
-- PostgreSQL Worker 通过事务和 `FOR UPDATE SKIP LOCKED` 原子抢占 `queued` 任务。
-- 只有租约过期的 `running` 任务才会被恢复为失败；其他 Worker 正在执行的任务不会被误判。
-- `queued` 任务本身即数据库队列，不依赖 Web 重启时“重新提交”。
-- `bootstrap.py` 统一迁移、默认数据、过期租约恢复、清理与迁移审计，避免多个 Web Worker 重复执行。
-
-### 2. system_admin 保护
-
-- 普通管理员不能修改已有 `system_admin`，包括降级、停用和其他属性变更。
-- 只有 `system_admin` 能授予 `system_admin`。
-- 最后一个有效 `system_admin` 不能被降级或停用。
-- 高权限账户变更要求 `confirmation=<目标用户名>` 二次确认。
-- 高权限变更写入 `security.privileged_user.updated` 专用审计事件。
-
-### 3. 权限点真正落地到接口
-
-新增/落实：
-
-- `task.own.cancel`
-- `task.other.manage`
-- `file.other.download`
-- `user.role.manage`
-- `data.export`
-
-`task.other.view` 只代表查看权限，不再隐含重试或取消；审稿专家可查看他人任务，但默认不能重试、取消或下载他人文件。
-
-### 4. 内容级文件安全校验
-
-上传不再只看扩展名。V4.2 同时检查扩展名、检测 MIME、魔数和格式解析：
-
-- PDF：魔数 + pypdf 可打开/可读页数。
-- DOCX/PPTX/XLSX/ZIP：ZIP 结构、CRC、路径穿越、条目数、压缩比、OOXML 必需条目。
-- 图片：Pillow `verify()` 与尺寸读取。
-- 视频：ffprobe 必须成功并识别真实 video stream。
-- JSON/XML/文本：执行解析或编码验证。
-
-无法解析的文件进入 `quarantine/`，文件解析状态和相关任务状态均为 `failed`。
-
-### 5. 严格旧库 baseline 识别
-
-对“非空且没有 alembic_version”的数据库，系统会检查关键表、字段、类型族、约束、索引和新版本特征字段，并输出结构差异报告。不完全匹配时拒绝自动 stamp。生产旧库首次升级还需要人工备份/核验并显式设置：
-
-```env
-V4_BASELINE_CONFIRM=I_HAVE_VERIFIED_V4_0_BACKUP
-```
-
 ## 文献与论文知识系统
 
 ### 多来源文献适配
