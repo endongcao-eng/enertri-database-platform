@@ -1,6 +1,6 @@
 {
   "name": "EnerTri 网页试用部署准备版",
-  "version": "4.7.0-webprep.13",
+  "version": "4.7.0-webprep.14",
   "api_business_version": "4.7.0",
   "date": "2026-09-18",
   "status": "preparation_candidate_not_public_ready",
@@ -31,6 +31,7 @@
     "审计页面展示当前账号的实际权限清单",
     "静态前端资源增加版本号，避免 Railway/浏览器继续使用旧缓存",
     "密码策略调整为至少 8 位并包含大写字母和数字",
-    "新增模板库：管理员和科研/教师角色可上传 PDF、PPT、Excel、Word 模板，登录用户可按类别和文件名检索并下载"
+    "新增模板库：管理员和科研/教师角色可上传 PDF、PPT、Excel、Word 模板，登录用户可按类别和文件名检索并下载",
+    "修复模板库入口遗漏加载前端脚本的问题"
   ]
 }
