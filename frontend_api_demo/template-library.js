@@ -58,8 +58,9 @@ async function previewTemplate(templateId) {
 
 function renderTemplateLibrary() {
   const isManager = ['admin', 'system_admin', 'researcher'].includes(State.user?.role);
+  const isAdmin = ['admin', 'system_admin'].includes(State.user?.role);
   const templates = State.templates || [];
-  const rows = templates.map(item => `<article class="template-card js-template-preview" data-id="${item.id}"><div class="template-icon template-${escapeHtml(item.category)}">${templateCategoryIcon(item.category)}</div><div class="template-card-main"><div class="template-card-head"><div><span class="badge primary">${escapeHtml(item.category_label)}</span><h3>${escapeHtml(item.title)}</h3></div><div class="inline-actions"><button class="btn secondary small js-template-preview-btn" data-id="${item.id}">预览</button><button class="btn primary small js-template-download" data-url="${escapeHtml(item.download_url)}" data-name="${escapeHtml(item.original_name)}">下载</button></div></div><p class="muted">${formatBytes(item.size_bytes)} · ${formatTime(item.created_at)}${item.uploader_name ? ` · ${escapeHtml(item.uploader_name)}` : ''}</p></div></article>`).join('');
+  const rows = templates.map(item => `<article class="template-card js-template-preview" data-id="${item.id}"><div class="template-icon template-${escapeHtml(item.category)}">${templateCategoryIcon(item.category)}</div><div class="template-card-main"><div class="template-card-head"><div><span class="badge primary">${escapeHtml(item.category_label)}</span><h3>${escapeHtml(item.title)}</h3></div><div class="inline-actions"><button class="btn secondary small js-template-preview-btn" data-id="${item.id}">预览</button><button class="btn primary small js-template-download" data-url="${escapeHtml(item.download_url)}" data-name="${escapeHtml(item.original_name)}">下载</button>${isAdmin ? `<button class="btn danger small js-template-delete" data-id="${item.id}">删除</button>` : ''}</div></div><p class="muted">${formatBytes(item.size_bytes)} · ${formatTime(item.created_at)}${item.uploader_name ? ` · ${escapeHtml(item.uploader_name)}` : ''}</p></div></article>`).join('');
   const categoryButtons = TEMPLATE_CATEGORIES.map(([value, label]) => `<button class="template-category-btn ${TemplateLibraryUI.category === value ? 'active' : ''}" data-template-category="${value}"><span>${value === 'all' ? 'ALL' : templateCategoryIcon(value)}</span>${label}</button>`).join('');
   app.innerHTML = `<div class="page-shell template-shell">${topbar('EnerTri 模板库', '教学与科研模板集中管理、分类检索与下载')}
     <section class="template-hero"><div><span class="eyebrow">Template Library</span><h2>把常用模板放在一个地方</h2><p>按文件类型分类浏览，输入文件名即可快速检索。模板文件由教师或管理员统一维护，学生仅可下载使用。</p></div><div class="template-count"><strong>${templates.length}</strong><span>当前结果</span></div></section>
@@ -73,6 +74,12 @@ function renderTemplateLibrary() {
   document.getElementById('templateSearchBtn')?.addEventListener('click', () => { TemplateLibraryUI.query = document.getElementById('templateSearchInput').value; openTemplateLibrary(); });
   document.getElementById('templateSearchInput')?.addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('templateSearchBtn').click(); });
   document.querySelectorAll('.js-template-download').forEach(btn => btn.onclick = async event => { event.stopPropagation(); try { await apiDownload(btn.dataset.url, btn.dataset.name); } catch (e) { alert(`下载失败：${e.message}`); } });
+  document.querySelectorAll('.js-template-delete').forEach(btn => btn.onclick = async event => {
+    event.stopPropagation();
+    if (!confirm('确定删除这个模板吗？删除后所有用户都无法继续下载。')) return;
+    try { await api(`/templates/${btn.dataset.id}`, {method:'DELETE'}); await openTemplateLibrary(); }
+    catch (e) { alert(`删除失败：${e.message}`); }
+  });
   document.querySelectorAll('.js-template-preview, .js-template-preview-btn').forEach(btn => btn.onclick = event => { if (event.target.closest('.js-template-download')) return; event.stopPropagation(); previewTemplate(Number(btn.dataset.id || btn.closest('.js-template-preview')?.dataset.id)); });
   document.getElementById('templateUploadBtn')?.addEventListener('click', async () => {
     const file = document.getElementById('templateFileInput').files[0];

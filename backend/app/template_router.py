@@ -172,7 +172,7 @@ def preview_template(template_id: int, request: Request, db: Session = Depends(g
 
 
 @router.delete("/{template_id}")
-def delete_template(template_id: int, request: Request, db: Session = Depends(get_db), user: User = Depends(require_permission("template.manage"))):
+def delete_template(template_id: int, request: Request, db: Session = Depends(get_db), user: User = Depends(require_permission("template.delete"))):
     item = db.get(TemplateFile, template_id)
     if not item:
         raise HTTPException(status_code=404, detail="模板不存在")

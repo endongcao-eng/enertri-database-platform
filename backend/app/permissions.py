@@ -29,7 +29,7 @@ ROLE_PERMISSIONS: dict[str, set[str]] = {
         "file.own.view", "file.other.view", "file.own.download", "file.other.download", "file.own.delete", "file.other.manage",
         "data.export", "user.role.manage", "rules.maintain", "process.approve", "audit.view",
         "knowledge.own.manage", "knowledge.shared.search", "knowledge.enterprise.manage",
-        "template.view", "template.download", "template.manage",
+        "template.view", "template.download", "template.manage", "template.delete",
     },
     "system_admin": {"*"},
 }

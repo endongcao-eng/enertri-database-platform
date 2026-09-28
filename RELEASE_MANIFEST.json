@@ -1,6 +1,6 @@
 {
   "name": "EnerTri 网页试用部署准备版",
-  "version": "4.7.0-webprep.16",
+  "version": "4.7.0-webprep.17",
   "api_business_version": "4.7.0",
   "date": "2026-09-18",
   "status": "preparation_candidate_not_public_ready",
@@ -34,6 +34,7 @@
     "新增模板库：管理员和科研/教师角色可上传 PDF、PPT、Excel、Word 模板，登录用户可按类别和文件名检索并下载",
     "修复模板库入口遗漏加载前端脚本的问题",
     "模板库支持点击预览：PDF 内嵌查看，DOCX/PPTX/XLSX 提取正文或表格内容展示",
-    "修复 Railway FILE_STORE_DIR 与 MEDIA_DIR 不同时模板内容路径被错误拒绝的问题，并补充下载错误提示"
+    "修复 Railway FILE_STORE_DIR 与 MEDIA_DIR 不同时模板内容路径被错误拒绝的问题，并补充下载错误提示",
+    "管理员可在模板库删除模板，删除后从列表隐藏并禁止继续下载"
   ]
 }
