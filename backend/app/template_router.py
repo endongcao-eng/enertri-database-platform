@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 
 from .audit import write_audit
 from .database import MEDIA_DIR, get_db
-from .file_service import InvalidStoredUpload, store_upload
+from .file_service import FILE_STORE_DIR, InvalidStoredUpload, store_upload
 from .models import TemplateFile, User, WorkspaceFile
 from .security import current_user, require_permission
 
@@ -52,7 +52,10 @@ def _template_path(item: TemplateFile) -> Path:
         raise HTTPException(status_code=404, detail="模板不存在")
     path = Path(item.file.storage_path).resolve()
     media_root = MEDIA_DIR.resolve()
-    if not path.exists() or path == media_root or media_root not in path.parents:
+    file_store_root = FILE_STORE_DIR.resolve()
+    allowed_roots = (media_root, file_store_root)
+    inside_allowed_root = any(path != root and root in path.parents for root in allowed_roots)
+    if not path.exists() or not inside_allowed_root:
         raise HTTPException(status_code=404, detail="模板文件内容不存在")
     return path
 

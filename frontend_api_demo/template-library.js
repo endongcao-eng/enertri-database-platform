@@ -48,7 +48,7 @@ async function previewTemplate(templateId) {
     }
     dialog.innerHTML = `<div class="section-head"><div><span class="badge primary">${escapeHtml(data.category?.toUpperCase() || '模板')}</span><h2>${escapeHtml(data.title)}</h2></div><div class="inline-actions"><button class="btn primary small js-preview-download">下载原文件</button><button class="btn ghost" id="closeTemplatePreviewBtn">关闭</button></div></div>${visual}${templatePreviewBody(data)}`;
     document.getElementById('closeTemplatePreviewBtn').onclick = closeTemplatePreview;
-    dialog.querySelector('.js-preview-download').onclick = () => apiDownload(`/api/templates/${templateId}/download`, data.original_name);
+    dialog.querySelector('.js-preview-download').onclick = async () => { try { await apiDownload(`/api/templates/${templateId}/download`, data.original_name); } catch (e) { alert(`下载失败：${e.message}`); } };
   } catch (e) {
     const dialog = document.querySelector('#templatePreviewModal .template-preview-dialog');
     if (dialog) dialog.innerHTML = `<div class="section-head"><h2>预览失败</h2><button class="btn ghost" id="closeTemplatePreviewBtn">关闭</button></div><div class="notice error">${escapeHtml(e.message)}</div>`;
@@ -72,7 +72,7 @@ function renderTemplateLibrary() {
   document.querySelectorAll('[data-template-category]').forEach(btn => btn.onclick = () => { TemplateLibraryUI.category = btn.dataset.templateCategory; openTemplateLibrary(); });
   document.getElementById('templateSearchBtn')?.addEventListener('click', () => { TemplateLibraryUI.query = document.getElementById('templateSearchInput').value; openTemplateLibrary(); });
   document.getElementById('templateSearchInput')?.addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('templateSearchBtn').click(); });
-  document.querySelectorAll('.js-template-download').forEach(btn => btn.onclick = () => apiDownload(btn.dataset.url, btn.dataset.name));
+  document.querySelectorAll('.js-template-download').forEach(btn => btn.onclick = async event => { event.stopPropagation(); try { await apiDownload(btn.dataset.url, btn.dataset.name); } catch (e) { alert(`下载失败：${e.message}`); } });
   document.querySelectorAll('.js-template-preview, .js-template-preview-btn').forEach(btn => btn.onclick = event => { if (event.target.closest('.js-template-download')) return; event.stopPropagation(); previewTemplate(Number(btn.dataset.id || btn.closest('.js-template-preview')?.dataset.id)); });
   document.getElementById('templateUploadBtn')?.addEventListener('click', async () => {
     const file = document.getElementById('templateFileInput').files[0];
