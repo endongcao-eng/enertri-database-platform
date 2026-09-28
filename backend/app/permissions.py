@@ -5,19 +5,23 @@ ROLE_PERMISSIONS: dict[str, set[str]] = {
     "learning_user": {
         "paper.upload", "task.own.view", "task.own.retry", "task.own.cancel",
         "file.own.view", "file.own.download", "file.own.delete", "knowledge.own.manage",
+        "template.view", "template.download",
     },
     "researcher": {
         "paper.upload", "ai.external", "task.own.view", "task.own.retry", "task.own.cancel",
         "file.own.view", "file.own.download", "file.own.delete", "data.export", "knowledge.own.manage",
+        "template.view", "template.download", "template.manage",
     },
     "production_engineer": {
         "paper.upload", "ai.external", "simulation.commercial", "task.own.view", "task.own.retry", "task.own.cancel",
         "file.own.view", "file.own.download", "file.own.delete", "data.export", "knowledge.own.manage",
+        "template.view", "template.download",
     },
     "review_expert": {
         "paper.upload", "ai.external", "task.own.view", "task.other.view", "task.own.retry", "task.own.cancel",
         "file.own.view", "file.other.view", "file.own.download", "file.own.delete", "data.export",
         "process.approve", "knowledge.own.manage", "knowledge.shared.search",
+        "template.view", "template.download",
     },
     "admin": {
         "paper.upload", "ai.external", "simulation.commercial",
@@ -25,6 +29,7 @@ ROLE_PERMISSIONS: dict[str, set[str]] = {
         "file.own.view", "file.other.view", "file.own.download", "file.other.download", "file.own.delete", "file.other.manage",
         "data.export", "user.role.manage", "rules.maintain", "process.approve", "audit.view",
         "knowledge.own.manage", "knowledge.shared.search", "knowledge.enterprise.manage",
+        "template.view", "template.download", "template.manage",
     },
     "system_admin": {"*"},
 }

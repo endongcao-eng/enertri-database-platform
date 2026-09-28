@@ -53,7 +53,7 @@ def main() -> None:
             db,
             action="database.migration.completed",
             resource_type="database",
-            resource_id="v4_7_dynamic_development_loop",
+            resource_id=migration["current_revision"],
             details={**migration, "capability_standard_seed": standard_seed, "research_profile_seed": profile_seed, "project_matching_seed": matching_seed, "development_planning_seed": planning_seed, "closed_loop_seed": closed_loop_seed, "expired_task_leases_recovered": interrupted, "expired_files_cleaned": cleaned},
         )
     print({"ok": True, **migration, "capability_standard_seed": standard_seed, "research_profile_seed": profile_seed, "project_matching_seed": matching_seed, "development_planning_seed": planning_seed, "closed_loop_seed": closed_loop_seed, "expired_task_leases_recovered": interrupted, "expired_files_cleaned": cleaned})

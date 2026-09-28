@@ -4,7 +4,7 @@ function routeFromLocationHash() {
   return value || 'home';
 }
 const initialPathRoute = window.location.pathname === '/login' ? 'login' : window.location.pathname === '/register' ? 'register' : routeFromLocationHash();
-const initialRoute = ['home', 'login', 'register', 'workspace', 'admin'].includes(initialPathRoute)
+const initialRoute = ['home', 'login', 'register', 'workspace', 'admin', 'template-library'].includes(initialPathRoute)
   ? initialPathRoute
   : 'home';
 const State = {
@@ -33,6 +33,7 @@ const State = {
   quizChecked: false,
   quizResult: null,
   registerMessage: '',
+  templates: [],
 };
 
 function syncRouteHash(route, replace = false) {
@@ -71,7 +72,7 @@ window.addEventListener('hashchange', () => {
   const route = routeFromLocationHash();
   if (route === State.route) return;
   if (route === 'home') return goHome();
-  if (['login', 'workspace', 'admin'].includes(route)) return goToRoute(route, { replace: true });
+  if (['login', 'workspace', 'admin', 'template-library'].includes(route)) return goToRoute(route, { replace: true });
   if (route === 'register') return goToRoute(route, { replace: true });
   const loaders = {
     'task-center': () => openTaskCenter(),
@@ -83,6 +84,7 @@ window.addEventListener('hashchange', () => {
     'project-matching': () => openProjectMatching(),
     'development-planning': () => openDevelopmentPlanning(),
     'development-execution': () => openDevelopmentExecution(),
+    'template-library': () => openTemplateLibrary(),
   };
   if (loaders[route]) loaders[route]();
 });
@@ -170,6 +172,7 @@ function render() {
   if (State.route === 'project-matching') return renderProjectMatching();
   if (State.route === 'development-planning') return renderDevelopmentPlanning();
   if (State.route === 'development-execution') return renderDevelopmentExecution();
+  if (State.route === 'template-library') return State.user ? renderTemplateLibrary() : renderLogin('请先登录后使用模板库。');
   return renderHome();
 }
 function topbar(title = 'EnerTri', subtitle = '能源专业三语术语学习平台') {
@@ -178,7 +181,7 @@ function topbar(title = 'EnerTri', subtitle = '能源专业三语术语学习平
     ? `${State.route === 'admin' ? '<button class="btn secondary" id="toHomeBtn">返回前台</button>' : '<button class="btn secondary" id="toAdminBtn">术语后台</button>'}<button class="btn secondary" id="toAuditBtn">审计日志</button>`
     : '';
   const workspaceNav = State.user
-    ? `${State.route === 'workspace' ? '<button class="btn secondary" id="toHomeBtn">返回前台</button>' : '<button class="btn primary" id="toWorkspaceBtn">智能工作台</button>'}<button class="btn ${State.route === 'knowledge' ? 'primary' : 'secondary'}" id="toKnowledgeBtn">论文知识库</button><button class="btn ${State.route === 'capability-standards' ? 'primary' : 'secondary'}" id="toCapabilityStandardsBtn">能力标准库</button><button class="btn ${State.route === 'research-profile' ? 'primary' : 'secondary'}" id="toResearchProfileBtn">个人科研画像</button>${isAdmin?`<button class="btn ${State.route === 'project-matching' ? 'primary' : 'secondary'}" id="toProjectMatchingBtn">项目人才匹配</button>`:''}<button class="btn ${State.route === 'development-planning' ? 'primary' : 'secondary'}" id="toDevelopmentPlanningBtn">成长与方向规划</button><button class="btn ${State.route === 'development-execution' ? 'primary' : 'secondary'}" id="toDevelopmentExecutionBtn">成长执行闭环</button><button class="btn secondary" id="toTasksBtn">任务中心</button><button class="btn secondary" id="toFilesBtn">文件管理</button>`
+    ? `${State.route === 'workspace' ? '<button class="btn secondary" id="toHomeBtn">返回前台</button>' : '<button class="btn primary" id="toWorkspaceBtn">智能工作台</button>'}<button class="btn ${State.route === 'knowledge' ? 'primary' : 'secondary'}" id="toKnowledgeBtn">论文知识库</button><button class="btn ${State.route === 'template-library' ? 'primary' : 'secondary'}" id="toTemplateLibraryBtn">模板库</button><button class="btn ${State.route === 'capability-standards' ? 'primary' : 'secondary'}" id="toCapabilityStandardsBtn">能力标准库</button><button class="btn ${State.route === 'research-profile' ? 'primary' : 'secondary'}" id="toResearchProfileBtn">个人科研画像</button>${isAdmin?`<button class="btn ${State.route === 'project-matching' ? 'primary' : 'secondary'}" id="toProjectMatchingBtn">项目人才匹配</button>`:''}<button class="btn ${State.route === 'development-planning' ? 'primary' : 'secondary'}" id="toDevelopmentPlanningBtn">成长与方向规划</button><button class="btn ${State.route === 'development-execution' ? 'primary' : 'secondary'}" id="toDevelopmentExecutionBtn">成长执行闭环</button><button class="btn secondary" id="toTasksBtn">任务中心</button><button class="btn secondary" id="toFilesBtn">文件管理</button>`
     : '';
   return `<header class="topbar"><div class="brand"><div class="brand-mark">ET</div><div><h1>${escapeHtml(title)}</h1><p>${escapeHtml(subtitle)}</p></div></div><div class="topbar-actions">${State.user ? `<span class="badge">${escapeHtml(State.user.display_name)} · ${escapeHtml(State.user.role)}</span>${workspaceNav}${adminNav}<button class="btn secondary" id="changePasswordBtn">修改密码</button><button class="btn ghost" id="logoutBtn">退出</button>` : '<button class="btn primary" id="toLoginBtn">登录学习</button>'}</div></header>`;
 }
@@ -276,6 +279,7 @@ function bindCommon() {
   document.getElementById('toAdminBtn')?.addEventListener('click', () => goToRoute('admin'));
   document.getElementById('toWorkspaceBtn')?.addEventListener('click', () => goToRoute('workspace'));
   document.getElementById('toKnowledgeBtn')?.addEventListener('click', () => openKnowledgeSystem());
+  document.getElementById('toTemplateLibraryBtn')?.addEventListener('click', () => openTemplateLibrary());
   document.getElementById('toCapabilityStandardsBtn')?.addEventListener('click', () => openCapabilityStandards());
   document.getElementById('toResearchProfileBtn')?.addEventListener('click', () => openResearchProfile());
   document.getElementById('toProjectMatchingBtn')?.addEventListener('click', () => openProjectMatching());

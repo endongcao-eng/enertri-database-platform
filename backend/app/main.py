@@ -28,6 +28,7 @@ from .research_profile_router import router as research_profile_router
 from .project_matching_router import router as project_matching_router
 from .development_planning_router import router as development_planning_router
 from .development_execution_router import router as development_execution_router
+from .template_router import router as template_router
 from .capability_standard_service import seed_capability_standards
 from .research_profile_service import seed_demo_research_profiles
 from .project_matching_service import seed_demo_project_matching
@@ -62,6 +63,7 @@ app.include_router(research_profile_router)
 app.include_router(project_matching_router)
 app.include_router(development_planning_router)
 app.include_router(development_execution_router)
+app.include_router(template_router)
 
 
 @app.on_event("startup")

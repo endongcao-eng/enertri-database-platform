@@ -264,6 +264,21 @@ class WorkspaceFile(Base):
     uploader = relationship("User")
 
 
+class TemplateFile(Base):
+    __tablename__ = "template_files"
+    id = Column(Integer, primary_key=True)
+    file_id = Column(Integer, ForeignKey("workspace_files.id", ondelete="CASCADE"), nullable=False, unique=True, index=True)
+    category = Column(String(16), nullable=False, index=True)
+    title = Column(String(512), nullable=False, index=True)
+    uploader_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), index=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    __table_args__ = (
+        CheckConstraint("category IN ('pdf','ppt','excel','word')", name="ck_template_files_category"),
+    )
+    file = relationship("WorkspaceFile")
+    uploader = relationship("User")
+
+
 class TaskFile(Base):
     __tablename__ = "task_files"
     task_id = Column(Integer, ForeignKey("workspace_tasks.id", ondelete="CASCADE"), primary_key=True)

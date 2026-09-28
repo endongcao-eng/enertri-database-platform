@@ -411,7 +411,7 @@ class V41FoundationTest(unittest.TestCase):
 
         migration = self.client.get("/api/admin/migrations", headers=self.admin_headers)
         self.assertEqual(migration.status_code, 200)
-        self.assertEqual(migration.json()["current_revision"], "v4_7_trial_controls")
+        self.assertEqual(migration.json()["current_revision"], "v4_7_template_library")
         self.assertEqual(migration.json()["status"], "succeeded")
 
         users = self.client.get("/api/admin/users", headers=self.admin_headers)
