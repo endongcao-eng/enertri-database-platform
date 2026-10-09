@@ -1,4 +1,4 @@
-const KnowledgeUI = { pdfObjectUrl: null, poller: null };
+const KnowledgeUI = { pdfObjectUrl: null, poller: null, centralPoller: null };
 
 async function knowledgePdfBlobUrl(fileId) {
   if (!fileId) return null;
@@ -14,15 +14,27 @@ async function knowledgePdfBlobUrl(fileId) {
 
 async function openKnowledgeSystem(documentId = null) {
   const navigationId = beginNavigation('knowledge');
+  State.literatureSearchResult = null;
+  State.publications = [];
+  State.centralLiteratureStatus = { available: false, message: '正在连接空间能源平台论文主库…' };
   State.knowledgeBusy = true;
   render();
   try {
-    const [bases, publications, documents] = await Promise.all([
-      api('/knowledge/bases'), api('/literature/publications?limit=100'), api('/knowledge/documents')
+    const [bases, documents] = await Promise.all([
+      api('/knowledge/bases'), api('/knowledge/documents')
     ]);
     State.knowledgeBases = bases;
-    State.publications = publications;
     State.knowledgeDocuments = documents;
+    try {
+      const catalog = await api(`/literature/publications?limit=20&offset=${State.centralLiteratureOffset||0}`);
+      State.publications = catalog.items || [];
+      State.centralLiteratureTotal = catalog.total || 0;
+      State.centralLiteratureOffset = catalog.offset || 0;
+      State.centralLiteratureStatus = { available: true, message: '空间能源平台论文主库已连接' };
+    } catch (e) {
+      State.publications = [];
+      State.centralLiteratureStatus = { available: false, message: e.message || '空间能源平台论文主库暂不可用' };
+    }
     State.selectedKnowledgeBaseId ||= bases[0]?.id || null;
     if (documentId) State.selectedKnowledgeDocumentId = Number(documentId);
     State.selectedKnowledgeDocumentId ||= documents.find(d => d.status === 'ready')?.id || documents[0]?.id || null;
@@ -32,6 +44,38 @@ async function openKnowledgeSystem(documentId = null) {
   if (!isCurrentNavigation(navigationId, 'knowledge')) return;
   State.knowledgeBusy = false;
   render();
+  clearInterval(KnowledgeUI.centralPoller);
+  KnowledgeUI.centralPoller = setInterval(async () => {
+    if (!isCurrentNavigation(navigationId, 'knowledge')) {
+      clearInterval(KnowledgeUI.centralPoller);
+      return;
+    }
+    try {
+      const status = await api('/literature/central/status');
+      const wasAvailable = Boolean(State.centralLiteratureStatus?.available);
+      State.centralLiteratureStatus = status;
+      if (!status.available) {
+        State.publications = [];
+        if (State.literatureSearchResult) {
+          State.literatureSearchResult.items = (State.literatureSearchResult.items || []).filter(p => !(p.sources || []).includes('空间能源论文库') && p.catalog_source !== 'space_energy');
+        }
+        if (wasAvailable) renderKnowledgeSystem();
+      } else if (!wasAvailable) {
+        const catalog = await api(`/literature/publications?limit=20&offset=${State.centralLiteratureOffset||0}`);
+        State.publications = catalog.items || [];
+        State.centralLiteratureTotal = catalog.total || 0;
+        renderKnowledgeSystem();
+      }
+    } catch (e) {
+      const wasAvailable = Boolean(State.centralLiteratureStatus?.available);
+      State.centralLiteratureStatus = { available: false, message: e.message || '空间能源平台论文主库暂不可用' };
+      State.publications = [];
+      if (State.literatureSearchResult) {
+        State.literatureSearchResult.items = (State.literatureSearchResult.items || []).filter(p => !(p.sources || []).includes('空间能源论文库') && p.catalog_source !== 'space_energy');
+      }
+      if (wasAvailable) renderKnowledgeSystem();
+    }
+  }, 15000);
 }
 
 async function loadKnowledgeDocument(documentId, rerender = true) {
@@ -60,13 +104,14 @@ function renderKnowledgeSystem() {
   const pubs = State.publications || [];
   const docs = State.knowledgeDocuments || [];
   const doc = State.knowledgeDocument;
-  const sourceCount = new Set(pubs.flatMap(p => p.sources || [])).size;
-  const mergedCount = pubs.filter(p => (p.sources || []).length > 1).length;
+  const displayedPubs = State.literatureSearchResult?.items || pubs;
+  const sourceCount = State.centralLiteratureStatus?.available ? 3 : 2;
+  const mergedCount = displayedPubs.filter(p => (p.sources || []).length > 1).length;
   const readyDocs = docs.filter(d => d.status === 'ready').length;
   const evidenceCount = (doc?.pages || []).length + (doc?.tables || []).length + (doc?.figures || []).length;
   const search = State.literatureSearchResult;
   const selectedKb = bases.find(k => Number(k.id) === Number(State.selectedKnowledgeBaseId)) || bases[0];
-  const publicationCards = pubs.slice(0, 8).map(p => `<article class="publication-card">
+  const publicationCards = displayedPubs.map(p => `<article class="publication-card">
     <div class="pub-top"><div>${(p.sources||[]).map(s=>`<span class="badge primary">${escapeHtml(s)}</span>`).join(' ')}</div><span class="badge ${p.open_access?'success':''}">${p.open_access?'OA':'Metadata'}</span></div>
     <h3>${escapeHtml(p.title)}</h3><p class="muted">${escapeHtml((p.authors||[]).slice(0,4).join(', ') || '作者信息待补充')} · ${escapeHtml(p.journal||'期刊待补充')} · ${escapeHtml(p.year||'—')}</p>
     <div class="pub-meta"><span>DOI ${escapeHtml(p.doi||'—')}</span><span>引用 ${p.citation_count||0}</span>${(p.sources||[]).length>1?'<strong class="dedup-pill">跨源已合并</strong>':''}</div>
@@ -91,14 +136,17 @@ function renderKnowledgeSystem() {
       <section class="card panel paper-qa"><div class="section-head"><div><span class="eyebrow">05 · Paper QA</span><h2>基于论文的原文问答</h2><p class="muted">答案仅来自已解析证据；每条证据可点击回到原文页。</p></div></div><div class="qa-row"><input class="input" id="paperQaQuestion" value="${escapeHtml(State.paperQaQuestion||'激光功率是多少？')}" placeholder="例如：最高抗拉强度对应哪组参数？"><button class="btn primary" id="paperQaBtn">基于原文回答</button></div>${qaBlock}</section>`
     : '<section class="card panel"><div class="empty-box">上传或选择一篇论文，开始证据化结构化阅读。</div></section>';
 
-  app.innerHTML = `<div class="page-shell knowledge-shell">${topbar('EnerTri 文献与论文知识系统','V4.2 · 多来源检索、证据化论文解析、知识库与原文问答')}
-    <section class="hero-grid knowledge-kpis"><div class="stat-card"><strong>${sourceCount || 2}</strong><span>文献来源适配器</span></div><div class="stat-card"><strong>${mergedCount}</strong><span>跨源去重合并</span></div><div class="stat-card"><strong>${readyDocs}</strong><span>已结构化论文</span></div><div class="stat-card"><strong>${evidenceCount}</strong><span>当前证据对象</span></div></section>
+  app.innerHTML = `<div class="page-shell knowledge-shell">${topbar('EnerTri 文献与论文知识系统','V4.7 · 空间能源平台主库、补充检索与证据化论文解析')}
+    <section class="hero-grid knowledge-kpis"><div class="stat-card"><strong>${sourceCount}</strong><span>文献来源适配器</span></div><div class="stat-card"><strong>${mergedCount}</strong><span>跨源去重合并</span></div><div class="stat-card"><strong>${readyDocs}</strong><span>已结构化论文</span></div><div class="stat-card"><strong>${evidenceCount}</strong><span>当前证据对象</span></div></section>
     ${State.knowledgeError?`<div class="notice error">${escapeHtml(State.knowledgeError)}</div>`:''}
 
-    <section class="card panel literature-panel"><div class="section-head"><div><span class="eyebrow">01 · Literature Retrieval</span><h2>多来源文献检索与去重</h2><p class="muted"></p></div>${mergedCount?`<span class="dedup-summary">已识别 ${mergedCount} 篇跨源合并记录</span>`:''}</div>
-      <div class="literature-search-row"><input class="input" id="literatureQuery" value="${escapeHtml(State.literatureQuery||'laser welding porosity')}" placeholder="输入 DOI、题名或研究主题"><label class="check-row"><input type="checkbox" id="sourceOpenAlex" checked>OpenAlex</label><label class="check-row"><input type="checkbox" id="sourceCrossref" checked>Crossref</label><button class="btn primary" id="literatureSearchBtn">跨源检索</button></div>
+    <div class="notice ${State.centralLiteratureStatus?.available?'success':'error'}">${escapeHtml(State.centralLiteratureStatus?.message || '正在连接空间能源平台论文主库…')}${State.centralLiteratureStatus?.available ? ` · 共 ${pubs.length} 篇当前页记录` : ' · 论文目录不会使用 EnerTri 本地旧缓存'}</div>
+
+    <section class="card panel literature-panel"><div class="section-head"><div><span class="eyebrow">01 · Literature Retrieval</span><h2>空间能源平台论文主库</h2><p class="muted">目录实时读取主库；OpenAlex 与 Crossref 可作为补充检索来源。</p></div>${mergedCount?`<span class="dedup-summary">已识别 ${mergedCount} 篇跨源合并记录</span>`:''}</div>
+      <div class="literature-search-row"><input class="input" id="literatureQuery" value="${escapeHtml(State.literatureQuery||'')}" placeholder="输入 DOI、题名或研究主题"><label class="check-row"><input type="checkbox" id="sourceSpaceEnergy" checked>空间能源主库</label><label class="check-row"><input type="checkbox" id="sourceOpenAlex" checked>OpenAlex</label><label class="check-row"><input type="checkbox" id="sourceCrossref" checked>Crossref</label><button class="btn primary" id="literatureSearchBtn">检索论文</button></div>
       ${search?`<div class="dedup-flow"><span>原始结果 <strong>${search.raw_count}</strong></span><span>→</span><span>自动合并 <strong>${search.duplicate_count}</strong></span><span>→</span><span>唯一文献 <strong>${search.deduplicated_count}</strong></span>${(search.source_status||[]).map(s=>`<span class="badge ${s.ok?'success':'danger'}">${escapeHtml(s.source)} ${s.ok?s.count:'不可用'}</span>`).join('')}</div>`:''}
-      <div class="publication-grid">${publicationCards || '<div class="empty-box">尚无已入库文献。</div>'}</div>
+      <div class="publication-grid">${publicationCards || `<div class="empty-box">${State.centralLiteratureStatus?.available?'主库当前页没有论文记录。':'空间能源平台后端未连接，暂时无法浏览主库论文。'}</div>`}</div>
+      ${!search && State.centralLiteratureStatus?.available ? `<div class="inline-actions" style="justify-content:space-between;margin-top:14px"><span class="muted">显示 ${State.centralLiteratureTotal ? State.centralLiteratureOffset+1 : 0}–${Math.min(State.centralLiteratureOffset+pubs.length,State.centralLiteratureTotal||0)} / ${State.centralLiteratureTotal||0} 篇</span><div class="inline-actions"><button class="btn small secondary" id="centralPapersPrev" ${State.centralLiteratureOffset<=0?'disabled':''}>上一页</button><button class="btn small secondary" id="centralPapersNext" ${State.centralLiteratureOffset+pubs.length>=State.centralLiteratureTotal?'disabled':''}>下一页</button></div></div>`:''}
     </section>
 
     <section class="knowledge-layout"><aside class="card panel knowledge-sidebar"><div class="section-head"><div><span class="eyebrow">02 · Knowledge Base</span><h2>知识库</h2></div></div>
@@ -147,10 +195,18 @@ function bindKnowledgeSystem() {
     const button=document.getElementById('literatureSearchBtn'); button.disabled=true; button.textContent='检索中…';
     try {
       State.literatureQuery=document.getElementById('literatureQuery').value.trim();
-      const sources=[]; if(document.getElementById('sourceOpenAlex').checked)sources.push('openalex'); if(document.getElementById('sourceCrossref').checked)sources.push('crossref');
+      const sources=[]; if(document.getElementById('sourceSpaceEnergy').checked)sources.push('space_energy'); if(document.getElementById('sourceOpenAlex').checked)sources.push('openalex'); if(document.getElementById('sourceCrossref').checked)sources.push('crossref');
       State.literatureSearchResult=await api('/literature/search',{method:'POST',body:JSON.stringify({query:State.literatureQuery,sources,limit:12})});
-      State.publications=await api('/literature/publications?limit=100'); renderKnowledgeSystem();
+      const catalog=await api(`/literature/publications?limit=20&offset=${State.centralLiteratureOffset||0}`); State.publications=catalog.items||[]; State.centralLiteratureTotal=catalog.total||0; renderKnowledgeSystem();
     } catch(e) { State.knowledgeError=e.message; renderKnowledgeSystem(); }
+  });
+  document.getElementById('centralPapersPrev')?.addEventListener('click', async()=>{
+    try { State.literatureSearchResult=null; State.centralLiteratureOffset=Math.max(0,(State.centralLiteratureOffset||0)-20); const catalog=await api(`/literature/publications?limit=20&offset=${State.centralLiteratureOffset}`); State.publications=catalog.items||[]; State.centralLiteratureTotal=catalog.total||0; State.centralLiteratureStatus={available:true,message:'空间能源平台论文主库已连接'}; renderKnowledgeSystem(); }
+    catch(e){State.publications=[];State.centralLiteratureStatus={available:false,message:e.message};renderKnowledgeSystem();}
+  });
+  document.getElementById('centralPapersNext')?.addEventListener('click', async()=>{
+    try { State.literatureSearchResult=null; State.centralLiteratureOffset=(State.centralLiteratureOffset||0)+20; const catalog=await api(`/literature/publications?limit=20&offset=${State.centralLiteratureOffset}`); State.publications=catalog.items||[]; State.centralLiteratureTotal=catalog.total||0; State.centralLiteratureStatus={available:true,message:'空间能源平台论文主库已连接'}; renderKnowledgeSystem(); }
+    catch(e){State.publications=[];State.centralLiteratureStatus={available:false,message:e.message};renderKnowledgeSystem();}
   });
   document.getElementById('createKbBtn')?.addEventListener('click', async()=>{
     try {

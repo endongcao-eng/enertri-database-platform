@@ -31,6 +31,7 @@ from .simulation import SUPPORTED_SOFTWARE, create_simulation_package, execution
 from .welding import analyze_defect, analyze_elements, assess_weldability, process_plan, select_filler
 from .permissions import has_permission
 from .file_validation import FileValidationError, validate_file_bytes
+from .space_energy_catalog import SpaceEnergyCatalogError, connection_status as space_energy_connection_status, search_literatures as search_space_energy_literatures, sync_search_results as sync_space_energy_search_results
 
 router = APIRouter(prefix="/api/workspace", tags=["AI Research & Welding Workspace"])
 MAX_FILE_BYTES = int(os.getenv("WORKSPACE_MAX_FILE_MB", "30")) * 1024 * 1024
@@ -360,7 +361,7 @@ def workspace_status(_: User = Depends(current_user)):
     return {
         "version": "4.1.0",
         "ai": ai_service.status(),
-        "literature": {"primary": "OpenAlex", "fallback": "Crossref", "openalex_api_key_configured": bool(os.getenv("OPENALEX_API_KEY"))},
+        "literature": {"primary": "空间能源平台论文库", **space_energy_connection_status(), "openalex_api_key_configured": bool(os.getenv("OPENALEX_API_KEY"))},
         "simulation": execution_status(),
         "capabilities": {
             "research": ["全球文献检索", "研究热点", "论文结构化阅读", "文献综述", "学术报告", "基金申请书", "学术 PPT", "同行评审"],
@@ -379,8 +380,9 @@ def list_jobs(limit: int = Query(default=30, ge=1, le=100), db: Session = Depend
 @router.post("/literature/search")
 def literature_search(payload: LiteratureSearchRequest, db: Session = Depends(get_db), user: User = Depends(current_user)):
     try:
-        result = search_openalex(**payload.model_dump())
-    except Exception as exc:
+        result = search_space_energy_literatures(payload.query, limit=payload.limit, year_from=payload.year_from, year_to=payload.year_to)
+        sync_space_energy_search_results(db, result.get("items") or [])
+    except SpaceEnergyCatalogError as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc
     job = _record_job(db, user, domain="research", task_type="literature_search", title=f"文献检索：{payload.query}", input_data=payload.model_dump(), output_json=result)
     return {"job": _job_to_dict(job), **result}
@@ -424,7 +426,7 @@ def review_paper(
     literature = {"items": [], "warning": "未提供检索词"}
     if literature_query.strip():
         try:
-            literature = search_openalex(literature_query.strip(), limit=15, sort="cited_by_count:desc")
+            literature = search_space_energy_literatures(literature_query.strip(), limit=15)
         except Exception as exc:
             literature = {"items": [], "warning": str(exc)}
     try:

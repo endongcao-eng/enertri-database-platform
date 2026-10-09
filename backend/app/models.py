@@ -366,6 +366,27 @@ class PublicationSource(Base):
     __table_args__ = (UniqueConstraint("source_name", "source_record_id", name="uq_publication_source_record"),)
 
 
+class SpaceEnergyLiterature(Base):
+    """Read-through mirror of the space-energy platform's literature schema.
+
+    The upstream API remains the source of truth. EnerTri refreshes these rows
+    only after a successful upstream response and never serves this mirror when
+    the upstream platform is unavailable.
+    """
+    __tablename__ = "space_energy_literatures"
+    id = Column(String(255), primary_key=True)
+    title = Column(String(500))
+    authors = Column(Text)
+    year = Column(Integer)
+    source = Column(String(200))
+    abstract = Column(Text)
+    doi = Column(String(200), index=True)
+    url = Column(String(1000))
+    full_text = Column(Text)
+    source_file = Column(String(500))
+    tags = Column(Text)
+
+
 class KnowledgeBase(Base):
     __tablename__ = "knowledge_bases"
     id = Column(Integer, primary_key=True)

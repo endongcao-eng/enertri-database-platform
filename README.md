@@ -2,7 +2,7 @@
 
 # EnerTri 科研与焊接智能平台 V4.7
 
-当前数据库目标 revision：`v4_7_dynamic_development_loop`。
+当前数据库目标 revision：`v4_7_space_energy_literature`。
 
 ## 科研成长执行闭环
 
@@ -49,7 +49,9 @@ Web Worker 不再创建 `ThreadPoolExecutor`，也不再在启动时执行任务
 - `get_author()`
 - `get_fulltext_link()`
 
-当前实现 OpenAlex 与 Crossref。主文献统一保存 DOI、标题、作者、机构、摘要、关键词、期刊、年份、引用量、开放获取状态和更新时间；`publication_sources` 保存来源 provenance 与原始 payload。
+当前实现空间能源平台、OpenAlex 与 Crossref。论文目录以空间能源平台为主库，EnerTri 通过后端代理实时读取；空间能源后端不可用时，目录 API 返回不可用状态，不回退到 EnerTri 本地的旧论文记录。PostgreSQL 中的 `space_energy_literatures` 表按主库 `literatures` 字段结构建立为读穿镜像，只在主库请求成功后更新。科研成长计划仍可使用 EnerTri 原有的 `publications` 外部检索记录。
+
+Railway 和 Docker 部署使用 `SPACE_ENERGY_API_BASE_URL` 指定空间能源平台的 API 根地址，默认示例为 `https://114514191981061285174648.dpdns.org`。EnerTri 后端会调用 `/api/literatures` 与 `/api/search`；访问者仍需先登录 EnerTri。论文库每 15 秒检查主库连通状态，检测到主库离线后清空页面中的目录结果。用户上传的 PDF/DOCX、逐页解析结果和证据索引继续保存在 EnerTri 的知识库中。
 
 ### 文献去重
 

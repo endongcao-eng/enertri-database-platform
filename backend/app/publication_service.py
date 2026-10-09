@@ -14,6 +14,7 @@ from sqlalchemy.orm import Session
 
 from .literature import CONTACT_EMAIL, CROSSREF_URL, OPENALEX_API_KEY, OPENALEX_URL, TIMEOUT, normalize_openalex_work, search_crossref, search_openalex
 from .models import Publication, PublicationSource
+from .space_energy_catalog import get_literature as get_space_energy_literature, search_literatures as search_space_energy_literatures, sync_search_results as sync_space_energy_search_results
 
 
 def normalize_doi(value: str | None) -> str | None:
@@ -43,10 +44,15 @@ def normalize_publication(item: dict[str, Any], source: str) -> dict[str, Any]:
     institutions = [str(v).strip() for v in item.get("institutions") or [] if str(v).strip()]
     keywords = [str(v).strip() for v in item.get("keywords") or [] if str(v).strip()]
     title = str(item.get("title") or "Untitled").strip()
+    doi = normalize_doi(item.get("doi"))
+    landing_page_url = item.get("landing_page_url") or item.get("url")
+    fulltext_url = item.get("fulltext_url") or item.get("pdf_url")
+    doi_url = f"https://doi.org/{doi}" if doi else None
     return {
         "source": source,
         "source_record_id": str(item.get("id") or item.get("source_record_id") or normalize_doi(item.get("doi")) or title),
-        "doi": normalize_doi(item.get("doi")),
+        "id": str(item.get("id") or item.get("source_record_id") or normalize_doi(item.get("doi")) or title),
+        "doi": doi,
         "title": title,
         "normalized_title": normalize_title(title),
         "authors": authors,
@@ -58,8 +64,10 @@ def normalize_publication(item: dict[str, Any], source: str) -> dict[str, Any]:
         "year": int(item["year"]) if item.get("year") else None,
         "citation_count": int(item.get("citation_count", item.get("cited_by_count", 0)) or 0),
         "open_access": item.get("open_access"),
-        "landing_page_url": item.get("landing_page_url") or item.get("url"),
-        "fulltext_url": item.get("fulltext_url") or item.get("pdf_url"),
+        "landing_page_url": landing_page_url,
+        "fulltext_url": fulltext_url,
+        "doi_url": doi_url,
+        "open_url": fulltext_url or landing_page_url or doi_url,
         "raw": item,
     }
 
@@ -251,11 +259,49 @@ class CrossrefAdapter:
         return (item or {}).get("fulltext_url") or (item or {}).get("landing_page_url")
 
 
-ADAPTERS: dict[str, PublicationAdapter] = {"openalex": OpenAlexAdapter(), "crossref": CrossrefAdapter()}
+@dataclass
+class SpaceEnergyAdapter:
+    name: str = "空间能源论文库"
+
+    def search_publications(self, query: str, *, limit: int = 20, **filters: Any) -> list[dict[str, Any]]:
+        from .space_energy_catalog import map_literature
+        result = search_space_energy_literatures(query, limit=limit, year_from=filters.get("year_from"), year_to=filters.get("year_to"))
+        rows = []
+        for raw in result.get("items") or []:
+            item = map_literature(raw)
+            mapped = normalize_publication(item, self.name)
+            mapped["catalog_source"] = "space_energy"
+            rows.append(mapped)
+        return rows
+
+    def get_publication(self, identifier: str) -> dict[str, Any] | None:
+        from .space_energy_catalog import map_literature
+        item = get_space_energy_literature(None, identifier)
+        return normalize_publication(map_literature(item), self.name) if item else None
+
+    def get_citations(self, identifier: str, *, limit: int = 20) -> list[dict[str, Any]]:
+        raise RuntimeError("空间能源平台尚未提供论文引用关系接口")
+
+    def get_references(self, identifier: str, *, limit: int = 20) -> list[dict[str, Any]]:
+        raise RuntimeError("空间能源平台尚未提供参考文献接口")
+
+    def get_author(self, identifier: str) -> dict[str, Any] | None:
+        return None
+
+    def get_fulltext_link(self, identifier: str) -> str | None:
+        item = self.get_publication(identifier)
+        return (item or {}).get("fulltext_url") or (item or {}).get("landing_page_url")
+
+
+ADAPTERS: dict[str, PublicationAdapter] = {
+    "openalex": OpenAlexAdapter(),
+    "crossref": CrossrefAdapter(),
+    "space_energy": SpaceEnergyAdapter(),
+}
 
 
 def search_publications(query: str, *, sources: list[str] | None = None, limit: int = 20, **filters: Any) -> dict[str, Any]:
-    selected = [s.lower() for s in (sources or ["openalex", "crossref"]) if s.lower() in ADAPTERS]
+    selected = [s.lower() for s in (sources or ["space_energy", "openalex", "crossref"]) if s.lower() in ADAPTERS]
     if not selected:
         raise ValueError("至少选择一个有效文献来源")
     all_items: list[dict[str, Any]] = []
@@ -277,6 +323,16 @@ def search_publications(query: str, *, sources: list[str] | None = None, limit: 
 def upsert_search_results(db: Session, result: dict[str, Any]) -> list[Publication]:
     saved: list[Publication] = []
     for item in result.get("items") or []:
+        central_record = next(
+            (source for source in item.get("source_records") or [] if source.get("source") == SpaceEnergyAdapter.name),
+            None,
+        )
+        if item.get("catalog_source") == "space_energy" or central_record:
+            mirror_item = dict(item)
+            if central_record:
+                mirror_item["id"] = central_record.get("source_record_id")
+            sync_space_energy_search_results(db, [mirror_item])
+            continue
         existing = None
         if item.get("doi"):
             existing = db.scalar(select(Publication).where(Publication.doi == item["doi"]))

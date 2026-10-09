@@ -17,6 +17,7 @@ from .models import KnowledgeBase, KnowledgeDocument, KnowledgeFigure, Knowledge
 from .paper_pipeline import answer_question
 from .permissions import has_permission
 from .publication_service import ADAPTERS, publication_to_dict, search_publications, upsert_search_results
+from .space_energy_catalog import SpaceEnergyCatalogError, connection_status as space_energy_connection_status, get_literature as get_space_energy_literature, list_literatures as list_space_energy_literatures
 from .security import current_user, require_permission
 from .task_service import create_task, link_file, submit_task, task_to_dict
 
@@ -25,7 +26,7 @@ router = APIRouter(prefix="/api", tags=["V4.2 Literature & Knowledge System"])
 
 class LiteratureSearchPayload(BaseModel):
     query: str = Field(min_length=2, max_length=500)
-    sources: list[str] = Field(default_factory=lambda: ["openalex", "crossref"])
+    sources: list[str] = Field(default_factory=lambda: ["space_energy", "openalex", "crossref"])
     year_from: int | None = None
     year_to: int | None = None
     open_access: bool | None = None
@@ -93,18 +94,29 @@ def multi_source_literature_search(payload: LiteratureSearchPayload, request: Re
 
 
 @router.get("/literature/publications")
-def list_publications(q: str | None = Query(default=None), limit: int = Query(default=100, ge=1, le=500), db: Session = Depends(get_db), _: User = Depends(current_user)):
-    stmt = select(Publication).order_by(Publication.id.desc()).limit(limit)
-    if q:
-        stmt = stmt.where(or_(Publication.title.ilike(f"%{q}%"), Publication.doi.ilike(f"%{q}%")))
-    return [publication_to_dict(db, row) for row in db.scalars(stmt).all()]
+def list_publications(q: str | None = Query(default=None), limit: int = Query(default=100, ge=1, le=200), offset: int = Query(default=0, ge=0), db: Session = Depends(get_db), _: User = Depends(current_user)):
+    """Browse the live canonical catalog; never fall back to the local publication cache."""
+    try:
+        result = list_space_energy_literatures(db, q=q, limit=limit, offset=offset)
+    except SpaceEnergyCatalogError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    return result
+
+
+@router.get("/literature/central/status")
+def central_literature_status(_: User = Depends(current_user)):
+    return space_energy_connection_status()
 
 
 @router.get("/literature/publications/{publication_id}")
-def get_publication(publication_id: int, db: Session = Depends(get_db), _: User = Depends(current_user)):
-    row = db.get(Publication, publication_id)
-    if not row: raise HTTPException(status_code=404, detail="publication not found")
-    return publication_to_dict(db, row)
+def get_publication(publication_id: str, db: Session = Depends(get_db), _: User = Depends(current_user)):
+    try:
+        item = get_space_energy_literature(db, publication_id)
+    except SpaceEnergyCatalogError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    if not item:
+        raise HTTPException(status_code=404, detail="论文主库中未找到该论文")
+    return item
 
 
 def _live_related(db: Session, publication_id: int, method: str, limit: int) -> dict[str, Any]:

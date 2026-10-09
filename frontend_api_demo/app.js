@@ -49,7 +49,10 @@ function beginNavigation(route, { replace = false } = {}) {
   State.route = route;
   syncRouteHash(route, replace);
   if (typeof Foundation !== 'undefined') clearInterval(Foundation.poller);
-  if (typeof KnowledgeUI !== 'undefined') clearInterval(KnowledgeUI.poller);
+  if (typeof KnowledgeUI !== 'undefined') {
+    clearInterval(KnowledgeUI.poller);
+    clearInterval(KnowledgeUI.centralPoller);
+  }
   return State.navigationId;
 }
 function isCurrentNavigation(id, route) {
