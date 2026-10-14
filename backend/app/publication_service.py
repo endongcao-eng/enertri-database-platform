@@ -17,6 +17,78 @@ from .models import Publication, PublicationSource
 from .space_energy_catalog import get_literature as get_space_energy_literature, search_literatures as search_space_energy_literatures, sync_search_results as sync_space_energy_search_results
 
 
+# These concept groups keep a broad bibliographic API from turning a domain
+# search into a generic web search. A result must match the requested concepts
+# and at least one engineering/energy concept before it reaches the user.
+DOMAIN_CONCEPTS: dict[str, tuple[str, ...]] = {
+    "space": ("空间", "航天", "太空", "space", "spacecraft", "orbital", "orbit", "satellite", "extraterrestrial"),
+    "energy": ("能源", "能量", "动力", "电力", "energy", "energetic", "power"),
+    "hydrogen": ("氢", "制氢", "hydrogen", "h2", "electrolysis", "电解"),
+    "fuel_cell": ("燃料电池", "燃料电池", "fuel cell", "pemfc", "sofc"),
+    "battery": ("电池", "储能", "锂电", "battery", "energy storage", "蓄电"),
+    "solar": ("太阳能", "光伏", "光热", "solar", "photovoltaic", "pv", "solar power"),
+    "thermal": ("热能", "热力", "热管理", "传热", "热防护", "thermal", "heat transfer", "thermodynamic"),
+    "propulsion": ("推进", "发动机", "推力", "propulsion", "thruster", "rocket", "engine"),
+    "fluid": ("流体", "流场", "流动", "湍流", "气动", "fluid", "flow", "fluid dynamics", "aerodynamic", "turbulence"),
+    "welding": ("焊接", "焊缝", "焊材", "welding", "weld", "joining"),
+    "materials": ("材料", "合金", "催化剂", "催化", "涂层", "复合材料", "material", "alloy", "catalyst", "coating"),
+    "nuclear": ("核能", "核反应堆", "核电", "nuclear", "reactor", "fission", "fusion"),
+    "renewable": ("可再生", "风能", "风电", "生物质", "renewable", "wind power", "biomass"),
+}
+ENERGY_DOMAIN_GROUPS = {"energy", "hydrogen", "fuel_cell", "battery", "solar", "thermal", "propulsion", "fluid", "welding", "materials", "nuclear", "renewable"}
+
+
+def _search_concepts(query: str) -> tuple[set[str], list[str]]:
+    normalized = (query or "").casefold()
+    concepts = {name for name, aliases in DOMAIN_CONCEPTS.items() if any(alias.casefold() in normalized for alias in aliases)}
+    tokens = re.findall(r"[a-z][a-z0-9+.-]*|[\u4e00-\u9fff]{1,8}", normalized)
+    return concepts, [token for token in tokens if len(token) > 1]
+
+
+def _publication_relevance(item: dict[str, Any], query: str) -> tuple[bool, float, list[str]]:
+    """Return a strict domain relevance decision and an explainable score."""
+    content = " ".join(str(item.get(key) or "") for key in ("title", "abstract", "journal", "source", "topic", "keywords", "tags")).casefold()
+    query_concepts, tokens = _search_concepts(query)
+    matched_concepts = {name for name, aliases in DOMAIN_CONCEPTS.items() if any(alias.casefold() in content for alias in aliases)}
+    matched_query_concepts = query_concepts & matched_concepts
+    free_tokens = [token for token in tokens if not any(token in aliases for aliases in DOMAIN_CONCEPTS.values())]
+    free_token_hits = sum(1 for token in free_tokens if token in content)
+    domain_hits = matched_concepts & ENERGY_DOMAIN_GROUPS
+
+    # DOI/author-like exact lookups should remain available when the caller is
+    # clearly asking for a specific identifier rather than a topic.
+    identifier_query = bool(re.fullmatch(r"(?:W\d+|10\.\d{4,9}/\S+)", query.strip(), re.I) or re.fullmatch(r"https?://(?:dx\.)?doi\.org/10\.\d{4,9}/\S+", query.strip(), re.I))
+    if identifier_query:
+        return True, 100.0, ["精确标识符检索"]
+
+    if query_concepts:
+        accepted = query_concepts.issubset(matched_concepts) and bool(domain_hits)
+    else:
+        accepted = bool(domain_hits) and (not free_tokens or free_token_hits > 0)
+    if not accepted:
+        return False, 0.0, []
+
+    title = str(item.get("title") or "").casefold()
+    title_hits = sum(1 for name in matched_query_concepts if any(alias.casefold() in title for alias in DOMAIN_CONCEPTS[name]))
+    score = min(100.0, 45.0 + min(30.0, len(matched_query_concepts) * 15.0) + min(15.0, len(domain_hits) * 3.0) + min(10.0, title_hits * 5.0))
+    reasons = [name for name in sorted(matched_query_concepts or domain_hits) if name in DOMAIN_CONCEPTS]
+    return True, round(score, 1), reasons
+
+
+def filter_relevant_publications(items: list[dict[str, Any]], query: str) -> tuple[list[dict[str, Any]], int]:
+    accepted: list[dict[str, Any]] = []
+    for item in items:
+        keep, score, reasons = _publication_relevance(item, query)
+        if not keep:
+            continue
+        row = dict(item)
+        row["relevance_score"] = score
+        row["relevance_reasons"] = reasons
+        accepted.append(row)
+    accepted.sort(key=lambda item: (-float(item.get("relevance_score") or 0), -int(item.get("citation_count") or 0)))
+    return accepted, len(items) - len(accepted)
+
+
 def normalize_doi(value: str | None) -> str | None:
     if not value:
         return None
@@ -310,14 +382,17 @@ def search_publications(query: str, *, sources: list[str] | None = None, limit: 
         adapter = ADAPTERS[key]
         try:
             rows = adapter.search_publications(query, limit=limit, **filters)
-            all_items.extend(rows)
-            source_status.append({"source": adapter.name, "ok": True, "count": len(rows)})
+            relevant_rows, filtered_count = filter_relevant_publications(rows, query)
+            all_items.extend(relevant_rows)
+            source_status.append({"source": adapter.name, "ok": True, "count": len(relevant_rows), "raw_count": len(rows), "filtered_count": filtered_count})
         except Exception as exc:
-            source_status.append({"source": adapter.name, "ok": False, "count": 0, "error": str(exc)})
+            source_status.append({"source": adapter.name, "ok": False, "count": 0, "raw_count": 0, "filtered_count": 0, "error": str(exc)})
     if not all_items and source_status and all(not s["ok"] for s in source_status):
         raise RuntimeError("所有文献来源均不可用：" + "; ".join(f"{s['source']}: {s.get('error')}" for s in source_status))
     deduped, merges = deduplicate_publications(all_items)
-    return {"query": query, "raw_count": len(all_items), "deduplicated_count": len(deduped), "duplicate_count": len(all_items) - len(deduped), "source_status": source_status, "dedup_merges": merges, "items": deduped}
+    raw_count = sum(int(status.get("raw_count") or 0) for status in source_status)
+    filtered_count = sum(int(status.get("filtered_count") or 0) for status in source_status)
+    return {"query": query, "raw_count": raw_count, "filtered_count": filtered_count, "deduplicated_count": len(deduped), "duplicate_count": len(all_items) - len(deduped), "source_status": source_status, "dedup_merges": merges, "items": deduped}
 
 
 def upsert_search_results(db: Session, result: dict[str, Any]) -> list[Publication]:

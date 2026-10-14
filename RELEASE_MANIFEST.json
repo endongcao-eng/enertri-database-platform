@@ -1,6 +1,6 @@
 {
   "name": "EnerTri 网页试用部署准备版",
-  "version": "4.7.0-webprep.18",
+  "version": "4.7.0-webprep.19",
   "api_business_version": "4.7.0",
   "date": "2026-10-14",
   "status": "preparation_candidate_not_public_ready",
@@ -18,7 +18,9 @@
     "dependency_audit": "target-environment-required",
     "railway_railpack": "configured_not_run",
     "trial_controls_tests": 10,
-    "paper_delete_integration": "not_run_dependencies_unavailable"
+    "paper_delete_integration": "not_run_dependencies_unavailable",
+    "table_extraction_helper": "passed with ruled and whitespace synthetic PDFs",
+    "relevance_filter": "passed with space-energy and unrelated-culture cases"
   },
   "prior_manifest": "review/input_release_manifest.json",
   "changes": [
@@ -39,6 +41,9 @@
     "管理员可在模板库删除模板，删除后从列表隐藏并禁止继续下载",
     "Railway 挂载 Volume 时默认将 MEDIA_DIR 指向 RAILWAY_VOLUME_MOUNT_PATH/media，避免未显式设置目录变量时上传内容落到临时磁盘",
     "论文知识库为缺失原件的上传文档返回 missing 状态并显示原文件缺失提示",
-    "个人知识库支持删除 PDF/DOCX 原件及其页、表、图、分块结构化结果，并取消进行中的入库任务"
+    "个人知识库支持删除 PDF/DOCX 原件及其页、表、图、分块结构化结果，并取消进行中的入库任务",
+    "PDF 表格提取改为 PyMuPDF 多策略识别并使用 pdfplumber 补充，按页面位置和内容去重、修正表格标题定位",
+    "论文搜索增加能源动力领域相关性过滤和相关度分数，移除只命中泛词的无关文献",
+    "文献知识库前端显示表格识别页码诊断、相关度和被过滤结果数量"
   ]
 }

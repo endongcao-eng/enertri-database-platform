@@ -301,6 +301,38 @@ def delete_knowledge_document(document_id: int, request: Request, db: Session = 
     return {"deleted": document_id, "structured_results_deleted": True, "source_file_deleted": bool(remove_path), "task_results_cleared": len(paper_tasks)}
 
 
+@router.post("/knowledge/documents/{document_id}/reprocess", status_code=202)
+def reprocess_knowledge_document(document_id: int, request: Request, db: Session = Depends(get_db), user: User = Depends(current_user)):
+    """Re-run parsing for an existing upload after the extraction pipeline is upgraded."""
+    doc = _document_access(db, document_id, user, manage=True)
+    if user.role != "system_admin" and not (has_permission(user.role, "knowledge.own.manage") or has_permission(user.role, "knowledge.enterprise.manage")):
+        raise HTTPException(status_code=403, detail="当前账号没有重新解析知识库文档的权限")
+    source = db.get(WorkspaceFile, doc.file_id) if doc.file_id else None
+    if not source or source.deleted_at is not None or not Path(source.storage_path).is_file():
+        raise HTTPException(status_code=409, detail="原始论文文件不存在，无法重新解析")
+    if Path(source.original_name).suffix.lower() not in {".pdf", ".docx"}:
+        raise HTTPException(status_code=400, detail="仅支持重新解析 PDF / DOCX 文档")
+    active = db.scalar(
+        select(WorkspaceTask).join(TaskFile, TaskFile.task_id == WorkspaceTask.id)
+        .where(TaskFile.file_id == source.id, WorkspaceTask.task_type == "paper_ingest", WorkspaceTask.status.in_(("queued", "running")))
+        .order_by(WorkspaceTask.id.desc())
+    )
+    if active:
+        return {**task_to_dict(active), "document_id": doc.id, "already_running": True}
+    doc.status = "pending"
+    source.parse_status = "pending"
+    db.commit()
+    task = create_task(
+        db, user_id=user.id, task_type="paper_ingest", title=f"重新解析论文：{doc.title}",
+        input_data={"file_id": source.id, "document_id": doc.id, "reprocess": True},
+        model_name="local-evidence-pipeline", model_version="V4.7", software_name="PyMuPDF/pdfplumber/multi-strategy-table-parser", software_version="4.7.0", timeout_seconds=3600,
+    )
+    link_file(db, task.id, source.id, "input")
+    write_audit(db, action="paper.knowledge_ingest.reprocess_queued", resource_type="knowledge_document", resource_id=doc.id, actor=user, details={"task_id": task.id, "file_id": source.id}, **_meta(request))
+    submit_task(task.id)
+    return {**task_to_dict(task), "document_id": doc.id, "already_running": False}
+
+
 @router.get("/knowledge/documents/{document_id}")
 def get_document(document_id: int, db: Session = Depends(get_db), user: User = Depends(current_user)):
     doc = _document_access(db, document_id, user)

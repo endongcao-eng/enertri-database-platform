@@ -30,6 +30,14 @@ TABLE_CAPTION_RE = re.compile(r"^(?:Table|表)\s*([A-Za-z0-9一二三四五六�
 FIGURE_CAPTION_RE = re.compile(r"^(?:Fig(?:ure)?\.?|图)\s*([A-Za-z0-9一二三四五六七八九十.-]+)\s*[:：.-]?\s*(.*)$", re.I)
 
 
+TABLE_EXTRACTION_STRATEGIES: tuple[tuple[str, dict[str, Any]], ...] = (
+    ("pymupdf-lines", {"vertical_strategy": "lines", "horizontal_strategy": "lines"}),
+    ("pymupdf-text", {"vertical_strategy": "text", "horizontal_strategy": "text", "min_words_vertical": 2, "min_words_horizontal": 1}),
+    ("pymupdf-mixed", {"vertical_strategy": "lines", "horizontal_strategy": "text", "min_words_horizontal": 1}),
+)
+TABLE_METHOD_PRIORITY = {"pymupdf-lines": 0, "pdfplumber-lines": 1, "pymupdf-mixed": 2, "pdfplumber-text": 3, "pymupdf-text": 4}
+
+
 def _tokenize(text: str) -> list[str]:
     return re.findall(r"[A-Za-z][A-Za-z0-9_.+-]*|[\u4e00-\u9fff]{1,4}|\d+(?:\.\d+)?", text.casefold())
 
@@ -96,6 +104,193 @@ def _markdown_table(rows: list[list[Any]]) -> str:
     cleaned = [row + [""] * (width - len(row)) for row in cleaned]
     header = cleaned[0]
     return "| " + " | ".join(header) + " |\n| " + " | ".join(["---"] * width) + " |\n" + "\n".join("| " + " | ".join(row) + " |" for row in cleaned[1:])
+
+
+def _clean_table_rows(raw_rows: Any) -> list[list[str]]:
+    """Normalize cells from different PDF table engines into stable rectangular rows."""
+    if not raw_rows:
+        return []
+    rows: list[list[str]] = []
+    for raw_row in raw_rows:
+        if raw_row is None:
+            continue
+        if not isinstance(raw_row, (list, tuple)):
+            raw_row = [raw_row]
+        row = [re.sub(r"\s+", " ", str(cell or "").replace("\u00a0", " ")).strip() for cell in raw_row]
+        if any(row):
+            row_text = " ".join(cell for cell in row if cell)
+            # Text based detection can include the caption as its first row.
+            if TABLE_CAPTION_RE.match(row_text) or re.match(r"^able\s*\d", row_text, re.I):
+                continue
+            rows.append(row)
+    width = max((len(row) for row in rows), default=0)
+    if width < 2 or len(rows) < 2:
+        return []
+    rows = [row + [""] * (width - len(row)) for row in rows]
+    # Remove columns that the extractor created but that contain no information.
+    keep_columns = [i for i in range(width) if any(row[i] for row in rows)]
+    rows = [[row[i] for i in keep_columns] for row in rows]
+    if len(rows[0]) < 2 or len(rows) < 2:
+        return []
+    # A repeated header is common when a table is split across PDF text blocks.
+    compact = lambda row: "|".join(cell.casefold() for cell in row)
+    cleaned: list[list[str]] = []
+    previous = None
+    for row in rows:
+        marker = compact(row)
+        if marker and marker == previous and len(cleaned) > 1:
+            continue
+        cleaned.append(row)
+        previous = marker
+    populated = sum(bool(cell) for row in cleaned for cell in row)
+    if populated < max(4, len(cleaned) * 2) or populated / max(1, len(cleaned) * len(cleaned[0])) < 0.28:
+        return []
+    return cleaned
+
+
+def _table_quality(rows: list[list[str]]) -> float:
+    if not rows:
+        return 0.0
+    cells = len(rows) * len(rows[0])
+    populated = sum(bool(cell) for row in rows for cell in row)
+    distinct_rows = len({"|".join(row).casefold() for row in rows})
+    return round(min(1.0, (populated / max(1, cells)) * 0.7 + (distinct_rows / len(rows)) * 0.3), 3)
+
+
+def _table_fingerprint(rows: list[list[str]]) -> str:
+    return "\n".join("\t".join(cell.casefold() for cell in row) for row in rows)
+
+
+def _bbox_iou(a: tuple[float, float, float, float] | None, b: tuple[float, float, float, float] | None) -> float:
+    if not a or not b:
+        return 0.0
+    left, top = max(a[0], b[0]), max(a[1], b[1])
+    right, bottom = min(a[2], b[2]), min(a[3], b[3])
+    intersection = max(0.0, right - left) * max(0.0, bottom - top)
+    if not intersection:
+        return 0.0
+    area_a = max(0.0, a[2] - a[0]) * max(0.0, a[3] - a[1])
+    area_b = max(0.0, b[2] - b[0]) * max(0.0, b[3] - b[1])
+    return intersection / max(1.0, area_a + area_b - intersection)
+
+
+def _bbox_overlap_ratio(a: tuple[float, float, float, float] | None, b: tuple[float, float, float, float] | None) -> float:
+    """Measure overlap against the smaller box, catching a text candidate that contains a ruled table."""
+    if not a or not b:
+        return 0.0
+    left, top = max(a[0], b[0]), max(a[1], b[1])
+    right, bottom = min(a[2], b[2]), min(a[3], b[3])
+    intersection = max(0.0, right - left) * max(0.0, bottom - top)
+    area_a = max(0.0, a[2] - a[0]) * max(0.0, a[3] - a[1])
+    area_b = max(0.0, b[2] - b[0]) * max(0.0, b[3] - b[1])
+    return intersection / max(1.0, min(area_a, area_b))
+
+
+def _caption_positions(pdf_page: Any) -> list[dict[str, Any]]:
+    """Read caption text blocks with their vertical position for correct table pairing."""
+    found: list[dict[str, Any]] = []
+    try:
+        blocks = pdf_page.get_text("blocks") or []
+    except Exception:
+        blocks = []
+    for block in blocks:
+        if len(block) < 5:
+            continue
+        top = float(block[1])
+        for line in str(block[4] or "").splitlines():
+            value = re.sub(r"\s+", " ", line).strip()
+            match = TABLE_CAPTION_RE.match(value)
+            if match:
+                found.append({"top": top, "number": match.group(1), "title": (match.group(2) or "").strip()})
+            top += 10.0
+    return sorted(found, key=lambda item: item["top"])
+
+
+def _extract_pdf_tables(pdf: Any, pages: list[dict[str, Any]], source_path: Path | None = None, pdfplumber_module: Any | None = None) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    """Extract tables with several layout strategies, then de-duplicate by location/content.
+
+    Scientific PDFs use both ruled tables and whitespace-aligned tables. A single
+    extractor strategy misses one of those families, which was the reason four
+    source tables could become two stored results.
+    """
+    candidates: list[dict[str, Any]] = []
+    strategy_counts: Counter[str] = Counter()
+    for page_number in range(1, pdf.page_count + 1):
+        page = pdf.load_page(page_number - 1)
+        for method, settings in TABLE_EXTRACTION_STRATEGIES:
+            try:
+                finder = page.find_tables(**settings)
+                for table in getattr(finder, "tables", []) or []:
+                    rows = _clean_table_rows(table.extract())
+                    if not rows:
+                        continue
+                    bbox = tuple(float(value) for value in (getattr(table, "bbox", None) or ()))
+                    candidates.append({"page_number": page_number, "rows": rows, "bbox": bbox if len(bbox) == 4 else None, "method": method, "quality": _table_quality(rows)})
+                    strategy_counts[method] += 1
+            except Exception:
+                continue
+
+    # pdfplumber is a useful fallback for PDFs where PyMuPDF cannot infer line geometry.
+    if pdfplumber_module is not None and source_path is not None:
+        try:
+            with pdfplumber_module.open(str(source_path)) as plumber:
+                for page_number, plumber_page in enumerate(plumber.pages, start=1):
+                    for method, settings in (
+                        ("pdfplumber-lines", {"vertical_strategy": "lines", "horizontal_strategy": "lines"}),
+                        ("pdfplumber-text", {"vertical_strategy": "text", "horizontal_strategy": "text", "min_words_vertical": 2, "min_words_horizontal": 1}),
+                    ):
+                        try:
+                            for table in plumber_page.find_tables(table_settings=settings) or []:
+                                rows = _clean_table_rows(table.extract())
+                                if not rows:
+                                    continue
+                                bbox = tuple(float(value) for value in (getattr(table, "bbox", None) or ()))
+                                candidates.append({"page_number": page_number, "rows": rows, "bbox": bbox if len(bbox) == 4 else None, "method": method, "quality": _table_quality(rows)})
+                                strategy_counts[method] += 1
+                        except Exception:
+                            continue
+        except Exception:
+            pass
+
+    selected: list[dict[str, Any]] = []
+    for candidate in sorted(candidates, key=lambda item: (item["page_number"], TABLE_METHOD_PRIORITY.get(item["method"], 9), (item["bbox"] or (0, 0, 0, 0))[1], -item["quality"])):
+        duplicate = False
+        for existing in selected:
+            if existing["page_number"] != candidate["page_number"]:
+                continue
+            same_content = _table_fingerprint(existing["rows"]) == _table_fingerprint(candidate["rows"])
+            same_location = _bbox_iou(existing.get("bbox"), candidate.get("bbox")) >= 0.45 or _bbox_overlap_ratio(existing.get("bbox"), candidate.get("bbox")) >= 0.55
+            if same_content or same_location:
+                duplicate = True
+                if TABLE_METHOD_PRIORITY.get(candidate["method"], 9) < TABLE_METHOD_PRIORITY.get(existing["method"], 9) or (candidate["quality"] > existing["quality"] and TABLE_METHOD_PRIORITY.get(candidate["method"], 9) == TABLE_METHOD_PRIORITY.get(existing["method"], 9)):
+                    existing.update(candidate)
+                break
+        if not duplicate:
+            selected.append(candidate)
+
+    captions_by_page: dict[int, list[dict[str, Any]]] = {}
+    for page_number in {item["page_number"] for item in selected}:
+        captions_by_page[page_number] = _caption_positions(pdf.load_page(page_number - 1))
+    output: list[dict[str, Any]] = []
+    for page_number in sorted({item["page_number"] for item in selected}):
+        page_tables = [item for item in selected if item["page_number"] == page_number]
+        page_tables.sort(key=lambda item: (item.get("bbox") or (0, 0, 0, 0))[1])
+        captions = captions_by_page.get(page_number, [])
+        used_caption_indexes: set[int] = set()
+        for ordinal, item in enumerate(page_tables, start=1):
+            caption = None
+            table_top = (item.get("bbox") or (0, 0, 0, 0))[1]
+            eligible = [(index, value) for index, value in enumerate(captions) if index not in used_caption_indexes and value["top"] <= table_top + 32]
+            if eligible:
+                index, caption = min(eligible, key=lambda pair: abs(table_top - pair[1]["top"]))
+                used_caption_indexes.add(index)
+            elif ordinal <= len(captions):
+                caption = captions[ordinal - 1]
+            number = caption["number"] if caption else str(len(output) + 1)
+            title = caption["title"] if caption else ""
+            output.append({"table_number": f"Table {number}", "page_number": page_number, "title": title, "data": item["rows"], "markdown": _markdown_table(item["rows"]), "extraction_method": item["method"], "extraction_quality": item["quality"]})
+    diagnostics = {"candidate_count": len(candidates), "table_count": len(output), "strategy_counts": dict(strategy_counts), "pages_with_tables": sorted({item["page_number"] for item in output})}
+    return output[:100], diagnostics
 
 
 def _captions(text: str, regex: re.Pattern[str]) -> list[tuple[str, str]]:
@@ -265,21 +460,8 @@ def ingest_pdf_document(
     sections = _section_map(pages)
     emit(47, "识别标题与章节", f"识别标题、摘要与 {len(sections)} 个章节区间")
 
-    tables: list[dict[str, Any]] = []
-    try:
-        with pdfplumber.open(str(path)) as plumber:
-            table_idx = 1
-            for page_number, page in enumerate(plumber.pages, start=1):
-                captions = _captions(pages[page_number - 1]["text"], TABLE_CAPTION_RE)
-                for raw in page.extract_tables() or []:
-                    if not raw or len(raw) < 2: continue
-                    cap_no, cap_title = captions[min(len(captions) - 1, 0)] if captions else (str(table_idx), "")
-                    tables.append({"table_number": f"Table {cap_no}", "page_number": page_number, "title": cap_title, "data": raw, "markdown": _markdown_table(raw)})
-                    table_idx += 1
-                    if len(tables) >= 100: break
-    except Exception:
-        tables = []
-    emit(58, "表格提取", f"提取到 {len(tables)} 个表格")
+    tables, table_diagnostics = _extract_pdf_tables(pdf, pages, path, pdfplumber)
+    emit(58, "表格提取", f"使用多种版式策略提取到 {len(tables)} 个表格")
 
     figures: list[dict[str, Any]] = []
     figure_dir = path.parent / f"doc_{document.id}_figures"
@@ -327,11 +509,11 @@ def ingest_pdf_document(
     document.page_count = len(pages)
     document.status = "ready"
     document.structure_json = json.dumps(structured, ensure_ascii=False, default=str)
-    document.metadata_json = json.dumps({"ocr_pages": ocr_pages, "references": refs, "text_layer_pages": len(pages) - ocr_pages}, ensure_ascii=False, default=str)
+    document.metadata_json = json.dumps({"ocr_pages": ocr_pages, "references": refs, "text_layer_pages": len(pages) - ocr_pages, "table_extraction": table_diagnostics}, ensure_ascii=False, default=str)
     file_record.parse_status = "parsed"
     db.commit()
     emit(92, "向量化与结构化阅读", f"完成 {len(chunks)} 个本地向量和证据索引")
-    return {"document_id": document.id, "title": title, "page_count": len(pages), "ocr_pages": ocr_pages, "sections": sections, "tables": [{k: v for k, v in t.items() if k != "data"} for t in tables], "figures": figures[:30], "reference_count": len(refs), "chunk_count": len(chunks), "structured_reading": structured}
+    return {"document_id": document.id, "title": title, "page_count": len(pages), "ocr_pages": ocr_pages, "sections": sections, "tables": [{k: v for k, v in t.items() if k != "data"} for t in tables], "table_extraction": table_diagnostics, "figures": figures[:30], "reference_count": len(refs), "chunk_count": len(chunks), "structured_reading": structured}
 
 
 def ingest_docx_document(
