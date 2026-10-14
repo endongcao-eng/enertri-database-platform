@@ -36,7 +36,9 @@ connect_args = {"check_same_thread": False} if DATABASE_URL.startswith("sqlite")
 engine = create_engine(DATABASE_URL, connect_args=connect_args, future=True, pool_pre_ping=True)
 SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False, future=True)
 
-MEDIA_DIR = Path(os.getenv("MEDIA_DIR", "./media")).resolve()
+_railway_volume_path = os.getenv("RAILWAY_VOLUME_MOUNT_PATH", "").strip()
+_default_media_dir = str(Path(_railway_volume_path) / "media") if _railway_volume_path else "./media"
+MEDIA_DIR = Path(os.getenv("MEDIA_DIR", _default_media_dir)).resolve()
 MEDIA_DIR.mkdir(parents=True, exist_ok=True)
 (MEDIA_DIR / "videos").mkdir(parents=True, exist_ok=True)
 ARTIFACT_DIR = Path(os.getenv("ARTIFACT_DIR", str(MEDIA_DIR / "artifacts"))).resolve()

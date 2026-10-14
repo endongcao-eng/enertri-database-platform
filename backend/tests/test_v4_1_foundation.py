@@ -26,7 +26,7 @@ os.environ.update({
 from fastapi.testclient import TestClient  # noqa: E402
 from app.main import app  # noqa: E402
 from app.database import SessionLocal  # noqa: E402
-from app.models import User, WorkspaceFile, WorkspaceTask  # noqa: E402
+from app.models import KnowledgeChunk, KnowledgeDocument, KnowledgeFigure, KnowledgePage, KnowledgeTable, User, WorkspaceFile, WorkspaceTask  # noqa: E402
 from app.security import hash_password  # noqa: E402
 from app.task_queue import claim_next_task, recover_expired_tasks  # noqa: E402
 from app.task_service import create_task  # noqa: E402
@@ -180,6 +180,47 @@ class V41FoundationTest(unittest.TestCase):
         self.assertTrue(any(e["page"] == 2 for e in qa2.json()["evidence"]))
         self.assertEqual(qa2.json()["evidence"][0]["section"], "Discussion")
 
+
+    def test_paper_delete_removes_structured_data_and_reports_missing_source(self):
+        bases = self.client.get("/api/knowledge/bases", headers=self.student_headers).json()
+        personal = next(row for row in bases if row["scope_type"] == "personal")
+        uploaded = self.client.post(
+            "/api/knowledge/documents/upload", headers=self.student_headers,
+            files={"file": ("delete-demo.pdf", _demo_pdf_bytes() + b"\n% delete-test-unique", "application/pdf")},
+            data={"knowledge_base_id": str(personal["id"]), "confidentiality": "internal", "allow_external_ai": "false"},
+        )
+        self.assertEqual(uploaded.status_code, 202, uploaded.text)
+        task_id = uploaded.json()["id"]
+        self.wait_task(task_id, timeout=20.0)
+        document_id = uploaded.json()["document_id"]
+        with SessionLocal() as db:
+            document = db.get(KnowledgeDocument, document_id)
+            source = db.get(WorkspaceFile, document.file_id)
+            source_path = Path(source.storage_path)
+            self.assertGreater(db.query(KnowledgePage).filter_by(document_id=document_id).count(), 0)
+            self.assertGreater(db.query(KnowledgeChunk).filter_by(document_id=document_id).count(), 0)
+            self.assertGreater(db.query(KnowledgeTable).filter_by(document_id=document_id).count(), 0)
+            source_path.unlink(missing_ok=True)
+
+        rows = self.client.get("/api/knowledge/documents", headers=self.student_headers).json()
+        row = next(item for item in rows if item["id"] == document_id)
+        self.assertEqual(row["status"], "missing")
+        self.assertEqual(row["parse_status"], "ready")
+        self.assertFalse(row["source_exists"])
+        self.assertTrue(row["source_missing"])
+
+        deleted = self.client.delete(f"/api/knowledge/documents/{document_id}", headers=self.student_headers)
+        self.assertEqual(deleted.status_code, 200, deleted.text)
+        self.assertTrue(deleted.json()["structured_results_deleted"])
+        self.assertEqual(deleted.json()["task_results_cleared"], 1)
+        self.assertEqual(self.client.get(f"/api/knowledge/documents/{document_id}", headers=self.student_headers).status_code, 404)
+        with SessionLocal() as db:
+            self.assertIsNone(db.get(KnowledgeDocument, document_id))
+            self.assertEqual(db.query(KnowledgePage).filter_by(document_id=document_id).count(), 0)
+            self.assertEqual(db.query(KnowledgeChunk).filter_by(document_id=document_id).count(), 0)
+            self.assertEqual(db.query(KnowledgeTable).filter_by(document_id=document_id).count(), 0)
+            self.assertEqual(db.query(KnowledgeFigure).filter_by(document_id=document_id).count(), 0)
+            self.assertIsNone(db.get(WorkspaceTask, task_id).result_json)
 
     def test_v42_blocker_permissions_and_system_admin_protection(self):
         users = self.client.get("/api/admin/users", headers=self.admin_headers).json()

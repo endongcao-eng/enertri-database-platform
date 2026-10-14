@@ -9,6 +9,8 @@
 - 一个 Railway Volume：挂载到 `/data`，保存上传文件、视频、任务产物和仿真工作目录。
 - FastAPI 直接提供 `frontend_api_demo` 静态网页；不再依赖 Caddy。
 
+PostgreSQL 只保存文件记录和结构化数据，PDF/DOCX 原件实际保存在文件系统。Railway 部署容器自身的文件系统会随部署更换；必须让下面的媒体目录落在挂载到 Web service 的 Volume 中。
+
 当前单服务设计是为了让 Web 和 Worker 共享本地文件卷，适合约 100 人试用。不要开启多个副本；如果需要横向扩展，应先把文件和产物迁移到 S3/R2/Railway Storage Bucket，再拆分 Worker service。
 
 ## Railway 控制台创建顺序
@@ -82,6 +84,10 @@ GET https://<域名>/api/ready
 - Worker 已启动并能连接 PostgreSQL；
 - 上传目录位于 `/data/media`；
 - 没有 SQLite fallback、SECRET_KEY 或数据库连接错误。
+
+可在 Railway Variables 中检查以上四个目录变量，并确认服务的 Volume mount path 是 `/data`。Railway 自动提供 `RAILWAY_VOLUME_MOUNT_PATH`；若未单独设置 `MEDIA_DIR`，EnerTri 会将其设为该挂载路径下的 `/media`。论文上传目录为 `FILE_STORE_DIR`，默认在 `MEDIA_DIR/files`；如果手动配置了目录变量，必须确保最终路径位于 Volume 挂载目录中。Railway 自动提供的 `RAILWAY_VOLUME_MOUNT_PATH` 应显示为 `/data`。也可用 Railway CLI 的 `railway volume browse /media/files` 查看 Volume 内文件。
+
+注意：Volume 只对挂载它的 service 可见。本项目把 Web 与论文解析 Worker 放在同一个 service，确保二者能访问相同的 `/data/media`。此前已经因未挂载 Volume 丢失的原文件不会因新增 Volume 自动恢复；需从原备份恢复，或在界面删除已缺失的论文记录。
 
 ## 重要运维规则
 

@@ -107,7 +107,7 @@ function renderKnowledgeSystem() {
   const displayedPubs = State.literatureSearchResult?.items || pubs;
   const sourceCount = State.centralLiteratureStatus?.available ? 3 : 2;
   const mergedCount = displayedPubs.filter(p => (p.sources || []).length > 1).length;
-  const readyDocs = docs.filter(d => d.status === 'ready').length;
+  const readyDocs = docs.filter(d => d.status === 'ready' && d.source_exists).length;
   const evidenceCount = (doc?.pages || []).length + (doc?.tables || []).length + (doc?.figures || []).length;
   const search = State.literatureSearchResult;
   const selectedKb = bases.find(k => Number(k.id) === Number(State.selectedKnowledgeBaseId)) || bases[0];
@@ -117,7 +117,7 @@ function renderKnowledgeSystem() {
     <div class="pub-meta"><span>DOI ${escapeHtml(p.doi||'—')}</span><span>引用 ${p.citation_count||0}</span>${(p.sources||[]).length>1?'<strong class="dedup-pill">跨源已合并</strong>':''}</div>
     <div class="inline-actions publication-actions">${p.open_url?`<a class="btn small primary" href="${escapeHtml(p.open_url)}" target="_blank" rel="noopener noreferrer">打开论文地址</a>`:''}${p.fulltext_url&&p.fulltext_url!==p.open_url?`<a class="btn small secondary" href="${escapeHtml(p.fulltext_url)}" target="_blank" rel="noopener noreferrer">打开全文</a>`:''}${p.doi_url?`<a class="btn small ghost" href="${escapeHtml(p.doi_url)}" target="_blank" rel="noopener noreferrer">DOI</a>`:''}</div>
   </article>`).join('');
-  const docRows = docs.map(d => `<button class="doc-row ${Number(d.id)===Number(State.selectedKnowledgeDocumentId)?'active':''} js-knowledge-doc" data-id="${d.id}"><span><strong>${escapeHtml(d.title)}</strong><small>${d.page_count||0} 页 · ${escapeHtml(d.status)}</small></span><span class="badge ${d.status==='ready'?'success':d.status==='failed'?'danger':'warning'}">${escapeHtml(d.status)}</span></button>`).join('');
+  const docRows = docs.map(d => `<div class="doc-row ${Number(d.id)===Number(State.selectedKnowledgeDocumentId)?'active':''}"><button class="doc-row-select js-knowledge-doc" data-id="${d.id}"><span><strong>${escapeHtml(d.title)}</strong><small>${d.page_count||0} 页 · ${d.source_missing===true?'原文件缺失':escapeHtml(d.status)}</small></span><span class="badge ${d.source_missing===true?'danger':d.status==='ready'?'success':d.status==='failed'?'danger':'warning'}">${d.source_missing===true?'原文件缺失':escapeHtml(d.status)}</span></button>${d.deletable?`<button class="doc-delete js-delete-knowledge-doc" data-id="${d.id}" title="删除文档及其结构化结果" aria-label="删除 ${escapeHtml(d.title)}">删除</button>`:''}</div>`).join('');
   const facts = (doc?.structure?.key_facts || []).map(f => `<button class="fact-card js-focus-page" data-page="${f.page}"><span>${escapeHtml(f.type.replaceAll('_',' '))}</span><strong>${escapeHtml(f.value)} ${escapeHtml(f.unit||'')}</strong><small>第 ${f.page} 页 · ${escapeHtml(f.evidence||'')}</small></button>`).join('');
   const sections = (doc?.structure?.sections || []).map(s=>`<button class="section-chip js-focus-page" data-page="${s.page_start}">${escapeHtml(s.title)} <span>P${s.page_start}${s.page_end!==s.page_start?`–${s.page_end}`:''}</span></button>`).join('');
   const tables = (doc?.tables || []).map(t => `<div class="table-result"><div class="section-head"><div><h3>${escapeHtml(t.table_number)} ${escapeHtml(t.title||'')}</h3><p class="muted">原文第 ${t.page_number} 页</p></div><button class="btn small secondary js-focus-page" data-page="${t.page_number}">定位原文</button></div>${renderExtractedTable(t)}</div>`).join('');
@@ -129,8 +129,8 @@ function renderKnowledgeSystem() {
   const qaBlock = qa
     ? `<div class="qa-answer"><div><span class="badge ${qa.confidence==='high'?'success':'warning'}">${escapeHtml(qa.confidence)} confidence</span><h3>答案</h3><p>${escapeHtml(qa.answer)}</p></div><div class="qa-evidence-grid">${qaEvidence}</div></div>`
     : '<div class="empty-box compact-empty">输入问题后，系统会返回答案、页码、章节与原文片段。</div>';
-  const documentMain = doc ? `<section class="card panel document-overview"><div class="section-head"><div><span class="eyebrow">03 · Evidence-first Paper Reading</span><h2>${escapeHtml(doc.title)}</h2><p class="muted">${doc.page_count} 页 · ${escapeHtml(doc.status)}</p></div><span class="badge success">${doc.status==='ready'?'结构化完成':escapeHtml(doc.status)}</span></div><div class="section-strip">${sections}</div>${facts?`<div class="facts-grid">${facts}</div>`:''}</section>
-      <section class="paper-split"><div class="card pdf-panel"><div class="section-head"><div><h2>${isPdf?'PDF 原文':'Word 原文'}</h2><p class="muted">${isPdf?`当前定位：第 ${State.focusPage||1} 页`:'DOCX 已完成结构化；页码按文档显式分页符记录'}</p></div><div class="page-nav">${isPdf?`<button class="btn small secondary" id="prevPdfPage">上一页</button><span>P${State.focusPage||1} / ${doc.page_count}</span><button class="btn small secondary" id="nextPdfPage">下一页</button>`:''}</div></div>${pdfSrc?`<iframe id="paperPdfFrame" class="paper-pdf-frame" src="${escapeHtml(pdfSrc)}"></iframe>`:`<div class="empty-box">${isPdf?'无法加载 PDF 原文预览':'Word 原文不在浏览器内嵌渲染，点击下方按钮打开原文件。'}${doc.file_id?'<br><button class="btn small primary" id="openOriginalDocument">打开原文件</button>':''}</div>`}</div>
+  const documentMain = doc ? `<section class="card panel document-overview"><div class="section-head"><div><span class="eyebrow">03 · Evidence-first Paper Reading</span><h2>${escapeHtml(doc.title)}</h2><p class="muted">${doc.page_count} 页 · ${escapeHtml(doc.status)}</p></div><span class="badge ${doc.source_missing===true?'danger':'success'}">${doc.source_missing===true?'原文件缺失':doc.status==='ready'?'结构化完成':escapeHtml(doc.status)}</span></div>${doc.source_missing===true?'<div class="notice error">原始文件当前无法访问。下面的结构化内容可能仍保留；如无需保留，请使用左侧“删除”清理原文件记录和全部解析结果。</div>':''}<div class="section-strip">${sections}</div>${facts?`<div class="facts-grid">${facts}</div>`:''}</section>
+      <section class="paper-split"><div class="card pdf-panel"><div class="section-head"><div><h2>${isPdf?'PDF 原文':'Word 原文'}</h2><p class="muted">${isPdf?`当前定位：第 ${State.focusPage||1} 页`:'DOCX 已完成结构化；页码按文档显式分页符记录'}</p></div><div class="page-nav">${isPdf?`<button class="btn small secondary" id="prevPdfPage">上一页</button><span>P${State.focusPage||1} / ${doc.page_count}</span><button class="btn small secondary" id="nextPdfPage">下一页</button>`:''}</div></div>${pdfSrc?`<iframe id="paperPdfFrame" class="paper-pdf-frame" src="${escapeHtml(pdfSrc)}"></iframe>`:`<div class="empty-box">${isPdf?'无法加载 PDF 原文预览':'Word 原文不在浏览器内嵌渲染，点击下方按钮打开原文件。'}${doc.file_id&&doc.source_exists?'<br><button class="btn small primary" id="openOriginalDocument">打开原文件</button>':''}</div>`}</div>
       <div class="card panel evidence-panel"><div class="section-head"><div><h2>结构化结果</h2><p class="muted">点击任意证据直接定位左侧原文页</p></div></div><div class="page-evidence-list">${pageEvidence}</div></div></section>
       <section class="card panel"><div class="section-head"><div><span class="eyebrow">04 · Table Extraction</span><h2>表格数据提取</h2></div><span class="badge primary">${doc.tables?.length||0} 个表格</span></div>${tables || '<div class="empty-box">当前论文未检测到可结构化表格。</div>'}</section>
       <section class="card panel paper-qa"><div class="section-head"><div><span class="eyebrow">05 · Paper QA</span><h2>基于论文的原文问答</h2><p class="muted">答案仅来自已解析证据；每条证据可点击回到原文页。</p></div></div><div class="qa-row"><input class="input" id="paperQaQuestion" value="${escapeHtml(State.paperQaQuestion||'激光功率是多少？')}" placeholder="例如：最高抗拉强度对应哪组参数？"><button class="btn primary" id="paperQaBtn">基于原文回答</button></div>${qaBlock}</section>`
@@ -182,6 +182,32 @@ function bindKnowledgeSystem() {
     renderKnowledgeSystem();
   });
   document.querySelectorAll('.js-knowledge-doc').forEach(b => b.onclick = async () => { State.paperQaResult=null; await loadKnowledgeDocument(b.dataset.id); });
+  document.querySelectorAll('.js-delete-knowledge-doc').forEach(b => b.onclick = async event => {
+    event.stopPropagation();
+    const id = Number(b.dataset.id);
+    const item = (State.knowledgeDocuments || []).find(d => Number(d.id) === id);
+    if (!item || !window.confirm(`确定删除“${item.title}”吗？其 PDF / DOCX 原文件及页、表格、图表、文本片段等结构化结果会一并删除，无法恢复。`)) return;
+    b.disabled = true;
+    try {
+      await api(`/knowledge/documents/${id}`, { method: 'DELETE' });
+      if (Number(State.selectedKnowledgeDocumentId) === id) {
+        State.selectedKnowledgeDocumentId = null;
+        State.knowledgeDocument = null;
+        State.paperQaResult = null;
+        State.knowledgePdfUrl = null;
+        if (KnowledgeUI.pdfObjectUrl) URL.revokeObjectURL(KnowledgeUI.pdfObjectUrl);
+        KnowledgeUI.pdfObjectUrl = null;
+      }
+      State.knowledgeDocuments = await api(`/knowledge/documents?knowledge_base_id=${State.selectedKnowledgeBaseId}`);
+      State.selectedKnowledgeDocumentId ||= State.knowledgeDocuments[0]?.id || null;
+      if (State.selectedKnowledgeDocumentId) await loadKnowledgeDocument(State.selectedKnowledgeDocumentId, false);
+      State.knowledgeError = '';
+      renderKnowledgeSystem();
+    } catch (e) {
+      State.knowledgeError = e.message || '删除文档失败';
+      renderKnowledgeSystem();
+    }
+  });
   document.querySelectorAll('.js-focus-page').forEach(b => b.onclick = () => focusKnowledgePage(b.dataset.page));
   document.getElementById('openOriginalDocument')?.addEventListener('click', async () => {
     try {

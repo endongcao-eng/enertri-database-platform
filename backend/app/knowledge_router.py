@@ -1,19 +1,20 @@
 from __future__ import annotations
 
 import json
+import shutil
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Request, UploadFile
 from pydantic import BaseModel, Field
-from sqlalchemy import or_, select
+from sqlalchemy import delete, or_, select
 from sqlalchemy.orm import Session
 
 from .audit import write_audit
 from .database import get_db
-from .file_service import InvalidStoredUpload, store_upload
-from .models import KnowledgeBase, KnowledgeDocument, KnowledgeFigure, KnowledgePage, KnowledgeTable, Publication, PublicationSource, TaskEvent, User, WorkspaceFile, WorkspaceTask
+from .file_service import FILE_STORE_DIR, InvalidStoredUpload, store_upload
+from .models import KnowledgeBase, KnowledgeChunk, KnowledgeDocument, KnowledgeFigure, KnowledgePage, KnowledgeTable, Publication, PublicationSource, TaskEvent, TaskFile, User, WorkspaceFile, WorkspaceTask
 from .paper_pipeline import answer_question
 from .permissions import has_permission
 from .publication_service import ADAPTERS, publication_to_dict, search_publications, upsert_search_results
@@ -221,20 +222,98 @@ def list_documents(knowledge_base_id: int | None = None, db: Session = Depends(g
         try: _document_access(db, doc.id, user)
         except HTTPException: continue
         source = db.get(WorkspaceFile, doc.file_id) if doc.file_id else None
-        rows.append({"id": doc.id, "title": doc.title, "status": doc.status, "page_count": doc.page_count, "knowledge_base_id": doc.knowledge_base_id, "file_id": doc.file_id, "file_type": Path(source.original_name).suffix.lower() if source else None, "created_at": doc.created_at})
+        source_path = Path(source.storage_path) if source and source.deleted_at is None else None
+        source_exists = bool(source_path and source_path.is_file())
+        source_missing = doc.source_type == "upload" and not source_exists
+        file_type = Path(source.original_name).suffix.lower() if source else Path(doc.title).suffix.lower()
+        rows.append({"id": doc.id, "title": doc.title, "status": "missing" if source_missing else doc.status, "parse_status": doc.status, "source_type": doc.source_type, "deletable": doc.source_type == "upload" and file_type in {".pdf", ".docx"}, "source_exists": source_exists, "source_missing": source_missing, "page_count": doc.page_count, "knowledge_base_id": doc.knowledge_base_id, "file_id": doc.file_id, "file_type": file_type, "created_at": doc.created_at})
     return rows
+
+
+@router.delete("/knowledge/documents/{document_id}")
+def delete_knowledge_document(document_id: int, request: Request, db: Session = Depends(get_db), user: User = Depends(current_user)):
+    doc = _document_access(db, document_id, user, manage=True)
+    if user.role != "system_admin" and not (has_permission(user.role, "knowledge.own.manage") or has_permission(user.role, "knowledge.enterprise.manage")):
+        raise HTTPException(status_code=403, detail="当前账号没有删除知识库文档的权限")
+    if doc.source_type != "upload":
+        raise HTTPException(status_code=400, detail="仅支持删除个人知识库中上传的 PDF / DOCX 文档")
+    source = db.get(WorkspaceFile, doc.file_id) if doc.file_id else None
+    suffix = Path(source.original_name).suffix.lower() if source else Path(doc.title).suffix.lower()
+    if suffix not in {".pdf", ".docx"}:
+        raise HTTPException(status_code=400, detail="仅支持删除 PDF / DOCX 文档")
+
+    # Stop a queued/running ingestion job before removing its source and extracted data.
+    source_id = source.id if source else None
+    paper_tasks = []
+    active_tasks = []
+    if source_id:
+        paper_tasks = db.scalars(
+            select(WorkspaceTask).join(TaskFile, TaskFile.task_id == WorkspaceTask.id)
+            .where(TaskFile.file_id == source_id, WorkspaceTask.task_type == "paper_ingest")
+        ).all()
+        active_tasks = [task for task in paper_tasks if task.status in {"queued", "running"}]
+        now = datetime.now(timezone.utc)
+        for task in paper_tasks:
+            task.result_json = None
+        for task in active_tasks:
+            task.status = "cancelled"
+            task.current_step = "文档已删除"
+            task.error_message = "用户删除了对应的论文文档"
+            task.finished_at = now
+            task.lease_expires_at = None
+            db.add(TaskEvent(task_id=task.id, event_type="status", level="warning", step="文档已删除", progress=task.progress, message="论文文档及其解析结果已删除"))
+
+    figure_dirs = set()
+    expected_figure_dir_name = f"doc_{doc.id}_figures"
+    for figure in db.scalars(select(KnowledgeFigure).where(KnowledgeFigure.document_id == doc.id)).all():
+        if not figure.image_path:
+            continue
+        figure_dir = Path(figure.image_path).parent.resolve()
+        if figure_dir.name == expected_figure_dir_name and figure_dir.is_relative_to(FILE_STORE_DIR.resolve()):
+            figure_dirs.add(figure_dir)
+
+    # Structured content has explicit deletes for databases that do not enforce FK cascades.
+    db.execute(delete(KnowledgeChunk).where(KnowledgeChunk.document_id == doc.id))
+    db.execute(delete(KnowledgePage).where(KnowledgePage.document_id == doc.id))
+    db.execute(delete(KnowledgeTable).where(KnowledgeTable.document_id == doc.id))
+    db.execute(delete(KnowledgeFigure).where(KnowledgeFigure.document_id == doc.id))
+    db.delete(doc)
+
+    # A duplicate upload can reuse a WorkspaceFile. Preserve that file while another
+    # knowledge document still references it; otherwise remove the original and tombstone it.
+    remove_path = None
+    if source:
+        remaining_refs = db.scalar(select(KnowledgeDocument.id).where(KnowledgeDocument.file_id == source.id, KnowledgeDocument.id != doc.id).limit(1))
+        if not remaining_refs:
+            remove_path = Path(source.storage_path)
+            source.deleted_at = datetime.now(timezone.utc)
+    db.commit()
+
+    if remove_path:
+        try:
+            remove_path.unlink(missing_ok=True)
+        except OSError:
+            # Keep the database deletion successful; a later storage cleanup can remove the orphan.
+            pass
+    for figure_dir in figure_dirs:
+        shutil.rmtree(figure_dir, ignore_errors=True)
+    write_audit(db, action="paper.knowledge_document.deleted", resource_type="knowledge_document", resource_id=document_id, actor=user, details={"file_id": source_id, "active_tasks_cancelled": len(active_tasks)}, **_meta(request))
+    return {"deleted": document_id, "structured_results_deleted": True, "source_file_deleted": bool(remove_path), "task_results_cleared": len(paper_tasks)}
 
 
 @router.get("/knowledge/documents/{document_id}")
 def get_document(document_id: int, db: Session = Depends(get_db), user: User = Depends(current_user)):
     doc = _document_access(db, document_id, user)
+    source = db.get(WorkspaceFile, doc.file_id) if doc.file_id else None
+    source_exists = bool(source and source.deleted_at is None and Path(source.storage_path).is_file())
+    source_missing = doc.source_type == "upload" and not source_exists
     pages = db.scalars(select(KnowledgePage).where(KnowledgePage.document_id == doc.id).order_by(KnowledgePage.page_number)).all()
     tables = db.scalars(select(KnowledgeTable).where(KnowledgeTable.document_id == doc.id).order_by(KnowledgeTable.page_number, KnowledgeTable.id)).all()
     figures = db.scalars(select(KnowledgeFigure).where(KnowledgeFigure.document_id == doc.id).order_by(KnowledgeFigure.page_number, KnowledgeFigure.id)).all()
     structure = json.loads(doc.structure_json or "{}")
     metadata = json.loads(doc.metadata_json or "{}")
     return {
-        "id": doc.id, "title": doc.title, "status": doc.status, "page_count": doc.page_count, "file_id": doc.file_id, "file_type": (Path((db.get(WorkspaceFile, doc.file_id).original_name)).suffix.lower() if doc.file_id and db.get(WorkspaceFile, doc.file_id) else None), "knowledge_base_id": doc.knowledge_base_id,
+        "id": doc.id, "title": doc.title, "status": "missing" if source_missing else doc.status, "parse_status": doc.status, "page_count": doc.page_count, "file_id": doc.file_id, "source_exists": source_exists, "source_missing": source_missing, "file_type": Path(source.original_name).suffix.lower() if source else Path(doc.title).suffix.lower(), "knowledge_base_id": doc.knowledge_base_id,
         "structure": structure, "metadata": metadata,
         "pages": [{"page_number": p.page_number, "text": p.text, "ocr_used": p.ocr_used, "extraction_method": p.extraction_method, "page_url": f"/api/files/{doc.file_id}/download#page={p.page_number}" if doc.file_id else None} for p in pages],
         "tables": [{"id": t.id, "table_number": t.table_number, "page_number": t.page_number, "title": t.title, "data": json.loads(t.data_json), "markdown": t.markdown} for t in tables],
