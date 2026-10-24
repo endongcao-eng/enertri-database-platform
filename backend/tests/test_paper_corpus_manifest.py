@@ -49,7 +49,10 @@ class PaperCorpusManifestTest(unittest.TestCase):
             tables, diagnostics = _extract_pdf_tables(opened, [{"page_number": 1, "text": opened[0].get_text("text")}], path, pdfplumber)
             self.assertEqual(tables, [])
             self.assertGreater(diagnostics["rejected_candidate_count"], 0)
-            self.assertIn("paragraph_like_text_grid", diagnostics["rejection_reasons"])
+            self.assertTrue(
+                {"paragraph_like_text_grid", "missing_table_caption", "page_sized_text_grid"}
+                & set(diagnostics["rejection_reasons"])
+            )
             opened.close()
 
     def test_two_column_prose_is_not_promoted_to_character_grid(self):

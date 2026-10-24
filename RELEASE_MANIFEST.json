@@ -1,6 +1,6 @@
 {
   "name": "EnerTri 网页试用部署准备版",
-  "version": "4.7.0-webprep.23",
+  "version": "4.7.0-webprep.24",
   "api_business_version": "4.7.0",
   "date": "2026-10-24",
   "status": "preparation_candidate_not_public_ready",
@@ -22,7 +22,7 @@
     "predeploy_hardening_tests": "passed: accepted/rejected file categories, unified paper/task cascade, bilingual OCR, restricted video/simulation routes",
     "table_extraction_helper": "passed with ruled and whitespace synthetic PDFs",
     "relevance_filter": "passed with curated NASA/public energy set and unrelated-culture cases",
-    "research_value_upgrade_tests": "passed: table provenance/crops/correction, hybrid retrieval unknown-answer policy, central catalog save, four-table corpus manifest, single-column and two-column prose false-positive guards",
+    "research_value_upgrade_tests": "passed: table provenance/crops/correction, hybrid retrieval unknown-answer policy, central catalog save, four-table corpus manifest, single-column and two-column prose false-positive guards; manual Applied Energy 292 (2021) 116896 check returned tables on pages 2 and 7",
     "research_value_upgrade": [
       "表格 bbox、提取策略、置信度和裁剪预览持久化",
       "表格人工修正与按新 bbox 重裁剪",
@@ -63,6 +63,6 @@
     "增加 Worker 心跳表、真实数据库/Volume/Worker 健康与就绪检查",
     "收紧视频分析与术语视频上传、项目匹配和直接仿真创建/执行接口的权限",
     "删除论文时同步删除 paper_ingest 任务、任务文件和任务事件"
-    ,"表格文本策略增加正文网格、双栏字符碎片网格和整页正文候选拦截；旧版本无坐标表格在详情页隐藏并提示重新解析"
+    ,"表格文本策略增加正文网格、双栏字符碎片网格和整页正文候选拦截；对带表题的无边框表格使用文本块和列锚点提取；旧版本无坐标表格在详情页隐藏并提示重新解析"
   ]
 }

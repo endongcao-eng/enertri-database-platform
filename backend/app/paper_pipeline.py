@@ -38,7 +38,7 @@ TABLE_EXTRACTION_STRATEGIES: tuple[tuple[str, dict[str, Any]], ...] = (
     ("pymupdf-text", {"vertical_strategy": "text", "horizontal_strategy": "text", "min_words_vertical": 2, "min_words_horizontal": 1}),
     ("pymupdf-mixed", {"vertical_strategy": "lines", "horizontal_strategy": "text", "min_words_horizontal": 1}),
 )
-TABLE_METHOD_PRIORITY = {"pymupdf-lines": 0, "pdfplumber-lines": 1, "pymupdf-mixed": 2, "pdfplumber-text": 3, "pymupdf-text": 4}
+TABLE_METHOD_PRIORITY = {"caption-words": 0, "pymupdf-lines": 1, "pdfplumber-lines": 2, "pymupdf-mixed": 3, "pdfplumber-text": 4, "pymupdf-text": 5}
 TABLE_TEXT_METHODS = {"pymupdf-text", "pdfplumber-text"}
 
 
@@ -216,6 +216,133 @@ def _caption_positions(pdf_page: Any) -> list[dict[str, Any]]:
     return sorted(found, key=lambda item: item["top"])
 
 
+def _captioned_word_tables(pdf_page: Any) -> list[dict[str, Any]]:
+    """Extract borderless tables from the PDF's own text blocks.
+
+    Some journal PDFs contain no table grid lines.  Generic whitespace table
+    detectors then merge the left-hand table with the neighbouring prose
+    column and can produce a page-sized false table.  Elsevier PDFs usually
+    keep the table caption, header block and body block as separate text
+    blocks; use that stable structure before falling back to generic layout
+    detection.
+    """
+    try:
+        blocks = pdf_page.get_text("blocks") or []
+        words = pdf_page.get_text("words") or []
+    except Exception:
+        return []
+
+    def block_words(block_index: int) -> list[tuple[Any, ...]]:
+        return sorted((word for word in words if int(word[5]) == block_index), key=lambda word: (word[1], word[0]))
+
+    def grouped_lines(block_index: int) -> list[list[tuple[Any, ...]]]:
+        lines: list[list[tuple[Any, ...]]] = []
+        for word in block_words(block_index):
+            if not lines or abs(float(word[1]) - float(lines[-1][0][1])) > 1.8:
+                lines.append([word])
+            else:
+                lines[-1].append(word)
+        return lines
+
+    found: list[dict[str, Any]] = []
+    for caption_index, raw_block in enumerate(blocks):
+        if len(raw_block) < 5:
+            continue
+        block_text = str(raw_block[4] or "")
+        block_lines = [re.sub(r"\s+", " ", line).strip() for line in block_text.splitlines() if line.strip()]
+        if not block_lines:
+            continue
+        match = TABLE_CAPTION_RE.match(block_lines[0])
+        if not match:
+            continue
+        number = match.group(1)
+        title = (match.group(2) or "").strip() or (block_lines[1] if len(block_lines) > 1 else "")
+        caption_bottom = float(raw_block[3])
+        # The first block below the caption is the table header.  Neighbouring
+        # prose columns either begin before the caption block ends or have a
+        # different left edge, so they are excluded here.
+        header_index = None
+        header_block = None
+        for index, candidate in enumerate(blocks):
+            if index == caption_index or len(candidate) < 5:
+                continue
+            if float(candidate[1]) < caption_bottom - 1.5 or float(candidate[1]) > caption_bottom + 28:
+                continue
+            candidate_words = block_words(index)
+            if len(candidate_words) < 3:
+                continue
+            if float(candidate[0]) > float(pdf_page.rect.width) * 0.60:
+                continue
+            header_index, header_block = index, candidate
+            break
+        if header_index is None or header_block is None:
+            continue
+
+        header_lines = grouped_lines(header_index)
+        if not header_lines:
+            continue
+        # In these PDFs each logical column has a distinct line number inside
+        # the header block (multi-word headers share that line number).
+        header_words = block_words(header_index)
+        header_groups: dict[int, list[tuple[Any, ...]]] = {}
+        for word in header_words:
+            header_groups.setdefault(int(word[6]), []).append(word)
+        columns = sorted(
+            ((min(float(word[0]) for word in group), " ".join(str(word[4]) for word in sorted(group, key=lambda item: item[0]))) for group in header_groups.values()),
+            key=lambda item: item[0],
+        )
+        if len(columns) < 3:
+            continue
+        anchors = [item[0] for item in columns]
+        header_row = [item[1] for item in columns]
+
+        body_index = None
+        body_block = None
+        for index, candidate in enumerate(blocks):
+            if index in {caption_index, header_index} or len(candidate) < 5:
+                continue
+            if float(candidate[1]) < float(header_block[3]) - 1.5 or float(candidate[1]) > float(header_block[3]) + 24:
+                continue
+            if abs(float(candidate[0]) - float(header_block[0])) > 12:
+                continue
+            candidate_words = block_words(index)
+            if len(candidate_words) < len(columns) * 2:
+                continue
+            body_index, body_block = index, candidate
+            break
+        if body_index is None or body_block is None:
+            continue
+
+        body_rows: list[list[str]] = []
+        for line in grouped_lines(body_index):
+            cells = ["" for _ in anchors]
+            for word in line:
+                x0 = float(word[0])
+                column = max((idx for idx, anchor in enumerate(anchors) if x0 >= anchor - 4), default=0)
+                cells[column] = f"{cells[column]} {word[4]}".strip()
+            if any(cells):
+                body_rows.append(cells)
+        rows = _clean_table_rows([header_row, *body_rows])
+        if len(rows) < 2:
+            continue
+        bbox = [
+            min(float(header_block[0]), float(body_block[0])),
+            min(float(header_block[1]), float(body_block[1])),
+            max(float(header_block[2]), float(body_block[2])),
+            max(float(header_block[3]), float(body_block[3])),
+        ]
+        found.append({
+            "page_number": 0,
+            "rows": rows,
+            "bbox": tuple(bbox),
+            "method": "caption-words",
+            "quality": _table_quality(rows),
+            "caption_number": number,
+            "caption_title": title,
+        })
+    return found
+
+
 def _candidate_has_table_signal(candidate: dict[str, Any], page: Any, captions: list[dict[str, Any]]) -> tuple[bool, str]:
     """Reject paragraph-shaped false tables produced by whitespace detectors.
 
@@ -257,6 +384,16 @@ def _candidate_has_table_signal(candidate: dict[str, Any], page: Any, captions: 
     # an explicit Table/表 caption are not discarded.
     if not caption_near and width >= 8 and avg_cell_chars < 8 and short_cell_ratio >= 0.30:
         return False, "fragmented_text_grid"
+    if not caption_near and area_ratio > 0.55:
+        # A borderless table without a caption is ambiguous, while a
+        # page-sized candidate is almost always journal prose, a figure
+        # caption, or references merged into a whitespace grid.
+        return False, "page_sized_text_grid"
+    if not caption_near:
+        # Text-only extraction has no geometric proof.  Require an explicit
+        # Table/表 caption; ruled or mixed geometric strategies still cover
+        # genuinely caption-less tables.
+        return False, "missing_table_caption"
     compact_grid = width >= 3 and len(rows) >= 3 and median_populated >= 3 and avg_cell_chars <= 32 and area_ratio < 0.88
     if caption_near and len(rows) >= 2:
         # A caption is strong evidence, but a full-page paragraph block with
@@ -283,13 +420,24 @@ def _extract_pdf_tables(pdf: Any, pages: list[dict[str, Any]], source_path: Path
     rejected_strategy_counts: Counter[str] = Counter()
     rejection_reasons: Counter[str] = Counter()
     captions_by_page: dict[int, list[dict[str, Any]]] = {}
+    caption_table_pages: set[int] = set()
     for page_number in range(1, pdf.page_count + 1):
         page = pdf.load_page(page_number - 1)
         captions_by_page[page_number] = _caption_positions(page)
+        for caption_table in _captioned_word_tables(page):
+            caption_table["page_number"] = page_number
+            candidates.append(caption_table)
+            strategy_counts["caption-words"] += 1
+            caption_table_pages.add(page_number)
         for method, settings in TABLE_EXTRACTION_STRATEGIES:
+            # Once a caption/header/body block has yielded a table, do not
+            # let a page-sized whitespace candidate replace it with the whole
+            # journal page.  Geometric strategies remain eligible.
             try:
                 finder = page.find_tables(**settings)
                 for table in getattr(finder, "tables", []) or []:
+                    if page_number in caption_table_pages and method in TABLE_TEXT_METHODS:
+                        continue
                     rows = _clean_table_rows(table.extract())
                     if not rows:
                         continue
@@ -316,6 +464,8 @@ def _extract_pdf_tables(pdf: Any, pages: list[dict[str, Any]], source_path: Path
                     ):
                         try:
                             for table in plumber_page.find_tables(table_settings=settings) or []:
+                                if page_number in caption_table_pages and method in TABLE_TEXT_METHODS:
+                                    continue
                                 rows = _clean_table_rows(table.extract())
                                 if not rows:
                                     continue
@@ -365,8 +515,8 @@ def _extract_pdf_tables(pdf: Any, pages: list[dict[str, Any]], source_path: Path
                 used_caption_indexes.add(index)
             elif ordinal <= len(captions):
                 caption = captions[ordinal - 1]
-            number = caption["number"] if caption else str(len(output) + 1)
-            title = caption["title"] if caption else ""
+            number = item.get("caption_number") or (caption["number"] if caption else str(len(output) + 1))
+            title = item.get("caption_title") or (caption["title"] if caption else "")
             bbox = item.get("bbox")
             output.append({
                 "table_number": f"Table {number}", "page_number": page_number, "title": title,
@@ -381,7 +531,7 @@ def _extract_pdf_tables(pdf: Any, pages: list[dict[str, Any]], source_path: Path
         "rejected_candidate_count": sum(rejected_strategy_counts.values()),
         "rejected_strategy_counts": dict(rejected_strategy_counts),
         "rejection_reasons": dict(rejection_reasons),
-        "text_strategy_policy": "text-only candidates require a nearby caption, numeric signal, or compact multi-column evidence",
+        "text_strategy_policy": "text-only candidates require an explicit nearby Table/表 caption; geometric strategies may operate without captions",
     }
     return output[:100], diagnostics
 
