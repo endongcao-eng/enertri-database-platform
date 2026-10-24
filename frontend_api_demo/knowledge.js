@@ -1,4 +1,4 @@
-const KnowledgeUI = { pdfObjectUrl: null, poller: null, centralPoller: null };
+const KnowledgeUI = { pdfObjectUrl: null, poller: null, centralPoller: null, previewObjectUrls: new Set() };
 
 async function knowledgePdfBlobUrl(fileId) {
   if (!fileId) return null;
@@ -10,6 +10,28 @@ async function knowledgePdfBlobUrl(fileId) {
   if (KnowledgeUI.pdfObjectUrl) URL.revokeObjectURL(KnowledgeUI.pdfObjectUrl);
   KnowledgeUI.pdfObjectUrl = URL.createObjectURL(blob);
   return KnowledgeUI.pdfObjectUrl;
+}
+
+async function knowledgePreviewBlobUrl(path) {
+  if (!path) return null;
+  const token = getToken();
+  const headers = token ? { Authorization: `Bearer ${token}` } : {};
+  const res = await fetch(path.startsWith('/api/') ? path : `${API_BASE}${path}`, { headers });
+  if (!res.ok) throw new Error('无法加载图片预览');
+  const url = URL.createObjectURL(await res.blob());
+  KnowledgeUI.previewObjectUrls.add(url);
+  return url;
+}
+
+async function loadKnowledgePreviewImages() {
+  document.querySelectorAll('[data-preview-url]').forEach(async image => {
+    try {
+      const url = await knowledgePreviewBlobUrl(image.dataset.previewUrl);
+      if (url) image.src = url;
+    } catch (e) {
+      image.replaceWith(Object.assign(document.createElement('span'), { className: 'muted', textContent: '预览不可用' }));
+    }
+  });
 }
 
 async function openKnowledgeSystem(documentId = null) {
@@ -47,7 +69,7 @@ async function openKnowledgeSystem(documentId = null) {
     } else if (documentId) {
       State.selectedKnowledgeDocumentId = null;
     }
-    State.selectedKnowledgeDocumentId ||= documents.find(d => d.status === 'ready')?.id || documents[0]?.id || null;
+    State.selectedKnowledgeDocumentId ||= State.knowledgeDocuments.find(d => d.status === 'ready')?.id || State.knowledgeDocuments[0]?.id || null;
     if (State.selectedKnowledgeDocumentId) await loadKnowledgeDocument(State.selectedKnowledgeDocumentId, false);
     State.knowledgeError = '';
   } catch (e) { if (isCurrentNavigation(navigationId, 'knowledge')) State.knowledgeError = e.message; }
@@ -121,16 +143,17 @@ function renderKnowledgeSystem() {
   const evidenceCount = (doc?.pages || []).length + (doc?.tables || []).length + (doc?.figures || []).length;
   const search = State.literatureSearchResult;
   const selectedKb = bases.find(k => Number(k.id) === Number(State.selectedKnowledgeBaseId)) || bases[0];
-  const publicationCards = displayedPubs.map(p => `<article class="publication-card">
+  const publicationCards = displayedPubs.map(p => { const isCentral = p.catalog_source === 'space_energy' || p.primary_source === 'space_energy' || (p.sources || []).includes('空间能源平台论文库'); return `<article class="publication-card">
     <div class="pub-top"><div>${(p.sources||[]).map(s=>`<span class="badge primary">${escapeHtml(s)}</span>`).join(' ')}</div><span class="badge ${p.open_access?'success':''}">${p.open_access?'OA':'Metadata'}</span></div>
     <h3>${escapeHtml(p.title)}</h3><p class="muted">${escapeHtml((p.authors||[]).slice(0,4).join(', ') || '作者信息待补充')} · ${escapeHtml(p.journal||'期刊待补充')} · ${escapeHtml(p.year||'—')}</p>
     <div class="pub-meta"><span>DOI ${escapeHtml(p.doi||'—')}</span><span>引用 ${p.citation_count||0}</span>${p.relevance_score!=null?`<span class="dedup-pill">相关度 ${Number(p.relevance_score).toFixed(0)}%</span>`:''}${(p.sources||[]).length>1?'<strong class="dedup-pill">跨源已合并</strong>':''}</div>
-    <div class="inline-actions publication-actions">${p.open_url?`<a class="btn small primary" href="${escapeHtml(p.open_url)}" target="_blank" rel="noopener noreferrer">打开论文地址</a>`:''}${p.fulltext_url&&p.fulltext_url!==p.open_url?`<a class="btn small secondary" href="${escapeHtml(p.fulltext_url)}" target="_blank" rel="noopener noreferrer">打开全文</a>`:''}${p.doi_url?`<a class="btn small ghost" href="${escapeHtml(p.doi_url)}" target="_blank" rel="noopener noreferrer">DOI</a>`:''}</div>
-  </article>`).join('');
+    <div class="inline-actions publication-actions">${p.open_url?`<a class="btn small primary" href="${escapeHtml(p.open_url)}" target="_blank" rel="noopener noreferrer">打开论文地址</a>`:''}${p.fulltext_url&&p.fulltext_url!==p.open_url?`<a class="btn small secondary" href="${escapeHtml(p.fulltext_url)}" target="_blank" rel="noopener noreferrer">打开全文</a>`:''}${p.doi_url?`<a class="btn small ghost" href="${escapeHtml(p.doi_url)}" target="_blank" rel="noopener noreferrer">DOI</a>`:''}${isCentral?`<button class="btn small secondary js-save-central-paper" data-id="${escapeHtml(p.id)}">保存到个人知识库</button>`:''}</div>
+  </article>`; }).join('');
   const docRows = docs.map(d => `<div class="doc-row ${Number(d.id)===Number(State.selectedKnowledgeDocumentId)?'active':''}"><button class="doc-row-select js-knowledge-doc" data-id="${d.id}"><span><strong>${escapeHtml(d.title)}</strong><small>${d.page_count||0} 页 · ${d.source_missing===true?'原文件缺失':escapeHtml(d.status)}</small></span><span class="badge ${d.source_missing===true?'danger':d.status==='ready'?'success':d.status==='failed'?'danger':'warning'}">${d.source_missing===true?'原文件缺失':escapeHtml(d.status)}</span></button>${d.deletable?`<button class="doc-delete js-delete-knowledge-doc" data-id="${d.id}" title="删除文档及其结构化结果" aria-label="删除 ${escapeHtml(d.title)}">删除</button>`:''}</div>`).join('');
   const facts = (doc?.structure?.key_facts || []).map(f => `<button class="fact-card js-focus-page" data-page="${f.page}"><span>${escapeHtml(f.type.replaceAll('_',' '))}</span><strong>${escapeHtml(f.value)} ${escapeHtml(f.unit||'')}</strong><small>第 ${f.page} 页 · ${escapeHtml(f.evidence||'')}</small></button>`).join('');
   const sections = (doc?.structure?.sections || []).map(s=>`<button class="section-chip js-focus-page" data-page="${s.page_start}">${escapeHtml(s.title)} <span>P${s.page_start}${s.page_end!==s.page_start?`–${s.page_end}`:''}</span></button>`).join('');
-  const tables = (doc?.tables || []).map(t => `<div class="table-result"><div class="section-head"><div><h3>${escapeHtml(t.table_number)} ${escapeHtml(t.title||'')}</h3><p class="muted">原文第 ${t.page_number} 页</p></div><button class="btn small secondary js-focus-page" data-page="${t.page_number}">定位原文</button></div>${renderExtractedTable(t)}</div>`).join('');
+  const tables = (doc?.tables || []).map(t => `<div class="table-result"><div class="section-head"><div><h3>${escapeHtml(t.table_number)} ${escapeHtml(t.title||'')}</h3><p class="muted">原文第 ${t.page_number} 页 · 策略 ${escapeHtml(t.extraction_strategy||'unknown')} · 置信度 ${Math.round(Number(t.confidence||0)*100)}%${t.corrected?' · 已人工修正':''}</p></div><div class="inline-actions"><button class="btn small secondary js-focus-page" data-page="${t.page_number}">定位原文</button><button class="btn small ghost js-toggle-table-editor" data-id="${t.id}">人工修正</button></div></div>${t.preview_url?`<img class="table-preview-image" data-preview-url="${escapeHtml(t.preview_url)}" alt="${escapeHtml(t.table_number)} 页面裁剪预览" loading="lazy">`:''}${renderExtractedTable(t)}<div class="table-editor" id="table-editor-${t.id}" hidden><div class="form-grid"><label class="label">标题<input class="input table-edit-title" data-id="${t.id}" value="${escapeHtml(t.title||'')}"></label><label class="label">页码<input class="input table-edit-page" data-id="${t.id}" type="number" min="1" value="${t.page_number}"></label><label class="label">bbox（x0,y0,x1,y1）<input class="input table-edit-bbox" data-id="${t.id}" value="${escapeHtml((t.bbox||[]).join(','))}"></label><label class="label">表格 JSON（二维数组）<textarea class="input table-edit-data" data-id="${t.id}" rows="5">${escapeHtml(JSON.stringify(t.data||[], null, 2))}</textarea></label></div><button class="btn small primary js-save-table-correction" data-id="${t.id}">保存人工修正</button></div></div>`).join('');
+  const figures = (doc?.figures || []).map(f => `<div class="figure-result"><div><strong>${escapeHtml(f.figure_number)}</strong><span class="muted"> · 第 ${f.page_number} 页 · ${escapeHtml(f.caption||'')}</span></div>${f.preview_url?`<img class="figure-preview-image" data-preview-url="${escapeHtml(f.preview_url)}" alt="${escapeHtml(f.figure_number)} 图片预览" loading="lazy">`:''}</div>`).join('');
   const tableDiagnostics = doc?.metadata?.table_extraction;
   const tableNotice = tableDiagnostics ? `<p class="muted table-diagnostics">已使用多种版式策略识别 ${tableDiagnostics.table_count||0} 个表格，覆盖第 ${(tableDiagnostics.pages_with_tables||[]).join('、')||'—'} 页；如果原文是扫描图片或表格边界极复杂，仍建议对照原文核验。</p>` : '';
   const pageEvidence = (doc?.pages || []).map(p => `<button class="page-evidence js-focus-page" data-page="${p.page_number}"><strong>P${p.page_number}</strong><span>${escapeHtml((p.text||'').replace(/\s+/g,' ').slice(0,160))}</span><small>${p.ocr_used?'OCR':'文本层'} · ${escapeHtml(p.extraction_method||'')}</small></button>`).join('');
@@ -139,12 +162,13 @@ function renderKnowledgeSystem() {
   const isPdf = doc?.file_type === '.pdf';
   const pdfSrc = isPdf && State.knowledgePdfUrl ? `${State.knowledgePdfUrl}#page=${State.focusPage||1}&view=FitH` : '';
   const qaBlock = qa
-    ? `<div class="qa-answer"><div><span class="badge ${qa.confidence==='high'?'success':'warning'}">${escapeHtml(qa.confidence)} confidence</span><h3>答案</h3><p>${escapeHtml(qa.answer)}</p></div><div class="qa-evidence-grid">${qaEvidence}</div></div>`
+    ? `<div class="qa-answer"><div><span class="badge ${qa.answerable===false?'danger':qa.confidence==='high'?'success':'warning'}">${qa.answerable===false?'无法确定':escapeHtml(qa.confidence)+' confidence'}</span><h3>答案</h3><p>${escapeHtml(qa.answer)}</p></div><div class="qa-evidence-grid">${qaEvidence}</div></div>`
     : '<div class="empty-box compact-empty">输入问题后，系统会返回答案、页码、章节与原文片段。</div>';
   const documentMain = doc ? `<section class="card panel document-overview"><div class="section-head"><div><span class="eyebrow">03 · Evidence-first Paper Reading</span><h2>${escapeHtml(doc.title)}</h2><p class="muted">${doc.page_count} 页 · ${escapeHtml(doc.status)}</p></div><div class="inline-actions"><span class="badge ${doc.source_missing===true?'danger':'success'}">${doc.source_missing===true?'原文件缺失':doc.status==='ready'?'结构化完成':escapeHtml(doc.status)}</span>${doc.source_exists?'<button class="btn small secondary" id="reprocessKnowledgeBtn">重新解析</button>':''}</div></div>${doc.source_missing===true?'<div class="notice error">原始文件当前无法访问。下面的结构化内容可能仍保留；如无需保留，请使用左侧“删除”清理原文件记录和全部解析结果。</div>':''}<div id="paperReprocessNotice"></div><div class="section-strip">${sections}</div>${facts?`<div class="facts-grid">${facts}</div>`:''}</section>
       <section class="paper-split"><div class="card pdf-panel"><div class="section-head"><div><h2>${isPdf?'PDF 原文':'Word 原文'}</h2><p class="muted">${isPdf?`当前定位：第 ${State.focusPage||1} 页`:'DOCX 已完成结构化；页码按文档显式分页符记录'}</p></div><div class="page-nav">${isPdf?`<button class="btn small secondary" id="prevPdfPage">上一页</button><span>P${State.focusPage||1} / ${doc.page_count}</span><button class="btn small secondary" id="nextPdfPage">下一页</button>`:''}</div></div>${pdfSrc?`<iframe id="paperPdfFrame" class="paper-pdf-frame" src="${escapeHtml(pdfSrc)}"></iframe>`:`<div class="empty-box">${isPdf?'无法加载 PDF 原文预览':'Word 原文不在浏览器内嵌渲染，点击下方按钮打开原文件。'}${doc.file_id&&doc.source_exists?'<br><button class="btn small primary" id="openOriginalDocument">打开原文件</button>':''}</div>`}</div>
       <div class="card panel evidence-panel"><div class="section-head"><div><h2>结构化结果</h2><p class="muted">点击任意证据直接定位左侧原文页</p></div></div><div class="page-evidence-list">${pageEvidence}</div></div></section>
-      <section class="card panel"><div class="section-head"><div><span class="eyebrow">04 · Table Extraction</span><h2>表格数据提取</h2>${tableNotice}</div><span class="badge primary">${doc.tables?.length||0} 个表格</span></div>${tables || '<div class="empty-box">当前论文未检测到可结构化表格。</div>'}</section>
+      <section class="card panel"><div class="section-head"><div><span class="eyebrow">04 · Table Extraction</span><h2>表格数据提取与核验</h2>${tableNotice}</div><span class="badge primary">${doc.tables?.length||0} 个表格</span></div>${tables || '<div class="empty-box">当前论文未检测到可结构化表格。</div>'}</section>
+      ${figures?`<section class="card panel"><div class="section-head"><div><span class="eyebrow">04b · Figure Preview</span><h2>论文图片预览</h2><p class="muted">图片通过受保护接口读取，不暴露存储路径。</p></div><span class="badge primary">${doc.figures?.length||0} 张图片</span></div><div class="figure-grid">${figures}</div></section>`:''}
       <section class="card panel paper-qa"><div class="section-head"><div><span class="eyebrow">05 · Paper QA</span><h2>基于论文的原文问答</h2><p class="muted">答案仅来自已解析证据；每条证据可点击回到原文页。</p></div></div><div class="qa-row"><input class="input" id="paperQaQuestion" value="${escapeHtml(State.paperQaQuestion||'激光功率是多少？')}" placeholder="例如：最高抗拉强度对应哪组参数？"><button class="btn primary" id="paperQaBtn">基于原文回答</button></div>${qaBlock}</section>`
     : '<section class="card panel"><div class="empty-box">上传或选择一篇论文，开始证据化结构化阅读。</div></section>';
 
@@ -170,7 +194,7 @@ function renderKnowledgeSystem() {
     </aside>
     <main class="knowledge-main">${documentMain}</main></section>
   </div>`;
-  bindCommon(); bindKnowledgeSystem();
+  bindCommon(); bindKnowledgeSystem(); loadKnowledgePreviewImages();
 }
 
 function focusKnowledgePage(page) {
@@ -221,6 +245,29 @@ function bindKnowledgeSystem() {
     }
   });
   document.querySelectorAll('.js-focus-page').forEach(b => b.onclick = () => focusKnowledgePage(b.dataset.page));
+  document.querySelectorAll('.js-toggle-table-editor').forEach(button => button.onclick = () => {
+    const editor = document.getElementById(`table-editor-${button.dataset.id}`);
+    if (editor) editor.hidden = !editor.hidden;
+  });
+  document.querySelectorAll('.js-save-table-correction').forEach(button => button.onclick = async () => {
+    const id = button.dataset.id;
+    try {
+      const rawBbox = document.querySelector(`.table-edit-bbox[data-id="${id}"]`)?.value.trim();
+      const rawData = document.querySelector(`.table-edit-data[data-id="${id}"]`)?.value.trim();
+      const bbox = rawBbox ? rawBbox.split(',').map(Number) : null;
+      if (bbox && (bbox.length !== 4 || bbox.some(Number.isNaN))) throw new Error('bbox 必须填写四个数字');
+      const data = rawData ? JSON.parse(rawData) : null;
+      button.disabled = true;
+      await api(`/knowledge/documents/${State.selectedKnowledgeDocumentId}/tables/${id}`, { method: 'PATCH', body: JSON.stringify({ title: document.querySelector(`.table-edit-title[data-id="${id}"]`)?.value || null, page_number: Number(document.querySelector(`.table-edit-page[data-id="${id}"]`)?.value || 1), bbox, data }) });
+      State.knowledgeDocument = await api(`/knowledge/documents/${State.selectedKnowledgeDocumentId}`);
+      renderKnowledgeSystem();
+    } catch (e) { State.knowledgeError = e.message || '保存表格修正失败'; renderKnowledgeSystem(); }
+  });
+  document.querySelectorAll('.js-save-central-paper').forEach(button => button.onclick = async () => {
+    button.disabled = true; button.textContent = '保存中…';
+    try { const saved = await api(`/literature/publications/${encodeURIComponent(button.dataset.id)}/save`, { method: 'POST', body: JSON.stringify({}) }); State.selectedKnowledgeBaseId = saved.knowledge_base_id; State.knowledgeError = saved.already_saved ? '该论文已经在个人知识库中。' : '已保存到个人知识库。'; await openKnowledgeSystem(saved.document_id); }
+    catch (e) { button.disabled = false; button.textContent = '保存到个人知识库'; State.knowledgeError = e.message; renderKnowledgeSystem(); }
+  });
   document.getElementById('openOriginalDocument')?.addEventListener('click', async () => {
     try {
       const url = await knowledgePdfBlobUrl(State.knowledgeDocument?.file_id);

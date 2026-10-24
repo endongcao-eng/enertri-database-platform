@@ -1,0 +1,74 @@
+[
+  {
+    "id": "nasa-20230018600",
+    "query": "空间 能源",
+    "relevant": true,
+    "item": {
+      "title": "Space Based Solar Power",
+      "abstract": "In-space collection of solar energy, transmission of that energy to Earth, conversion to electricity, and delivery to the grid or batteries.",
+      "journal": "NASA Technical Reports Server",
+      "keywords": ["space solar power", "energy", "electricity"],
+      "url": "https://ntrs.nasa.gov/citations/20230018600"
+    }
+  },
+  {
+    "id": "nasa-20220014049",
+    "query": "空间 能源",
+    "relevant": true,
+    "item": {
+      "title": "Methodology Report of Cost Benefit Analysis of Space Based Solar Power",
+      "abstract": "Space-based solar power gathers power in space and transmits it wirelessly to users on Earth; this report compares costs and benefits with grid-scale energy sources.",
+      "journal": "NASA Technical Reports Server",
+      "keywords": ["space-based solar power", "energy", "cost benefit"],
+      "url": "https://ntrs.nasa.gov/citations/20220014049"
+    }
+  },
+  {
+    "id": "doi-10.2514-6.2024-4944",
+    "query": "空间 能源",
+    "relevant": true,
+    "item": {
+      "title": "Space Based Solar Power",
+      "abstract": "Space based solar power entails in-space collection of solar energy, wireless transmission, conversion to electricity and delivery to the grid.",
+      "journal": "AIAA ASCEND",
+      "keywords": ["space energy", "solar power", "wireless transmission"],
+      "doi": "10.2514/6.2024-4944",
+      "url": "https://doi.org/10.2514/6.2024-4944"
+    }
+  },
+  {
+    "id": "nasa-20210012354",
+    "query": "空间 能源",
+    "relevant": true,
+    "item": {
+      "title": "Solar power for deep-space applications: state of art and development",
+      "abstract": "Solar arrays power spacecraft in deep space and their performance depends on the space environment and available solar energy.",
+      "journal": "NASA Technical Reports Server",
+      "keywords": ["space photovoltaics", "solar energy", "spacecraft power"],
+      "url": "https://ntrs.nasa.gov/citations/20210012354"
+    }
+  },
+  {
+    "id": "hanspub-32812",
+    "query": "空间 能源",
+    "relevant": false,
+    "item": {
+      "title": "杭州茶文化资源发展空间可能性的探索",
+      "abstract": "文化资源空间发展研究。",
+      "journal": "社会科学",
+      "keywords": ["茶文化", "资源发展"],
+      "url": "https://www.hanspub.org/journal/paperinformation?paperid=32812"
+    }
+  },
+  {
+    "id": "unrelated-orbital-culture",
+    "query": "空间 能源",
+    "relevant": false,
+    "item": {
+      "title": "Cultural resource development and spatial possibility",
+      "abstract": "A cultural geography study of heritage tourism and regional identity.",
+      "journal": "Cultural Geography",
+      "keywords": ["culture", "spatial planning"]
+    }
+  }
+]

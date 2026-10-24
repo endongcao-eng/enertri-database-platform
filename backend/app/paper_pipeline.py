@@ -21,6 +21,8 @@ CHUNK_CHARS = max(600, int(os.getenv("KNOWLEDGE_CHUNK_CHARS", "1400")))
 CHUNK_OVERLAP = max(50, int(os.getenv("KNOWLEDGE_CHUNK_OVERLAP", "180")))
 OCR_MIN_TEXT_CHARS = max(10, int(os.getenv("OCR_MIN_TEXT_CHARS", "60")))
 EMBED_DIM = max(64, int(os.getenv("LOCAL_EMBED_DIM", "128")))
+EVIDENCE_MIN_SCORE = max(0.0, min(1.0, float(os.getenv("PAPER_EVIDENCE_MIN_SCORE", "0.22"))))
+EVIDENCE_MIN_MARGIN = max(0.0, min(1.0, float(os.getenv("PAPER_EVIDENCE_MIN_MARGIN", "0.015"))))
 DEFAULT_OCR_LANG = os.getenv("OCR_LANG", "chi_sim+eng")
 
 SECTION_RE = re.compile(
@@ -37,6 +39,12 @@ TABLE_EXTRACTION_STRATEGIES: tuple[tuple[str, dict[str, Any]], ...] = (
     ("pymupdf-mixed", {"vertical_strategy": "lines", "horizontal_strategy": "text", "min_words_horizontal": 1}),
 )
 TABLE_METHOD_PRIORITY = {"pymupdf-lines": 0, "pdfplumber-lines": 1, "pymupdf-mixed": 2, "pdfplumber-text": 3, "pymupdf-text": 4}
+
+
+def _table_confidence(quality: float, method: str, bbox: tuple[float, float, float, float] | None) -> float:
+    """Conservative confidence score for review queues, not a truth claim."""
+    method_bonus = {"pymupdf-lines": 0.10, "pdfplumber-lines": 0.06, "pymupdf-mixed": 0.04, "pdfplumber-text": 0.0, "pymupdf-text": -0.04}.get(method, -0.08)
+    return round(max(0.0, min(1.0, float(quality) * 0.82 + (0.10 if bbox else -0.12) + method_bonus)), 3)
 
 
 def _tokenize(text: str) -> list[str]:
@@ -289,7 +297,14 @@ def _extract_pdf_tables(pdf: Any, pages: list[dict[str, Any]], source_path: Path
                 caption = captions[ordinal - 1]
             number = caption["number"] if caption else str(len(output) + 1)
             title = caption["title"] if caption else ""
-            output.append({"table_number": f"Table {number}", "page_number": page_number, "title": title, "data": item["rows"], "markdown": _markdown_table(item["rows"]), "extraction_method": item["method"], "extraction_quality": item["quality"]})
+            bbox = item.get("bbox")
+            output.append({
+                "table_number": f"Table {number}", "page_number": page_number, "title": title,
+                "data": item["rows"], "markdown": _markdown_table(item["rows"]),
+                "extraction_method": item["method"], "extraction_strategy": item["method"],
+                "extraction_quality": item["quality"], "confidence": _table_confidence(item["quality"], item["method"], bbox),
+                "bbox": list(bbox) if bbox else None,
+            })
     diagnostics = {"candidate_count": len(candidates), "table_count": len(output), "strategy_counts": dict(strategy_counts), "pages_with_tables": sorted({item["page_number"] for item in output})}
     return output[:100], diagnostics
 
@@ -462,12 +477,31 @@ def ingest_pdf_document(
     sections = _section_map(pages)
     emit(47, "识别标题与章节", f"识别标题、摘要与 {len(sections)} 个章节区间")
 
-    tables, table_diagnostics = _extract_pdf_tables(pdf, pages, path, pdfplumber)
-    emit(58, "表格提取", f"使用多种版式策略提取到 {len(tables)} 个表格")
-
-    figures: list[dict[str, Any]] = []
     figure_dir = figure_dir or path.parent / f"doc_{document.id}_figures"
     figure_dir.mkdir(parents=True, exist_ok=True)
+    tables, table_diagnostics = _extract_pdf_tables(pdf, pages, path, pdfplumber)
+    # Persist a page crop beside the extracted figures.  It is deliberately
+    # generated from the selected bbox, allowing a researcher to audit or
+    # correct a table without downloading the complete paper.
+    for index, table in enumerate(tables, start=1):
+        bbox = table.get("bbox")
+        if not bbox:
+            table["preview_path"] = None
+            continue
+        try:
+            page = pdf.load_page(int(table["page_number"]) - 1)
+            rect = fitz.Rect(*bbox) & page.rect
+            if rect.width < 4 or rect.height < 4:
+                raise ValueError("table bbox is empty")
+            pix = page.get_pixmap(matrix=fitz.Matrix(2, 2), clip=rect, alpha=False)
+            preview_path = figure_dir / f"table_{index}_p{table['page_number']}.png"
+            pix.save(str(preview_path))
+            table["preview_path"] = str(preview_path)
+        except Exception:
+            table["preview_path"] = None
+    emit(58, "表格提取", f"使用多种版式策略提取到 {len(tables)} 个表格，并生成可核验裁剪")
+
+    figures: list[dict[str, Any]] = []
     figure_idx = 1
     for i in range(pdf.page_count):
         page = pdf.load_page(i)
@@ -500,7 +534,7 @@ def ingest_pdf_document(
     for p in pages:
         db.add(KnowledgePage(document_id=document.id, page_number=p["page_number"], text=p["text"], extraction_method=p["extraction_method"], ocr_used=p["ocr_used"], metadata_json=json.dumps({}, ensure_ascii=False)))
     for t in tables:
-        db.add(KnowledgeTable(document_id=document.id, table_number=t["table_number"], page_number=t["page_number"], title=t["title"], data_json=json.dumps(t["data"], ensure_ascii=False, default=str), markdown=t["markdown"]))
+        db.add(KnowledgeTable(document_id=document.id, table_number=t["table_number"], page_number=t["page_number"], title=t["title"], data_json=json.dumps(t["data"], ensure_ascii=False, default=str), markdown=t["markdown"], bbox_json=json.dumps(t.get("bbox"), ensure_ascii=False), extraction_strategy=t.get("extraction_strategy") or t.get("extraction_method") or "unknown", confidence=float(t.get("confidence") or 0.0), preview_path=t.get("preview_path")))
     for f in figures:
         db.add(KnowledgeFigure(document_id=document.id, figure_number=f["figure_number"], page_number=f["page_number"], caption=f["caption"], image_path=f["image_path"], metadata_json=json.dumps({}, ensure_ascii=False)))
     for c in chunks:
@@ -582,7 +616,7 @@ def ingest_docx_document(
         if pages:
             table_text = "\n".join(" | ".join(row) for row in rows)
             page = next((p["page_number"] for p in pages if table_text[:80] in p["text"]), 1)
-        tables.append({"table_number": f"Table {index}", "page_number": page, "title": "", "data": rows, "markdown": _markdown_table(rows)})
+        tables.append({"table_number": f"Table {index}", "page_number": page, "title": "", "data": rows, "markdown": _markdown_table(rows), "bbox": None, "extraction_strategy": "docx-table", "confidence": 0.90, "preview_path": None})
     emit(58, "表格提取", f"提取到 {len(tables)} 个表格")
 
     sections = _section_map(pages)
@@ -601,7 +635,7 @@ def ingest_docx_document(
     for p in pages:
         db.add(KnowledgePage(document_id=document.id, page_number=p["page_number"], text=p["text"], extraction_method=p["extraction_method"], ocr_used=False, metadata_json=json.dumps({"source_format": "docx"}, ensure_ascii=False)))
     for table in tables:
-        db.add(KnowledgeTable(document_id=document.id, table_number=table["table_number"], page_number=table["page_number"], title=table["title"], data_json=json.dumps(table["data"], ensure_ascii=False), markdown=table["markdown"]))
+        db.add(KnowledgeTable(document_id=document.id, table_number=table["table_number"], page_number=table["page_number"], title=table["title"], data_json=json.dumps(table["data"], ensure_ascii=False), markdown=table["markdown"], bbox_json=None, extraction_strategy=table.get("extraction_strategy", "docx-table"), confidence=float(table.get("confidence") or 0.9), preview_path=None))
     for chunk in chunks:
         db.add(KnowledgeChunk(document_id=document.id, chunk_index=chunk["chunk_index"], content=chunk["content"], token_count=len(_tokenize(chunk["content"])), page_start=chunk["page_start"], page_end=chunk["page_end"], section=chunk["section"], embedding_model=f"enertri-hash-v1-{EMBED_DIM}", embedding_json=json.dumps(local_embedding(chunk["content"])), metadata_json=json.dumps({"evidence_excerpt": chunk["content"][:500], "source_format": "docx"}, ensure_ascii=False)))
     structured = _structured_reading(title, abstract, pages, sections, tables, [], refs)
@@ -647,20 +681,32 @@ def _expanded_query(question: str) -> str:
 
 
 def retrieve_evidence(db: Session, document_id: int, question: str, limit: int = 5) -> list[dict[str, Any]]:
+    """Hybrid retrieval: lexical full-text overlap plus local vector similarity.
+
+    The lexical side is intentionally database-independent and works on both
+    SQLite and PostgreSQL installations.  It gives exact scientific terms a
+    measurable contribution instead of allowing a hash-vector collision to
+    become an apparent answer.
+    """
     expanded = _expanded_query(question)
     query_vec = local_embedding(expanded)
     q_tokens = set(_tokenize(expanded))
+    raw_question = re.sub(r"\s+", " ", question.casefold()).strip()
     rows = db.scalars(select(KnowledgeChunk).where(KnowledgeChunk.document_id == document_id)).all()
-    ranked: list[tuple[float, KnowledgeChunk]] = []
+    ranked: list[tuple[float, float, float, KnowledgeChunk]] = []
     for row in rows:
         try: emb = json.loads(row.embedding_json or "[]")
         except Exception: emb = []
+        row_text = re.sub(r"\s+", " ", row.content.casefold())
         row_tokens = set(_tokenize(row.content))
-        lexical = len(q_tokens & row_tokens) / max(1, min(len(q_tokens), 12))
-        score = 0.68 * cosine(query_vec, emb) + 0.32 * lexical
-        ranked.append((score, row))
+        token_overlap = len(q_tokens & row_tokens) / max(1, min(len(q_tokens), 12))
+        phrase_boost = 0.18 if raw_question and len(raw_question) >= 4 and raw_question in row_text else 0.0
+        lexical = min(1.0, token_overlap + phrase_boost)
+        vector_score = max(0.0, cosine(query_vec, emb))
+        score = 0.56 * lexical + 0.44 * vector_score
+        ranked.append((score, lexical, vector_score, row))
     ranked.sort(key=lambda x: x[0], reverse=True)
-    return [{"chunk_id": row.id, "score": round(score, 4), "page": row.page_start, "page_end": row.page_end, "section": row.section, "text": row.content, "excerpt": row.content[:900]} for score, row in ranked[:limit] if score > -0.2]
+    return [{"chunk_id": row.id, "score": round(score, 4), "lexical_score": round(lexical, 4), "vector_score": round(vector_score, 4), "retrieval_method": "hybrid_fulltext_vector", "page": row.page_start, "page_end": row.page_end, "section": row.section, "text": row.content, "excerpt": row.content[:900]} for score, lexical, vector_score, row in ranked[:limit] if score >= 0.03]
 
 
 def _best_sentence(text: str, pattern: str) -> str | None:
@@ -675,8 +721,10 @@ def _best_sentence(text: str, pattern: str) -> str | None:
 
 def answer_question(db: Session, document: KnowledgeDocument, question: str) -> dict[str, Any]:
     evidence = retrieve_evidence(db, document.id, question, 6)
-    if not evidence:
-        return {"answer": "未在已解析原文中检索到足够证据，无法可靠回答。", "confidence": "low", "evidence": []}
+    top_score = float(evidence[0]["score"]) if evidence else 0.0
+    second_score = float(evidence[1]["score"]) if len(evidence) > 1 else 0.0
+    if not evidence or top_score < EVIDENCE_MIN_SCORE or (top_score - second_score < EVIDENCE_MIN_MARGIN and float(evidence[0].get("lexical_score") or 0) < 0.05):
+        return {"answer": "无法确定：当前已解析论文中没有达到证据阈值的明确支持。请核对原文页、表格或补充材料。", "confidence": "low", "answerable": False, "evidence": [], "evidence_threshold": EVIDENCE_MIN_SCORE, "retrieval_method": "hybrid_fulltext_vector", "evidence_policy": "低于阈值或证据相互接近时不猜测。"}
 
     q = question.casefold()
     intent = "generic"
@@ -735,12 +783,15 @@ def answer_question(db: Session, document: KnowledgeDocument, question: str) -> 
         if key in seen:
             continue
         seen.add(key)
-        deduped.append({"page": ev["page"], "page_end": ev["page_end"], "section": ev["section"], "excerpt": text, "score": ev["score"]})
+        deduped.append({"page": ev["page"], "page_end": ev["page_end"], "section": ev["section"], "excerpt": text, "score": ev["score"], "lexical_score": ev.get("lexical_score"), "vector_score": ev.get("vector_score"), "retrieval_method": ev.get("retrieval_method")})
         if len(deduped) >= 4:
             break
     return {
         "answer": answer,
         "confidence": confidence,
+        "answerable": True,
         "evidence": deduped,
+        "evidence_threshold": EVIDENCE_MIN_SCORE,
+        "retrieval_method": "hybrid_fulltext_vector",
         "evidence_policy": "答案仅基于已解析原文证据；页码为 PDF 物理页码。",
     }

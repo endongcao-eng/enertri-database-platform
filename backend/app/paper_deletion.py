@@ -89,6 +89,10 @@ def delete_document_rows(db: Session, document: KnowledgeDocument, *, mark_sourc
         figure_dir = _safe_figure_dir(figure.image_path, document.id)
         if figure_dir and figure_dir not in result.figure_dirs:
             result.figure_dirs.append(figure_dir)
+    for table in db.scalars(select(KnowledgeTable).where(KnowledgeTable.document_id == document.id)).all():
+        figure_dir = _safe_figure_dir(table.preview_path, document.id)
+        if figure_dir and figure_dir not in result.figure_dirs:
+            result.figure_dirs.append(figure_dir)
 
     # Explicit deletes keep this correct on SQLite and on existing PostgreSQL
     # installations where foreign-key cascade enforcement may differ.

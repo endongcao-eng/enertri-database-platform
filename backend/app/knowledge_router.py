@@ -1,18 +1,20 @@
 from __future__ import annotations
 
 import json
+import re
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Request, UploadFile
+from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 
 from .audit import write_audit
 from .database import get_db
-from .file_service import InvalidStoredUpload, store_upload
+from .file_service import FILE_STORE_DIR, InvalidStoredUpload, is_managed_storage_path, store_upload
 from .models import KnowledgeBase, KnowledgeChunk, KnowledgeDocument, KnowledgeFigure, KnowledgePage, KnowledgeTable, Publication, PublicationSource, TaskEvent, TaskFile, User, WorkspaceFile, WorkspaceTask
 from .paper_pipeline import answer_question
 from .paper_deletion import delete_document_rows, finalize_paper_deletion
@@ -47,6 +49,20 @@ class KnowledgeBaseCreate(BaseModel):
 
 class QAPayload(BaseModel):
     question: str = Field(min_length=2, max_length=2000)
+
+
+class TableCorrectionPayload(BaseModel):
+    title: str | None = Field(default=None, max_length=2000)
+    page_number: int | None = Field(default=None, ge=1)
+    bbox: list[float] | None = None
+    data: list[list[Any]] | None = None
+    markdown: str | None = None
+    extraction_strategy: str | None = Field(default=None, max_length=80)
+    confidence: float | None = Field(default=None, ge=0, le=1)
+
+
+class CentralSavePayload(BaseModel):
+    knowledge_base_id: int | None = None
 
 
 def _meta(request: Request) -> dict[str, str | None]:
@@ -118,6 +134,61 @@ def get_publication(publication_id: str, db: Session = Depends(get_db), _: User 
     if not item:
         raise HTTPException(status_code=404, detail="论文主库中未找到该论文")
     return item
+
+
+@router.post("/literature/publications/{publication_id}/save")
+def save_central_publication(
+    publication_id: str,
+    request: Request,
+    payload: CentralSavePayload | None = None,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_permission("paper.upload")),
+):
+    """Save a central-catalog record into the user's KB without inventing a PDF.
+
+    This creates a bibliographic knowledge document.  The document is
+    intentionally marked ``catalog`` until the user uploads/attaches a full
+    text, so it cannot be mistaken for a parsed original source.
+    """
+    try:
+        item = get_space_energy_literature(db, publication_id)
+    except SpaceEnergyCatalogError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    if not item:
+        raise HTTPException(status_code=404, detail="论文主库中未找到该论文")
+    kb = db.get(KnowledgeBase, payload.knowledge_base_id) if payload and payload.knowledge_base_id else _ensure_personal_kb(db, user)
+    if not kb or not _kb_access(kb, user, manage=True):
+        raise HTTPException(status_code=404, detail="knowledge base not found")
+    # A catalog row has no local Publication id yet; create or reuse the
+    # bibliographic mirror so KnowledgeDocument can retain a stable FK.
+    doi = item.get("doi")
+    normalized_title = " ".join(re.sub(r"[^\w\u4e00-\u9fff]+", " ", str(item.get("title") or "").casefold()).split())
+    local = db.scalar(select(Publication).where(Publication.doi == doi)) if doi else None
+    if not local and normalized_title:
+        for candidate in db.scalars(select(Publication).where(Publication.normalized_title == normalized_title).limit(10)).all():
+            local = candidate
+            break
+    if not local:
+        local = Publication(title=item.get("title") or "未命名论文", normalized_title=normalized_title or str(item.get("title") or "未命名论文").casefold(), doi=doi, primary_source="space_energy")
+        db.add(local); db.flush()
+    local.title = local.title or item.get("title")
+    local.abstract = local.abstract or item.get("abstract")
+    local.journal = local.journal or item.get("journal") or item.get("source")
+    local.year = local.year or item.get("year")
+    local.landing_page_url = local.landing_page_url or item.get("landing_page_url") or item.get("open_url")
+    local.fulltext_url = local.fulltext_url or item.get("fulltext_url")
+    local.authors_json = json.dumps(item.get("authors") or [], ensure_ascii=False)
+    local.keywords_json = json.dumps(item.get("keywords") or item.get("tags") or [], ensure_ascii=False)
+    if not db.scalar(select(PublicationSource).where(PublicationSource.publication_id == local.id, PublicationSource.source_name == "space_energy", PublicationSource.source_record_id == str(publication_id))):
+        db.add(PublicationSource(publication_id=local.id, source_name="space_energy", source_record_id=str(publication_id), raw_json=json.dumps(item, ensure_ascii=False, default=str)))
+    existing = db.scalar(select(KnowledgeDocument).where(KnowledgeDocument.knowledge_base_id == kb.id, KnowledgeDocument.publication_id == local.id, KnowledgeDocument.source_type == "catalog"))
+    already_saved = existing is not None
+    if not existing:
+        existing = KnowledgeDocument(publication_id=local.id, knowledge_base_id=kb.id, title=item.get("title") or "未命名论文", source_type="catalog", owner_user_id=user.id, status="catalog_saved", page_count=0, metadata_json=json.dumps({"central_catalog_id": str(publication_id), "source": "space_energy", "fulltext_url": item.get("fulltext_url")}, ensure_ascii=False))
+        db.add(existing)
+    db.commit(); db.refresh(existing)
+    write_audit(db, action="literature.central.saved_to_knowledge_base", resource_type="knowledge_document", resource_id=existing.id, actor=user, details={"central_id": str(publication_id), "knowledge_base_id": kb.id}, **_meta(request))
+    return {"saved": True, "already_saved": already_saved, "document_id": existing.id, "knowledge_base_id": kb.id, "publication": publication_to_dict(db, local), "source_type": "catalog", "fulltext_url": item.get("fulltext_url")}
 
 
 def _live_related(db: Session, publication_id: int, method: str, limit: int) -> dict[str, Any]:
@@ -297,9 +368,84 @@ def get_document(document_id: int, db: Session = Depends(get_db), user: User = D
         "id": doc.id, "title": doc.title, "status": "missing" if source_missing else doc.status, "parse_status": doc.status, "page_count": doc.page_count, "file_id": doc.file_id, "source_exists": source_exists, "source_missing": source_missing, "file_type": Path(source.original_name).suffix.lower() if source else Path(doc.title).suffix.lower(), "knowledge_base_id": doc.knowledge_base_id,
         "structure": structure, "metadata": metadata,
         "pages": [{"page_number": p.page_number, "text": p.text, "ocr_used": p.ocr_used, "extraction_method": p.extraction_method, "page_url": f"/api/files/{doc.file_id}/download#page={p.page_number}" if doc.file_id else None} for p in pages],
-        "tables": [{"id": t.id, "table_number": t.table_number, "page_number": t.page_number, "title": t.title, "data": json.loads(t.data_json), "markdown": t.markdown} for t in tables],
-        "figures": [{"id": f.id, "figure_number": f.figure_number, "page_number": f.page_number, "caption": f.caption} for f in figures],
+        "tables": [{"id": t.id, "table_number": t.table_number, "page_number": t.page_number, "title": t.title, "data": json.loads(t.data_json or "[]"), "markdown": t.markdown, "bbox": json.loads(t.bbox_json) if t.bbox_json else None, "extraction_strategy": t.extraction_strategy, "confidence": t.confidence, "preview_url": f"/api/knowledge/documents/{doc.id}/tables/{t.id}/preview" if t.preview_path else None, "corrected": bool(t.correction_json)} for t in tables],
+        "figures": [{"id": f.id, "figure_number": f.figure_number, "page_number": f.page_number, "caption": f.caption, "preview_url": f"/api/knowledge/documents/{doc.id}/figures/{f.id}/preview" if f.image_path else None} for f in figures],
     }
+
+
+def _table_or_404(db: Session, document_id: int, table_id: int) -> KnowledgeTable:
+    table = db.scalar(select(KnowledgeTable).where(KnowledgeTable.id == table_id, KnowledgeTable.document_id == document_id))
+    if not table:
+        raise HTTPException(status_code=404, detail="table not found")
+    return table
+
+
+def _safe_preview_path(value: str | None) -> Path:
+    if not value:
+        raise HTTPException(status_code=404, detail="preview not available")
+    path = Path(value).resolve()
+    if not is_managed_storage_path(path) or not path.is_file():
+        raise HTTPException(status_code=404, detail="preview not available")
+    return path
+
+
+@router.get("/knowledge/documents/{document_id}/tables/{table_id}/preview")
+def table_preview(document_id: int, table_id: int, db: Session = Depends(get_db), user: User = Depends(current_user)):
+    doc = _document_access(db, document_id, user)
+    table = _table_or_404(db, doc.id, table_id)
+    path = _safe_preview_path(table.preview_path)
+    return FileResponse(path, filename=path.name, media_type="image/png")
+
+
+@router.patch("/knowledge/documents/{document_id}/tables/{table_id}")
+def correct_table(document_id: int, table_id: int, payload: TableCorrectionPayload, request: Request, db: Session = Depends(get_db), user: User = Depends(require_permission("knowledge.own.manage"))):
+    doc = _document_access(db, document_id, user, manage=True)
+    table = _table_or_404(db, doc.id, table_id)
+    if payload.bbox is not None and len(payload.bbox) != 4:
+        raise HTTPException(status_code=422, detail="bbox 必须是 [x0, y0, x1, y1]")
+    if payload.title is not None: table.title = payload.title
+    if payload.page_number is not None: table.page_number = payload.page_number
+    if payload.bbox is not None:
+        x0, y0, x1, y1 = payload.bbox
+        if x1 <= x0 or y1 <= y0: raise HTTPException(status_code=422, detail="bbox 的右下角必须大于左上角")
+        table.bbox_json = json.dumps([round(float(v), 3) for v in payload.bbox], ensure_ascii=False)
+    if payload.data is not None:
+        table.data_json = json.dumps(payload.data, ensure_ascii=False, default=str)
+        if payload.markdown is None:
+            rows = [[str(cell or "").strip() for cell in row] for row in payload.data]
+            width = max((len(row) for row in rows), default=0)
+            padded = [row + [""] * (width - len(row)) for row in rows]
+            table.markdown = "| " + " | ".join(padded[0]) + " |\n| " + " | ".join(["---"] * width) + " |\n" + "\n".join("| " + " | ".join(row) + " |" for row in padded[1:]) if padded else ""
+    if payload.markdown is not None: table.markdown = payload.markdown
+    if payload.extraction_strategy is not None: table.extraction_strategy = payload.extraction_strategy
+    if payload.confidence is not None: table.confidence = payload.confidence
+    correction = json.loads(table.correction_json or "{}")
+    correction.update({"corrected_at": datetime.now(timezone.utc).isoformat(), "corrected_by": user.id, "fields": payload.model_dump(exclude_none=True)})
+    table.correction_json = json.dumps(correction, ensure_ascii=False, default=str)
+    # Re-crop from the original PDF when a reviewer supplied a new bbox.
+    if payload.bbox is not None and doc.file_id:
+        source = db.get(WorkspaceFile, doc.file_id)
+        try:
+            import fitz
+            if source and Path(source.storage_path).suffix.lower() == ".pdf" and Path(source.storage_path).is_file():
+                path = Path(table.preview_path) if table.preview_path else FILE_STORE_DIR / f"doc_{doc.id}_figures" / f"table_{table.id}_corrected.png"
+                path.parent.mkdir(parents=True, exist_ok=True)
+                pdf = fitz.open(source.storage_path); page = pdf.load_page(table.page_number - 1); rect = fitz.Rect(*payload.bbox) & page.rect
+                page.get_pixmap(matrix=fitz.Matrix(2, 2), clip=rect, alpha=False).save(str(path)); pdf.close(); table.preview_path = str(path)
+        except Exception:
+            pass
+    db.commit(); db.refresh(table)
+    write_audit(db, action="paper.table.corrected", resource_type="knowledge_table", resource_id=table.id, actor=user, details={"document_id": doc.id, "fields": payload.model_dump(exclude_none=True)}, **_meta(request))
+    return {"id": table.id, "document_id": doc.id, "table_number": table.table_number, "page_number": table.page_number, "title": table.title, "data": json.loads(table.data_json or "[]"), "markdown": table.markdown, "bbox": json.loads(table.bbox_json) if table.bbox_json else None, "extraction_strategy": table.extraction_strategy, "confidence": table.confidence, "preview_url": f"/api/knowledge/documents/{doc.id}/tables/{table.id}/preview" if table.preview_path else None, "corrected": True}
+
+
+@router.get("/knowledge/documents/{document_id}/figures/{figure_id}/preview")
+def figure_preview(document_id: int, figure_id: int, db: Session = Depends(get_db), user: User = Depends(current_user)):
+    doc = _document_access(db, document_id, user)
+    figure = db.scalar(select(KnowledgeFigure).where(KnowledgeFigure.id == figure_id, KnowledgeFigure.document_id == doc.id))
+    if not figure: raise HTTPException(status_code=404, detail="figure not found")
+    path = _safe_preview_path(figure.image_path)
+    return FileResponse(path, filename=path.name)
 
 
 @router.post("/knowledge/documents/{document_id}/qa")

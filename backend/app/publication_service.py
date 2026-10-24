@@ -89,6 +89,27 @@ def filter_relevant_publications(items: list[dict[str, Any]], query: str) -> tup
     return accepted, len(items) - len(accepted)
 
 
+def evaluate_relevance_dataset(dataset: list[dict[str, Any]]) -> dict[str, Any]:
+    """Run a labelled energy-literature set and return auditable metrics."""
+    tp = fp = fn = tn = 0
+    cases: list[dict[str, Any]] = []
+    for case in dataset:
+        item = case.get("item") or case
+        query = str(case.get("query") or "空间 能源")
+        expected = bool(case.get("relevant", False))
+        accepted, _ = filter_relevant_publications([item], query)
+        predicted = bool(accepted)
+        if predicted and expected: tp += 1
+        elif predicted and not expected: fp += 1
+        elif not predicted and expected: fn += 1
+        else: tn += 1
+        cases.append({"id": case.get("id"), "expected": expected, "predicted": predicted, "title": item.get("title")})
+    precision = tp / max(1, tp + fp)
+    recall = tp / max(1, tp + fn)
+    f1 = 2 * precision * recall / max(1e-9, precision + recall)
+    return {"count": len(dataset), "true_positive": tp, "false_positive": fp, "false_negative": fn, "true_negative": tn, "precision": round(precision, 4), "recall": round(recall, 4), "f1": round(f1, 4), "cases": cases}
+
+
 def normalize_doi(value: str | None) -> str | None:
     if not value:
         return None

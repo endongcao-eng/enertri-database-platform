@@ -1,0 +1,12 @@
+{
+  "name": "enertri-energy-paper-corpus-v1",
+  "query_domain": "能源动力/空间能源",
+  "cases": [
+    {"id": "four_tables_ruled", "format": "pdf", "layout": "single_column", "scan": false, "language": "en", "expected_tables": 4, "expected_bbox": true, "source_anchor": "controlled_layout_fixture"},
+    {"id": "two_column_energy", "format": "pdf", "layout": "two_column", "scan": false, "language": "en", "expected_tables": 0, "expected_bbox": false, "source_anchor": "controlled_layout_fixture"},
+    {"id": "scanned_english", "format": "pdf", "layout": "single_column", "scan": true, "language": "en", "expected_ocr": true, "source_anchor": "controlled_scan_fixture"},
+    {"id": "scanned_chinese", "format": "pdf", "layout": "single_column", "scan": true, "language": "zh", "expected_ocr": true, "ocr_lang": "chi_sim+eng", "source_anchor": "controlled_scan_fixture"},
+    {"id": "nasa_space_based_solar_power", "format": "pdf", "layout": "unknown", "scan": false, "language": "en", "source_anchor": "https://ntrs.nasa.gov/citations/20230018600"},
+    {"id": "nasa_cost_benefit_space_power", "format": "pdf", "layout": "unknown", "scan": false, "language": "en", "source_anchor": "https://ntrs.nasa.gov/citations/20220014049"}
+  ]
+}

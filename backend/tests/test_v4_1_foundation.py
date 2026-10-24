@@ -156,6 +156,20 @@ class V41FoundationTest(unittest.TestCase):
         self.assertEqual(doc["page_count"], 2)
         self.assertGreaterEqual(len(doc["pages"]), 2)
         self.assertGreaterEqual(len(doc["tables"]), 1, doc)
+        table = doc["tables"][0]
+        self.assertIn("extraction_strategy", table)
+        self.assertIn("confidence", table)
+        self.assertIn("bbox", table)
+        if table.get("preview_url"):
+            preview = self.client.get(table["preview_url"], headers=self.student_headers)
+            self.assertEqual(preview.status_code, 200, preview.text)
+            self.assertTrue(preview.headers.get("content-type", "").startswith("image/"))
+            corrected = self.client.patch(
+                f"/api/knowledge/documents/{document_id}/tables/{table['id']}", headers=self.student_headers,
+                json={"title": "人工核验表格", "confidence": 0.97, "data": table["data"]},
+            )
+            self.assertEqual(corrected.status_code, 200, corrected.text)
+            self.assertTrue(corrected.json()["corrected"])
         facts = doc["structure"].get("key_facts") or []
         self.assertTrue(any(f["type"] == "laser_power" and f["value"] == "2.4" for f in facts), facts)
         self.assertTrue(any(f["type"] == "tensile_strength" and f["value"] == "612" for f in facts), facts)
@@ -197,6 +211,13 @@ class V41FoundationTest(unittest.TestCase):
         self.assertIn("trapped", qa2.json()["answer"].lower())
         self.assertTrue(any(e["page"] == 2 for e in qa2.json()["evidence"]))
         self.assertEqual(qa2.json()["evidence"][0]["section"], "Discussion")
+        unknown = self.client.post(
+            f"/api/knowledge/documents/{document_id}/qa", headers=self.student_headers,
+            json={"question": "论文是否证明了量子纠缠驱动的核聚变推进？"},
+        )
+        self.assertEqual(unknown.status_code, 200, unknown.text)
+        self.assertFalse(unknown.json()["answerable"])
+        self.assertIn("无法确定", unknown.json()["answer"])
 
 
     def test_paper_delete_removes_structured_data_and_reports_missing_source(self):
@@ -265,6 +286,24 @@ class V41FoundationTest(unittest.TestCase):
             source = db.get(WorkspaceFile, file_id)
             self.assertIsNotNone(source)
             self.assertIsNotNone(source.deleted_at)
+
+    def test_central_catalog_paper_can_be_saved_to_personal_knowledge_base(self):
+        central = {
+            "id": "central-test-001", "title": "Space Based Solar Power", "authors": ["NASA"], "year": 2023,
+            "source": "NASA Technical Reports Server", "abstract": "Space energy transmission to Earth.",
+            "doi": "10.5555/central-test-001", "fulltext_url": "https://ntrs.nasa.gov/citations/20230018600",
+            "open_url": "https://ntrs.nasa.gov/citations/20230018600", "keywords": ["space energy"],
+        }
+        with patch("app.knowledge_router.get_space_energy_literature", return_value=central):
+            response = self.client.post("/api/literature/publications/central-test-001/save", headers=self.student_headers, json={})
+        self.assertEqual(response.status_code, 200, response.text)
+        body = response.json()
+        self.assertEqual(body["source_type"], "catalog")
+        self.assertFalse(body["already_saved"])
+        with patch("app.knowledge_router.get_space_energy_literature", return_value=central):
+            again = self.client.post("/api/literature/publications/central-test-001/save", headers=self.student_headers, json={})
+        self.assertEqual(again.status_code, 200, again.text)
+        self.assertTrue(again.json()["already_saved"])
 
     def test_chinese_scanned_pdf_uses_bilingual_ocr(self):
         with patch.dict(os.environ, {"OCR_LANG": "chi_sim+eng"}), patch("pytesseract.image_to_string", return_value="摘要 这是中文扫描论文的能源动力研究结果与结论。") as ocr:
@@ -556,7 +595,7 @@ class V41FoundationTest(unittest.TestCase):
 
         migration = self.client.get("/api/admin/migrations", headers=self.admin_headers)
         self.assertEqual(migration.status_code, 200)
-        self.assertEqual(migration.json()["current_revision"], "v4_7_operational_health")
+        self.assertEqual(migration.json()["current_revision"], "v4_7_literature_research_value")
         self.assertEqual(migration.json()["status"], "succeeded")
 
         users = self.client.get("/api/admin/users", headers=self.admin_headers)

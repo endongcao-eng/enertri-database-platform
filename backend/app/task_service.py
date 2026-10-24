@@ -26,7 +26,7 @@ from .file_service import FILE_STORE_DIR, register_generated_file
 from .file_validation import FileValidationError, validate_file_bytes
 from .task_queue import recover_expired_tasks
 from .paper_pipeline import ingest_document
-from .models import AIUsageRecord, KnowledgeDocument, KnowledgeFigure, SimulationArtifact, SimulationJob, TaskEvent, TaskFile, WorkspaceFile, WorkspaceTask
+from .models import AIUsageRecord, KnowledgeDocument, KnowledgeFigure, KnowledgeTable, SimulationArtifact, SimulationJob, TaskEvent, TaskFile, WorkspaceFile, WorkspaceTask
 from .simulation import SUPPORTED_SOFTWARE, create_simulation_package
 
 STEP_DELAY = float(os.getenv("TASK_STEP_DELAY_SECONDS", "0.05"))
@@ -576,6 +576,12 @@ def _paper_ingest_handler(db: Session, task: WorkspaceTask, payload: dict[str, A
                 image_path = Path(figure.image_path).resolve()
                 if stage_root == image_path or stage_root in image_path.parents:
                     figure.image_path = str(final_root / image_path.relative_to(stage_root))
+            for table in db.scalars(select(KnowledgeTable).where(KnowledgeTable.document_id == document.id)).all():
+                if not table.preview_path:
+                    continue
+                preview_path = Path(table.preview_path).resolve()
+                if stage_root == preview_path or stage_root in preview_path.parents:
+                    table.preview_path = str(final_root / preview_path.relative_to(stage_root))
             for item in result.get("figures") or []:
                 image_path = item.get("image_path") if isinstance(item, dict) else None
                 if image_path:

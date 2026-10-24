@@ -1,13 +1,13 @@
 {
   "name": "EnerTri 网页试用部署准备版",
-  "version": "4.7.0-webprep.21",
+  "version": "4.7.0-webprep.22",
   "api_business_version": "4.7.0",
   "date": "2026-10-24",
   "status": "preparation_candidate_not_public_ready",
-  "database_head": "v4_7_operational_health",
+  "database_head": "v4_7_literature_research_value",
   "validation": {
-    "isolated_sqlite_tests": 49,
-    "test_modules": 13,
+    "isolated_sqlite_tests": 53,
+    "test_modules": 15,
     "python_compile": "passed",
     "javascript_syntax": "passed",
     "yaml_parse": "passed",
@@ -21,7 +21,17 @@
     "paper_delete_integration": "passed_with_sqlite_inline_worker",
     "predeploy_hardening_tests": "passed: accepted/rejected file categories, unified paper/task cascade, bilingual OCR, restricted video/simulation routes",
     "table_extraction_helper": "passed with ruled and whitespace synthetic PDFs",
-    "relevance_filter": "passed with space-energy and unrelated-culture cases"
+    "relevance_filter": "passed with curated NASA/public energy set and unrelated-culture cases",
+    "research_value_upgrade_tests": "passed: table provenance/crops/correction, hybrid retrieval unknown-answer policy, central catalog save, four-table corpus manifest",
+    "research_value_upgrade": [
+      "表格 bbox、提取策略、置信度和裁剪预览持久化",
+      "表格人工修正与按新 bbox 重裁剪",
+      "受保护的图片与表格预览接口及前端 Blob 预览",
+      "全文词项检索与本地向量检索混合排序",
+      "证据阈值和无法确定机制",
+      "能源动力相关性标注集与评测指标",
+      "空间能源主库论文一键保存到个人知识库"
+    ]
   },
   "prior_manifest": "review/input_release_manifest.json",
   "changes": [

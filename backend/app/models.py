@@ -6,6 +6,7 @@ from sqlalchemy import (
     Column,
     Date,
     DateTime,
+    Float,
     ForeignKey,
     Integer,
     Numeric,
@@ -452,6 +453,14 @@ class KnowledgeTable(Base):
     title = Column(Text)
     data_json = Column(Text, nullable=False)
     markdown = Column(Text)
+    # Reproducibility metadata for scientific table extraction.  The bbox is
+    # stored in PDF page coordinates (x0, y0, x1, y1), so a reviewer can
+    # compare the structured values with the exact source region.
+    bbox_json = Column(Text)
+    extraction_strategy = Column(String(80), nullable=False, default="unknown")
+    confidence = Column(Float, nullable=False, default=0.0)
+    preview_path = Column(Text)
+    correction_json = Column(Text)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
 
