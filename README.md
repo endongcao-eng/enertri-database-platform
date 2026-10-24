@@ -2,7 +2,7 @@
 
 # EnerTri 科研与焊接智能平台 V4.7
 
-当前数据库目标 revision：`v4_7_space_energy_literature`。
+当前数据库目标 revision：`v4_7_operational_health`。
 
 ## 科研成长执行闭环
 
@@ -69,7 +69,7 @@ Railway 和 Docker 部署使用 `SPACE_ENERGY_API_BASE_URL` 指定空间能源�
 ```text
 文件校验
 → 文本层检测 / 逐页解析
-→ OCR 兜底
+→ 中文/英文 OCR 兜底（`chi_sim+eng`）
 → 标题 / 摘要 / 章节
 → 表格
 → 图片 / 图注
@@ -97,7 +97,7 @@ Railway 和 Docker 部署使用 `SPACE_ENERGY_API_BASE_URL` 指定空间能源�
 - 企业知识库 `enterprise`
 - 公共术语知识库 `public_terms`
 
-可配置团队检索、AI 使用、导出、保留原文；论文还保留保密等级和是否允许外部 AI。
+可配置团队检索、AI 使用、导出、保留原文；论文还保留保密等级和是否允许外部 AI。论文从文件中心或知识库任一入口删除时，原文件、页、表、图、分块和关联入库任务统一级联处理。
 
 ### 论文问答
 

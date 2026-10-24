@@ -20,11 +20,18 @@ async function openKnowledgeSystem(documentId = null) {
   State.knowledgeBusy = true;
   render();
   try {
-    const [bases, documents] = await Promise.all([
-      api('/knowledge/bases'), api('/knowledge/documents')
-    ]);
+    // Select the knowledge base before requesting documents.  The unscoped
+    // endpoint is intentionally available for administrative tooling, but a
+    // user-facing page must never mix documents from different bases.
+    const bases = await api('/knowledge/bases');
     State.knowledgeBases = bases;
-    State.knowledgeDocuments = documents;
+    const previousKbId = Number(State.selectedKnowledgeBaseId);
+    State.selectedKnowledgeBaseId = bases.some(k => Number(k.id) === previousKbId)
+      ? previousKbId
+      : (bases[0]?.id || null);
+    State.knowledgeDocuments = State.selectedKnowledgeBaseId
+      ? await api(`/knowledge/documents?knowledge_base_id=${encodeURIComponent(State.selectedKnowledgeBaseId)}`)
+      : [];
     try {
       const catalog = await api(`/literature/publications?limit=20&offset=${State.centralLiteratureOffset||0}`);
       State.publications = catalog.items || [];
@@ -35,8 +42,11 @@ async function openKnowledgeSystem(documentId = null) {
       State.publications = [];
       State.centralLiteratureStatus = { available: false, message: e.message || '空间能源平台论文主库暂不可用' };
     }
-    State.selectedKnowledgeBaseId ||= bases[0]?.id || null;
-    if (documentId) State.selectedKnowledgeDocumentId = Number(documentId);
+    if (documentId && State.knowledgeDocuments.some(d => Number(d.id) === Number(documentId))) {
+      State.selectedKnowledgeDocumentId = Number(documentId);
+    } else if (documentId) {
+      State.selectedKnowledgeDocumentId = null;
+    }
     State.selectedKnowledgeDocumentId ||= documents.find(d => d.status === 'ready')?.id || documents[0]?.id || null;
     if (State.selectedKnowledgeDocumentId) await loadKnowledgeDocument(State.selectedKnowledgeDocumentId, false);
     State.knowledgeError = '';

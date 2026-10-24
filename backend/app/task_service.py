@@ -22,11 +22,11 @@ from .ai_service import AIFile, AIResponseError, AIUnavailableError, ai_service
 from .artifacts import create_pptx, safe_filename
 from .audit import write_audit
 from .database import ARTIFACT_DIR, WORKSPACE_DIR, SessionLocal
-from .file_service import register_generated_file
+from .file_service import FILE_STORE_DIR, register_generated_file
 from .file_validation import FileValidationError, validate_file_bytes
 from .task_queue import recover_expired_tasks
 from .paper_pipeline import ingest_document
-from .models import AIUsageRecord, KnowledgeDocument, SimulationArtifact, SimulationJob, TaskEvent, TaskFile, WorkspaceFile, WorkspaceTask
+from .models import AIUsageRecord, KnowledgeDocument, KnowledgeFigure, SimulationArtifact, SimulationJob, TaskEvent, TaskFile, WorkspaceFile, WorkspaceTask
 from .simulation import SUPPORTED_SOFTWARE, create_simulation_package
 
 STEP_DELAY = float(os.getenv("TASK_STEP_DELAY_SECONDS", "0.05"))
@@ -542,12 +542,49 @@ def _paper_ingest_handler(db: Session, task: WorkspaceTask, payload: dict[str, A
     document.status = "parsing"
     record.parse_status = "parsing"
     db.commit()
+    staging_dir: Path | None = None
+    final_figure_dir: Path | None = None
+    backup_figure_dir: Path | None = None
+    promoted_figures = False
     try:
         _revalidate_record(db, record)
+        if Path(record.storage_path).suffix.lower() == ".pdf":
+            final_figure_dir = Path(record.storage_path).parent / f"doc_{document.id}_figures"
+            staging_dir = final_figure_dir.parent / f".{final_figure_dir.name}.staging-{uuid.uuid4().hex}"
+            staging_dir.mkdir(parents=True, exist_ok=False)
         result = ingest_document(
             db, document, record,
             progress=lambda progress, step, message: add_event(db, task, progress=progress, step=step, message=message),
+            figure_dir=staging_dir,
         )
+        db.flush()
+
+        # Promote extracted images only after the complete database result has
+        # been built.  A reprocess failure therefore leaves the prior figure
+        # directory and structured rows untouched.
+        if staging_dir and final_figure_dir:
+            if final_figure_dir.exists():
+                backup_figure_dir = final_figure_dir.parent / f".{final_figure_dir.name}.backup-{uuid.uuid4().hex}"
+                final_figure_dir.rename(backup_figure_dir)
+            staging_dir.rename(final_figure_dir)
+            promoted_figures = True
+            stage_root = staging_dir.resolve()
+            final_root = final_figure_dir.resolve()
+            for figure in db.scalars(select(KnowledgeFigure).where(KnowledgeFigure.document_id == document.id)).all():
+                if not figure.image_path:
+                    continue
+                image_path = Path(figure.image_path).resolve()
+                if stage_root == image_path or stage_root in image_path.parents:
+                    figure.image_path = str(final_root / image_path.relative_to(stage_root))
+            for item in result.get("figures") or []:
+                image_path = item.get("image_path") if isinstance(item, dict) else None
+                if image_path:
+                    candidate = Path(image_path).resolve()
+                    if stage_root == candidate or stage_root in candidate.parents:
+                        item["image_path"] = str(final_root / candidate.relative_to(stage_root))
+        db.commit()
+        if backup_figure_dir:
+            shutil.rmtree(backup_figure_dir, ignore_errors=True)
         return {
             **result,
             "summary": "论文已进入结构化知识库，可进行页码级证据问答",
@@ -556,8 +593,21 @@ def _paper_ingest_handler(db: Session, task: WorkspaceTask, payload: dict[str, A
             "input_file_id": record.id,
         }
     except Exception:
-        document.status = "failed"
-        record.parse_status = "failed"
+        db.rollback()
+        if staging_dir and staging_dir.exists():
+            shutil.rmtree(staging_dir, ignore_errors=True)
+        if promoted_figures and final_figure_dir and final_figure_dir.exists():
+            shutil.rmtree(final_figure_dir, ignore_errors=True)
+        if backup_figure_dir and backup_figure_dir.exists() and final_figure_dir:
+            backup_figure_dir.rename(final_figure_dir)
+        # Preserve previously committed structured rows on a reprocess error,
+        # but expose the failed state to the user and worker diagnostics.
+        document = db.get(KnowledgeDocument, int(payload["document_id"]))
+        record = db.get(WorkspaceFile, int(payload["file_id"]))
+        if document:
+            document.status = "failed"
+        if record:
+            record.parse_status = "failed"
         db.commit()
         raise
 

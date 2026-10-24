@@ -5,6 +5,7 @@ import random
 import secrets
 import shutil
 import time
+import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -12,11 +13,12 @@ from fastapi import Depends, FastAPI, File, HTTPException, Query, Request, Uploa
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from sqlalchemy import or_, select
+from sqlalchemy import or_, select, text
 from sqlalchemy.orm import Session, selectinload
 
 from .database import MEDIA_DIR, SessionLocal, get_db
-from .models import Article, Category, Term, User, UserTermProgress
+from .file_service import FILE_STORE_DIR, cleanup_expired_files
+from .models import Article, Category, Term, User, UserTermProgress, WorkerHeartbeat
 from .schemas import ArticleCreate, ArticleOut, ArticleUpdate, CategoryCreate, CategoryOut, ImportResult, LoginRequest, ProgressOut, ProgressUpdate, QuizOut, QuizSubmitRequest, QuizSubmitResult, ReviewRequest, TermCreate, TermOut, TermUpdate, TokenOut, UserOut
 from .security import admin_user, create_access_token, current_user, hash_password, optional_current_user, verify_password, require_permission
 from .utils import apply_related_term_names, article_to_out, apply_term_payload, bool_video, build_term_name_lookup, join_keywords, progress_to_out, seed_defaults, split_list, split_refs, term_to_out
@@ -35,7 +37,6 @@ from .project_matching_service import seed_demo_project_matching
 from .development_planning_service import seed_demo_development_planning
 from .development_execution_service import seed_demo_closed_loop
 from .migration_bootstrap import upgrade_database
-from .file_service import cleanup_expired_files
 from .file_validation import FileValidationError, validate_file_bytes
 from .audit import write_audit
 
@@ -82,23 +83,87 @@ def startup_checks() -> None:
             closed_loop_seed = seed_demo_closed_loop(db)
             interrupted = recover_expired_tasks()
             cleaned = cleanup_expired_files(db)
-            write_audit(db, action="database.migration.completed", resource_type="database", resource_id="v4_7_trial_controls", details={**migration_result, "capability_standard_seed": standard_seed, "research_profile_seed": profile_seed, "project_matching_seed": matching_seed, "development_planning_seed": planning_seed, "closed_loop_seed": closed_loop_seed, "expired_task_leases_recovered": interrupted, "expired_files_cleaned": cleaned, "bootstrap_mode": "explicit_startup_opt_in"})
+            write_audit(db, action="database.migration.completed", resource_type="database", resource_id=str(migration_result.get("current_revision") or "head"), details={**migration_result, "capability_standard_seed": standard_seed, "research_profile_seed": profile_seed, "project_matching_seed": matching_seed, "development_planning_seed": planning_seed, "closed_loop_seed": closed_loop_seed, "expired_task_leases_recovered": interrupted, "expired_files_cleaned": cleaned, "bootstrap_mode": "explicit_startup_opt_in"})
+
+
+def _storage_health() -> dict[str, object]:
+    roots = {"media": MEDIA_DIR, "file_store": FILE_STORE_DIR}
+    details: dict[str, object] = {}
+    ok = True
+    minimum_free = int(os.getenv("HEALTH_MIN_FREE_BYTES", str(128 * 1024 * 1024)))
+    for name, root in roots.items():
+        item: dict[str, object] = {"path": str(root), "exists": root.is_dir(), "writable": False}
+        try:
+            root.mkdir(parents=True, exist_ok=True)
+            item["exists"] = root.is_dir()
+            probe = root / f".healthcheck-{os.getpid()}"
+            probe.write_text("ok", encoding="ascii")
+            probe.unlink(missing_ok=True)
+            free_bytes = shutil.disk_usage(root).free
+            item["free_bytes"] = free_bytes
+            item["writable"] = free_bytes >= minimum_free
+        except OSError as exc:
+            item["error"] = str(exc)
+        details[name] = item
+        ok = ok and bool(item.get("writable"))
+    return {"ok": ok, "details": details, "minimum_free_bytes": minimum_free}
+
+
+def _worker_health(db: Session) -> dict[str, object]:
+    mode = os.getenv("TASK_EXECUTION_MODE", "database_worker").strip().lower()
+    if mode != "database_worker":
+        return {"ok": True, "required": False, "mode": mode, "workers": []}
+    stale_seconds = max(30, int(os.getenv("WORKER_HEARTBEAT_STALE_SECONDS", "90")))
+    now = datetime.now(timezone.utc)
+    try:
+        workers = db.scalars(
+            select(WorkerHeartbeat)
+            .where(WorkerHeartbeat.status == "running")
+            .order_by(WorkerHeartbeat.last_seen_at.desc())
+            .limit(20)
+        ).all()
+        output = []
+        for worker in workers:
+            seen = worker.last_seen_at
+            if seen.tzinfo is None:
+                seen = seen.replace(tzinfo=timezone.utc)
+            age = max(0.0, (now - seen).total_seconds())
+            output.append({"worker_id": worker.worker_id, "hostname": worker.hostname, "pid": worker.pid, "last_seen_at": worker.last_seen_at, "age_seconds": round(age, 1)})
+        return {"ok": bool(output) and any(item["age_seconds"] <= stale_seconds for item in output), "required": True, "mode": mode, "stale_after_seconds": stale_seconds, "workers": output}
+    except Exception as exc:
+        return {"ok": False, "required": True, "mode": mode, "error": f"Worker 心跳表不可用：{exc}", "workers": []}
+
+
+def _dependency_health(db: Session) -> dict[str, object]:
+    try:
+        db.execute(text("SELECT 1"))
+        database = {"ok": True}
+    except Exception as exc:
+        database = {"ok": False, "error": str(exc)}
+    storage = _storage_health()
+    worker = _worker_health(db) if database["ok"] else {"ok": False, "required": True, "error": "数据库不可用", "workers": []}
+    return {"database": database, "storage": storage, "worker": worker, "ok": bool(database["ok"] and storage["ok"] and (not worker.get("required") or worker["ok"]))}
 
 
 @app.get("/api/health")
-def health():
-    return {"ok": True, "version": "4.7.0", "task_execution_mode": os.getenv("TASK_EXECUTION_MODE", "database_worker")}
+def health(db: Session = Depends(get_db)):
+    """Liveness plus dependency diagnostics; readiness applies the 503 gate."""
+    result = _dependency_health(db)
+    return {"ok": result["ok"], "version": os.getenv("VERSION", "4.7.0"), "task_execution_mode": os.getenv("TASK_EXECUTION_MODE", "database_worker"), "dependencies": result}
 
 
 @app.get("/api/ready")
-def readiness():
+def readiness(db: Session = Depends(get_db)):
     from .migration_bootstrap import current_revision, HEAD_REVISION
+    result = _dependency_health(db)
     try:
-        if current_revision() != HEAD_REVISION:
-            raise RuntimeError("schema mismatch")
-    except Exception:
-        raise HTTPException(status_code=503, detail="Database is not ready")
-    return {"ok": True}
+        revision = current_revision()
+        result["schema"] = {"ok": revision == HEAD_REVISION, "current_revision": revision, "expected_revision": HEAD_REVISION}
+    except Exception as exc:
+        result["schema"] = {"ok": False, "error": str(exc)}
+    if not result["ok"] or not result["schema"]["ok"]:
+        raise HTTPException(status_code=503, detail={"message": "Database, storage, schema or Worker is not ready", **result})
+    return {"ok": True, **result}
 
 
 @app.post("/api/auth/login", response_model=TokenOut)
@@ -509,7 +574,12 @@ def delete_term(term_id: int, db: Session = Depends(get_db), _: User = Depends(a
 
 
 @app.post("/api/media/videos")
-def upload_video(file: UploadFile = File(...), _: User = Depends(current_user)):
+def upload_video(
+    request: Request,
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    user: User = Depends(require_permission("rules.maintain")),
+):
     safe_name = Path(file.filename or "video.mp4").name
     raw = file.file.read(512 * 1024 * 1024 + 1)
     if len(raw) > 512 * 1024 * 1024:
@@ -520,10 +590,14 @@ def upload_video(file: UploadFile = File(...), _: User = Depends(current_user)):
         raise HTTPException(status_code=400, detail=f"视频文件校验失败：{exc}") from exc
     if validation.get("category") != "video":
         raise HTTPException(status_code=400, detail="上传内容不是可识别的视频文件")
-    target = MEDIA_DIR / "videos" / safe_name
+    # Term media is public by design, but the upload operation is restricted
+    # to rule/term maintainers and uses a collision-safe storage name.
+    stored_name = f"{uuid.uuid4().hex}_{safe_name}"
+    target = MEDIA_DIR / "videos" / stored_name
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_bytes(raw)
-    return {"path": f"/media/videos/{safe_name}", "filename": safe_name, "validation": validation}
+    write_audit(db, action="term.video.uploaded", resource_type="media_video", resource_id=stored_name, actor=user, details={"original_name": safe_name, "category": validation.get("category")}, ip_address=request.client.host if request.client else None, user_agent=request.headers.get("user-agent"))
+    return {"path": f"/media/videos/{stored_name}", "filename": safe_name, "stored_name": stored_name, "validation": validation}
 
 
 @app.post("/api/import/excel", response_model=ImportResult)

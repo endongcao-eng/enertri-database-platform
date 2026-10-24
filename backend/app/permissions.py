@@ -10,17 +10,20 @@ ROLE_PERMISSIONS: dict[str, set[str]] = {
     "researcher": {
         "paper.upload", "ai.external", "task.own.view", "task.own.retry", "task.own.cancel",
         "file.own.view", "file.own.download", "file.own.delete", "data.export", "knowledge.own.manage",
+        "media.video",
         "template.view", "template.download", "template.manage",
     },
     "production_engineer": {
         "paper.upload", "ai.external", "simulation.commercial", "task.own.view", "task.own.retry", "task.own.cancel",
         "file.own.view", "file.own.download", "file.own.delete", "data.export", "knowledge.own.manage",
+        "media.video",
         "template.view", "template.download",
     },
     "review_expert": {
         "paper.upload", "ai.external", "task.own.view", "task.other.view", "task.own.retry", "task.own.cancel",
         "file.own.view", "file.other.view", "file.own.download", "file.own.delete", "data.export",
         "process.approve", "knowledge.own.manage", "knowledge.shared.search",
+        "media.video",
         "template.view", "template.download",
     },
     "admin": {
@@ -29,6 +32,7 @@ ROLE_PERMISSIONS: dict[str, set[str]] = {
         "file.own.view", "file.other.view", "file.own.download", "file.other.download", "file.own.delete", "file.other.manage",
         "data.export", "user.role.manage", "rules.maintain", "process.approve", "audit.view",
         "knowledge.own.manage", "knowledge.shared.search", "knowledge.enterprise.manage",
+        "media.video",
         "template.view", "template.download", "template.manage", "template.delete",
     },
     "system_admin": {"*"},

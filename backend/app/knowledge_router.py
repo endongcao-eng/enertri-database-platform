@@ -1,21 +1,21 @@
 from __future__ import annotations
 
 import json
-import shutil
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Request, UploadFile
 from pydantic import BaseModel, Field
-from sqlalchemy import delete, or_, select
+from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 
 from .audit import write_audit
 from .database import get_db
-from .file_service import FILE_STORE_DIR, InvalidStoredUpload, store_upload
+from .file_service import InvalidStoredUpload, store_upload
 from .models import KnowledgeBase, KnowledgeChunk, KnowledgeDocument, KnowledgeFigure, KnowledgePage, KnowledgeTable, Publication, PublicationSource, TaskEvent, TaskFile, User, WorkspaceFile, WorkspaceTask
 from .paper_pipeline import answer_question
+from .paper_deletion import delete_document_rows, finalize_paper_deletion
 from .permissions import has_permission
 from .publication_service import ADAPTERS, publication_to_dict, search_publications, upsert_search_results
 from .space_energy_catalog import SpaceEnergyCatalogError, connection_status as space_energy_connection_status, get_literature as get_space_energy_literature, list_literatures as list_space_energy_literatures
@@ -242,63 +242,12 @@ def delete_knowledge_document(document_id: int, request: Request, db: Session = 
     if suffix not in {".pdf", ".docx"}:
         raise HTTPException(status_code=400, detail="仅支持删除 PDF / DOCX 文档")
 
-    # Stop a queued/running ingestion job before removing its source and extracted data.
     source_id = source.id if source else None
-    paper_tasks = []
-    active_tasks = []
-    if source_id:
-        paper_tasks = db.scalars(
-            select(WorkspaceTask).join(TaskFile, TaskFile.task_id == WorkspaceTask.id)
-            .where(TaskFile.file_id == source_id, WorkspaceTask.task_type == "paper_ingest")
-        ).all()
-        active_tasks = [task for task in paper_tasks if task.status in {"queued", "running"}]
-        now = datetime.now(timezone.utc)
-        for task in paper_tasks:
-            task.result_json = None
-        for task in active_tasks:
-            task.status = "cancelled"
-            task.current_step = "文档已删除"
-            task.error_message = "用户删除了对应的论文文档"
-            task.finished_at = now
-            task.lease_expires_at = None
-            db.add(TaskEvent(task_id=task.id, event_type="status", level="warning", step="文档已删除", progress=task.progress, message="论文文档及其解析结果已删除"))
-
-    figure_dirs = set()
-    expected_figure_dir_name = f"doc_{doc.id}_figures"
-    for figure in db.scalars(select(KnowledgeFigure).where(KnowledgeFigure.document_id == doc.id)).all():
-        if not figure.image_path:
-            continue
-        figure_dir = Path(figure.image_path).parent.resolve()
-        if figure_dir.name == expected_figure_dir_name and figure_dir.is_relative_to(FILE_STORE_DIR.resolve()):
-            figure_dirs.add(figure_dir)
-
-    # Structured content has explicit deletes for databases that do not enforce FK cascades.
-    db.execute(delete(KnowledgeChunk).where(KnowledgeChunk.document_id == doc.id))
-    db.execute(delete(KnowledgePage).where(KnowledgePage.document_id == doc.id))
-    db.execute(delete(KnowledgeTable).where(KnowledgeTable.document_id == doc.id))
-    db.execute(delete(KnowledgeFigure).where(KnowledgeFigure.document_id == doc.id))
-    db.delete(doc)
-
-    # A duplicate upload can reuse a WorkspaceFile. Preserve that file while another
-    # knowledge document still references it; otherwise remove the original and tombstone it.
-    remove_path = None
-    if source:
-        remaining_refs = db.scalar(select(KnowledgeDocument.id).where(KnowledgeDocument.file_id == source.id, KnowledgeDocument.id != doc.id).limit(1))
-        if not remaining_refs:
-            remove_path = Path(source.storage_path)
-            source.deleted_at = datetime.now(timezone.utc)
+    deletion = delete_document_rows(db, doc)
     db.commit()
-
-    if remove_path:
-        try:
-            remove_path.unlink(missing_ok=True)
-        except OSError:
-            # Keep the database deletion successful; a later storage cleanup can remove the orphan.
-            pass
-    for figure_dir in figure_dirs:
-        shutil.rmtree(figure_dir, ignore_errors=True)
-    write_audit(db, action="paper.knowledge_document.deleted", resource_type="knowledge_document", resource_id=document_id, actor=user, details={"file_id": source_id, "active_tasks_cancelled": len(active_tasks)}, **_meta(request))
-    return {"deleted": document_id, "structured_results_deleted": True, "source_file_deleted": bool(remove_path), "task_results_cleared": len(paper_tasks)}
+    finalize_paper_deletion(deletion)
+    write_audit(db, action="paper.knowledge_document.deleted", resource_type="knowledge_document", resource_id=document_id, actor=user, details={"file_id": source_id, "active_tasks_cancelled": deletion.active_tasks_cancelled}, **_meta(request))
+    return {"deleted": document_id, "structured_results_deleted": True, "source_file_deleted": bool(deletion.remove_paths), "task_results_cleared": deletion.task_results_cleared, "tasks_deleted": deletion.tasks_deleted}
 
 
 @router.post("/knowledge/documents/{document_id}/reprocess", status_code=202)

@@ -1,13 +1,13 @@
 {
   "name": "EnerTri 网页试用部署准备版",
-  "version": "4.7.0-webprep.19",
+  "version": "4.7.0-webprep.21",
   "api_business_version": "4.7.0",
-  "date": "2026-10-14",
+  "date": "2026-10-24",
   "status": "preparation_candidate_not_public_ready",
-  "database_head": "v4_7_space_energy_literature",
+  "database_head": "v4_7_operational_health",
   "validation": {
-    "isolated_sqlite_tests": 36,
-    "test_modules": 8,
+    "isolated_sqlite_tests": 49,
+    "test_modules": 13,
     "python_compile": "passed",
     "javascript_syntax": "passed",
     "yaml_parse": "passed",
@@ -18,7 +18,8 @@
     "dependency_audit": "target-environment-required",
     "railway_railpack": "configured_not_run",
     "trial_controls_tests": 10,
-    "paper_delete_integration": "not_run_dependencies_unavailable",
+    "paper_delete_integration": "passed_with_sqlite_inline_worker",
+    "predeploy_hardening_tests": "passed: accepted/rejected file categories, unified paper/task cascade, bilingual OCR, restricted video/simulation routes",
     "table_extraction_helper": "passed with ruled and whitespace synthetic PDFs",
     "relevance_filter": "passed with space-energy and unrelated-culture cases"
   },
@@ -44,6 +45,13 @@
     "个人知识库支持删除 PDF/DOCX 原件及其页、表、图、分块结构化结果，并取消进行中的入库任务",
     "PDF 表格提取改为 PyMuPDF 多策略识别并使用 pdfplumber 补充，按页面位置和内容去重、修正表格标题定位",
     "论文搜索增加能源动力领域相关性过滤和相关度分数，移除只命中泛词的无关文献",
-    "文献知识库前端显示表格识别页码诊断、相关度和被过滤结果数量"
+    "文献知识库前端显示表格识别页码诊断、相关度和被过滤结果数量",
+    "统一文件中心与论文知识库删除入口，级联清理原文件、结构化结果和入库任务",
+    "补齐 XLSX/视频文件语义分类，修复有效上传被错误拒绝的问题",
+    "Railway/Docker 增加中文简体 OCR 语言包并默认使用 chi_sim+eng",
+    "重新解析使用暂存目录和数据库提交前的原子替换策略",
+    "增加 Worker 心跳表、真实数据库/Volume/Worker 健康与就绪检查",
+    "收紧视频分析与术语视频上传、项目匹配和直接仿真创建/执行接口的权限",
+    "删除论文时同步删除 paper_ingest 任务、任务文件和任务事件"
   ]
 }

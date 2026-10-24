@@ -359,7 +359,7 @@ def _telemetry_features(payload: TelemetryBatchRequest) -> dict[str, Any]:
 @router.get("/status")
 def workspace_status(_: User = Depends(current_user)):
     return {
-        "version": "4.1.0",
+        "version": os.getenv("VERSION", "4.7.0"),
         "ai": ai_service.status(),
         "literature": {"primary": "空间能源平台论文库", **space_energy_connection_status(), "openalex_api_key_configured": bool(os.getenv("OPENALEX_API_KEY"))},
         "simulation": execution_status(),
@@ -379,11 +379,22 @@ def list_jobs(limit: int = Query(default=30, ge=1, le=100), db: Session = Depend
 
 @router.post("/literature/search")
 def literature_search(payload: LiteratureSearchRequest, db: Session = Depends(get_db), user: User = Depends(current_user)):
+    from_primary_catalog = True
     try:
         result = search_space_energy_literatures(payload.query, limit=payload.limit, year_from=payload.year_from, year_to=payload.year_to)
-        sync_space_energy_search_results(db, result.get("items") or [])
     except SpaceEnergyCatalogError as exc:
-        raise HTTPException(status_code=502, detail=str(exc)) from exc
+        # The canonical catalog endpoint remains strict and never serves its
+        # local mirror while offline. This supplementary workspace search may
+        # use the existing OpenAlex/Crossref fallback and reports the outage.
+        from_primary_catalog = False
+        try:
+            result = search_openalex(payload.query, year_from=payload.year_from, year_to=payload.year_to, limit=payload.limit)
+            result["primary_catalog_available"] = False
+            result["primary_catalog_warning"] = str(exc)
+        except Exception as fallback_exc:
+            raise HTTPException(status_code=502, detail=f"{exc}；补充检索也不可用：{fallback_exc}") from fallback_exc
+    if from_primary_catalog:
+        sync_space_energy_search_results(db, result.get("items") or [])
     job = _record_job(db, user, domain="research", task_type="literature_search", title=f"文献检索：{payload.query}", input_data=payload.model_dump(), output_json=result)
     return {"job": _job_to_dict(job), **result}
 
@@ -616,7 +627,7 @@ def welding_defect(payload: WeldingRequest, use_ai: bool = Query(default=False),
 
 
 @router.post("/simulations")
-def create_simulation(payload: SimulationCreateRequest, db: Session = Depends(get_db), user: User = Depends(current_user)):
+def create_simulation(payload: SimulationCreateRequest, db: Session = Depends(get_db), user: User = Depends(require_permission("simulation.commercial"))):
     job = SimulationJob(user_id=user.id, name=payload.name, software=payload.software, status="prepared", parameters_json=json.dumps(payload.parameters, ensure_ascii=False), workdir="pending")
     db.add(job)
     db.flush()

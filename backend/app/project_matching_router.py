@@ -68,15 +68,20 @@ def _replace_requirements(db: Session, project: ResearchProject, caps: list[Capa
 
 
 @router.get("/projects")
-def list_projects(db: Session = Depends(get_db), _: User = Depends(current_user)):
-    rows = db.scalars(select(ResearchProject).order_by(ResearchProject.status.asc(), ResearchProject.updated_at.desc(), ResearchProject.id.desc())).all()
+def list_projects(db: Session = Depends(get_db), user: User = Depends(current_user)):
+    # Students/researchers may discover only explicitly active projects;
+    # drafts and archived projects remain an administration concern.
+    stmt = select(ResearchProject)
+    if user.role not in {"admin", "system_admin"}:
+        stmt = stmt.where(ResearchProject.status == "active")
+    rows = db.scalars(stmt.order_by(ResearchProject.status.asc(), ResearchProject.updated_at.desc(), ResearchProject.id.desc())).all()
     return [project_out(db, row) for row in rows]
 
 
 @router.get("/projects/{project_id}")
-def get_project(project_id: int, db: Session = Depends(get_db), _: User = Depends(current_user)):
+def get_project(project_id: int, db: Session = Depends(get_db), user: User = Depends(current_user)):
     project = db.get(ResearchProject, project_id)
-    if not project:
+    if not project or (project.status != "active" and user.role not in {"admin", "system_admin"}):
         raise HTTPException(status_code=404, detail="project not found")
     return project_out(db, project)
 

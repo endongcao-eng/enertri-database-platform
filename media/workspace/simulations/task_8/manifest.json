@@ -1,0 +1,11 @@
+{
+  "name": "V4.1 仿真验收",
+  "software": "ansys_mapdl",
+  "input_file": "welding_thermal.dat",
+  "parameters": {
+    "current_a": 220,
+    "voltage_v": 24,
+    "travel_speed_mm_s": 5,
+    "mesh_size_mm": 2
+  }
+}

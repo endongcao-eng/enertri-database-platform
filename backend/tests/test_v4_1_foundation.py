@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import os
+import io
 import tempfile
 import time
 import unittest
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+from unittest.mock import patch
 
 _TEST_ROOT = tempfile.TemporaryDirectory(prefix="enertri_v41_")
 _ROOT = Path(_TEST_ROOT.name)
@@ -26,7 +28,7 @@ os.environ.update({
 from fastapi.testclient import TestClient  # noqa: E402
 from app.main import app  # noqa: E402
 from app.database import SessionLocal  # noqa: E402
-from app.models import KnowledgeChunk, KnowledgeDocument, KnowledgeFigure, KnowledgePage, KnowledgeTable, User, WorkspaceFile, WorkspaceTask  # noqa: E402
+from app.models import KnowledgeChunk, KnowledgeDocument, KnowledgeFigure, KnowledgePage, KnowledgeTable, TaskEvent, TaskFile, User, WorkspaceFile, WorkspaceTask  # noqa: E402
 from app.security import hash_password  # noqa: E402
 from app.task_queue import claim_next_task, recover_expired_tasks  # noqa: E402
 from app.task_service import create_task  # noqa: E402
@@ -75,6 +77,22 @@ def _demo_pdf_bytes() -> bytes:
     y = 70
     for line in page2_lines:
         page2.insert_text((60, y), line, fontsize=10); y += 30
+    data = doc.tobytes(garbage=4, deflate=True)
+    doc.close()
+    return data
+
+
+def _demo_scanned_chinese_pdf_bytes() -> bytes:
+    """One image-only page used to verify the Chinese OCR path."""
+    import fitz
+    from PIL import Image
+
+    image = Image.new("RGB", (1200, 800), "white")
+    image_bytes = io.BytesIO()
+    image.save(image_bytes, format="PNG")
+    doc = fitz.open()
+    page = doc.new_page(width=595, height=842)
+    page.insert_image(fitz.Rect(40, 40, 555, 800), stream=image_bytes.getvalue())
     data = doc.tobytes(garbage=4, deflate=True)
     doc.close()
     return data
@@ -213,6 +231,7 @@ class V41FoundationTest(unittest.TestCase):
         self.assertEqual(deleted.status_code, 200, deleted.text)
         self.assertTrue(deleted.json()["structured_results_deleted"])
         self.assertEqual(deleted.json()["task_results_cleared"], 1)
+        self.assertEqual(deleted.json()["tasks_deleted"], 1)
         self.assertEqual(self.client.get(f"/api/knowledge/documents/{document_id}", headers=self.student_headers).status_code, 404)
         with SessionLocal() as db:
             self.assertIsNone(db.get(KnowledgeDocument, document_id))
@@ -220,7 +239,92 @@ class V41FoundationTest(unittest.TestCase):
             self.assertEqual(db.query(KnowledgeChunk).filter_by(document_id=document_id).count(), 0)
             self.assertEqual(db.query(KnowledgeTable).filter_by(document_id=document_id).count(), 0)
             self.assertEqual(db.query(KnowledgeFigure).filter_by(document_id=document_id).count(), 0)
-            self.assertIsNone(db.get(WorkspaceTask, task_id).result_json)
+            self.assertIsNone(db.get(WorkspaceTask, task_id))
+            self.assertEqual(db.query(TaskFile).filter_by(task_id=task_id).count(), 0)
+            self.assertEqual(db.query(TaskEvent).filter_by(task_id=task_id).count(), 0)
+
+    def test_file_center_delete_cascades_linked_paper_document(self):
+        bases = self.client.get("/api/knowledge/bases", headers=self.student_headers).json()
+        personal = next(row for row in bases if row["scope_type"] == "personal")
+        uploaded = self.client.post(
+            "/api/knowledge/documents/upload", headers=self.student_headers,
+            files={"file": ("file-center-delete.pdf", _demo_pdf_bytes() + b"\n% file-center-delete", "application/pdf")},
+            data={"knowledge_base_id": str(personal["id"]), "confidentiality": "internal", "allow_external_ai": "false"},
+        )
+        self.assertEqual(uploaded.status_code, 202, uploaded.text)
+        self.wait_task(uploaded.json()["id"], timeout=20.0)
+        document_id = uploaded.json()["document_id"]
+        with SessionLocal() as db:
+            document = db.get(KnowledgeDocument, document_id)
+            file_id = document.file_id
+        deleted = self.client.delete(f"/api/files/{file_id}", headers=self.student_headers)
+        self.assertEqual(deleted.status_code, 200, deleted.text)
+        self.assertIn(document_id, deleted.json()["knowledge_documents_deleted"])
+        with SessionLocal() as db:
+            self.assertIsNone(db.get(KnowledgeDocument, document_id))
+            source = db.get(WorkspaceFile, file_id)
+            self.assertIsNotNone(source)
+            self.assertIsNotNone(source.deleted_at)
+
+    def test_chinese_scanned_pdf_uses_bilingual_ocr(self):
+        with patch.dict(os.environ, {"OCR_LANG": "chi_sim+eng"}), patch("pytesseract.image_to_string", return_value="摘要 这是中文扫描论文的能源动力研究结果与结论。") as ocr:
+            bases = self.client.get("/api/knowledge/bases", headers=self.student_headers).json()
+            personal = next(row for row in bases if row["scope_type"] == "personal")
+            uploaded = self.client.post(
+                "/api/knowledge/documents/upload", headers=self.student_headers,
+                files={"file": ("中文扫描论文.pdf", _demo_scanned_chinese_pdf_bytes(), "application/pdf")},
+                data={"knowledge_base_id": str(personal["id"]), "confidentiality": "internal", "allow_external_ai": "false"},
+            )
+            self.assertEqual(uploaded.status_code, 202, uploaded.text)
+            completed, _ = self.wait_task(uploaded.json()["id"], timeout=20.0)
+        self.assertEqual(completed["status"], "succeeded", completed)
+        self.assertTrue(ocr.called)
+        self.assertEqual(ocr.call_args.kwargs["lang"], "chi_sim+eng")
+        detail = self.client.get(f"/api/knowledge/documents/{uploaded.json()['document_id']}", headers=self.student_headers).json()
+        self.assertTrue(detail["pages"][0]["ocr_used"])
+        self.assertIn("中文扫描论文", detail["pages"][0]["text"])
+
+    def test_reprocess_failure_preserves_previous_structured_result(self):
+        bases = self.client.get("/api/knowledge/bases", headers=self.student_headers).json()
+        personal = next(row for row in bases if row["scope_type"] == "personal")
+        uploaded = self.client.post(
+            "/api/knowledge/documents/upload", headers=self.student_headers,
+            files={"file": ("reprocess-atomic.pdf", _demo_pdf_bytes() + b"\n% reprocess-atomic", "application/pdf")},
+            data={"knowledge_base_id": str(personal["id"]), "confidentiality": "internal", "allow_external_ai": "false"},
+        )
+        self.assertEqual(uploaded.status_code, 202, uploaded.text)
+        self.wait_task(uploaded.json()["id"], timeout=20.0)
+        document_id = uploaded.json()["document_id"]
+        before = self.client.get(f"/api/knowledge/documents/{document_id}", headers=self.student_headers).json()
+        with patch("app.task_service.ingest_document", side_effect=RuntimeError("synthetic parser failure")):
+            queued = self.client.post(f"/api/knowledge/documents/{document_id}/reprocess", headers=self.student_headers)
+        self.assertEqual(queued.status_code, 202, queued.text)
+        failed, _ = self.wait_task(queued.json()["id"], timeout=20.0)
+        self.assertEqual(failed["status"], "failed")
+        after = self.client.get(f"/api/knowledge/documents/{document_id}", headers=self.student_headers).json()
+        self.assertEqual(after["status"], "failed")
+        self.assertEqual(after["pages"], before["pages"])
+        self.assertEqual(after["tables"], before["tables"])
+
+    def test_privileged_media_and_direct_simulation_routes_are_restricted(self):
+        video_task = self.client.post(
+            "/api/tasks/video-analysis",
+            headers=self.student_headers,
+            files={"file": ("not-authorized.mp4", b"not a video", "video/mp4")},
+        )
+        self.assertEqual(video_task.status_code, 403, video_task.text)
+        video = self.client.post(
+            "/api/media/videos",
+            headers=self.student_headers,
+            files={"file": ("not-authorized.mp4", b"not a video", "video/mp4")},
+        )
+        self.assertEqual(video.status_code, 403, video.text)
+        simulation = self.client.post(
+            "/api/workspace/simulations",
+            headers=self.student_headers,
+            json={"name": "not-authorized", "software": "hypermesh", "parameters": {}},
+        )
+        self.assertEqual(simulation.status_code, 403, simulation.text)
 
     def test_v42_blocker_permissions_and_system_admin_protection(self):
         users = self.client.get("/api/admin/users", headers=self.admin_headers).json()
@@ -360,12 +464,12 @@ class V41FoundationTest(unittest.TestCase):
 
         video = self.client.post(
             "/api/tasks/video-analysis",
-            headers=self.student_headers,
+            headers=self.reviewer_headers,
             files={"file": ("demo-video.mp4", b"not-a-real-video-but-valid-upload-flow", "video/mp4")},
             data={"focus": "process stability", "confidentiality": "restricted", "allow_external_ai": "true"},
         )
         self.assertEqual(video.status_code, 202, video.text)
-        video_task, _ = self.wait_task(video.json()["id"], timeout=12.0)
+        video_task, _ = self.wait_task(video.json()["id"], timeout=12.0, headers=self.reviewer_headers)
         self.assertEqual(video_task["status"], "failed", video_task)
         self.assertIn("校验", video_task["current_step"])
 
@@ -452,7 +556,7 @@ class V41FoundationTest(unittest.TestCase):
 
         migration = self.client.get("/api/admin/migrations", headers=self.admin_headers)
         self.assertEqual(migration.status_code, 200)
-        self.assertEqual(migration.json()["current_revision"], "v4_7_space_energy_literature")
+        self.assertEqual(migration.json()["current_revision"], "v4_7_operational_health")
         self.assertEqual(migration.json()["status"], "succeeded")
 
         users = self.client.get("/api/admin/users", headers=self.admin_headers)

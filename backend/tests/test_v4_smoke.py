@@ -195,12 +195,12 @@ class V4SmokeTest(unittest.TestCase):
                 f"simulation_create_{software}",
                 self.client.post(
                     "/api/workspace/simulations",
-                    headers=self.student_headers,
+                    headers=self.admin_headers,
                     json={"name": f"smoke-{software}", "software": software, "parameters": {"current_a": 220, "voltage_v": 24, "travel_speed_mm_s": 5}},
                 ),
             ).json()
             simulation_ids.append(created["id"])
-            archive = expect(f"simulation_download_{software}", self.client.get(created["package_url"], headers=self.student_headers))
+            archive = expect(f"simulation_download_{software}", self.client.get(created["package_url"], headers=self.admin_headers))
             self.assertTrue(archive.content.startswith(b"PK"))
 
         # 32-34: execution permissions, disabled runner, job history

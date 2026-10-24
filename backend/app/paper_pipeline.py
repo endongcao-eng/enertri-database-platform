@@ -21,6 +21,7 @@ CHUNK_CHARS = max(600, int(os.getenv("KNOWLEDGE_CHUNK_CHARS", "1400")))
 CHUNK_OVERLAP = max(50, int(os.getenv("KNOWLEDGE_CHUNK_OVERLAP", "180")))
 OCR_MIN_TEXT_CHARS = max(10, int(os.getenv("OCR_MIN_TEXT_CHARS", "60")))
 EMBED_DIM = max(64, int(os.getenv("LOCAL_EMBED_DIM", "128")))
+DEFAULT_OCR_LANG = os.getenv("OCR_LANG", "chi_sim+eng")
 
 SECTION_RE = re.compile(
     r"^(?:\d+(?:\.\d+)*\s+)?(abstract|摘要|introduction|引言|materials?\s*(?:and|&)\s*methods?|experimental|试验材料|实验材料|方法|methods?|results?(?:\s+and\s+discussion)?|结果(?:与讨论)?|discussion|讨论|conclusions?|结论|references?|参考文献|acknowledg(?:e)?ments?|致谢)\s*$",
@@ -415,6 +416,7 @@ def ingest_pdf_document(
     file_record: WorkspaceFile,
     *,
     progress: Callable[[int, str, str], None] | None = None,
+    figure_dir: Path | None = None,
 ) -> dict[str, Any]:
     path = Path(file_record.storage_path)
     if path.suffix.lower() != ".pdf":
@@ -445,7 +447,7 @@ def ingest_pdf_document(
                 from PIL import Image
                 pix = page.get_pixmap(matrix=fitz.Matrix(2, 2), alpha=False)
                 image = Image.open(io.BytesIO(pix.tobytes("png")))
-                ocr = pytesseract.image_to_string(image, lang=os.getenv("OCR_LANG", "eng"))
+                ocr = pytesseract.image_to_string(image, lang=os.getenv("OCR_LANG", DEFAULT_OCR_LANG))
                 if len(ocr.strip()) > len(text.strip()):
                     text = ocr; method = "ocr"; ocr_used = True; ocr_pages += 1
             except Exception:
@@ -464,7 +466,7 @@ def ingest_pdf_document(
     emit(58, "表格提取", f"使用多种版式策略提取到 {len(tables)} 个表格")
 
     figures: list[dict[str, Any]] = []
-    figure_dir = path.parent / f"doc_{document.id}_figures"
+    figure_dir = figure_dir or path.parent / f"doc_{document.id}_figures"
     figure_dir.mkdir(parents=True, exist_ok=True)
     figure_idx = 1
     for i in range(pdf.page_count):
@@ -511,7 +513,11 @@ def ingest_pdf_document(
     document.structure_json = json.dumps(structured, ensure_ascii=False, default=str)
     document.metadata_json = json.dumps({"ocr_pages": ocr_pages, "references": refs, "text_layer_pages": len(pages) - ocr_pages, "table_extraction": table_diagnostics}, ensure_ascii=False, default=str)
     file_record.parse_status = "parsed"
-    db.commit()
+    # The task handler commits only after the complete parse has succeeded and
+    # the staged figure directory has been promoted.  Keeping this function
+    # transaction-neutral allows reprocessing to roll back to the previous
+    # structured result on any extraction error.
+    db.flush()
     emit(92, "向量化与结构化阅读", f"完成 {len(chunks)} 个本地向量和证据索引")
     return {"document_id": document.id, "title": title, "page_count": len(pages), "ocr_pages": ocr_pages, "sections": sections, "tables": [{k: v for k, v in t.items() if k != "data"} for t in tables], "table_extraction": table_diagnostics, "figures": figures[:30], "reference_count": len(refs), "chunk_count": len(chunks), "structured_reading": structured}
 
@@ -522,6 +528,7 @@ def ingest_docx_document(
     file_record: WorkspaceFile,
     *,
     progress: Callable[[int, str, str], None] | None = None,
+    figure_dir: Path | None = None,
 ) -> dict[str, Any]:
     """Extract a DOCX into the same evidence index used by PDF documents.
 
@@ -604,17 +611,24 @@ def ingest_docx_document(
     document.structure_json = json.dumps(structured, ensure_ascii=False, default=str)
     document.metadata_json = json.dumps({"source_format": "docx", "references": refs, "logical_pages": len(pages), "page_position_note": "Word 文档页码取显式分页符；无分页符时按逻辑页呈现。"}, ensure_ascii=False, default=str)
     file_record.parse_status = "parsed"
-    db.commit()
+    db.flush()
     emit(92, "向量化与结构化阅读", f"完成 {len(chunks)} 个 Word 文档证据分块")
     return {"document_id": document.id, "title": title, "page_count": len(pages), "ocr_pages": 0, "sections": sections, "tables": [{k: v for k, v in table.items() if k != "data"} for table in tables], "figures": [], "reference_count": len(refs), "chunk_count": len(chunks), "structured_reading": structured, "source_format": "docx"}
 
 
-def ingest_document(db: Session, document: KnowledgeDocument, file_record: WorkspaceFile, *, progress: Callable[[int, str, str], None] | None = None) -> dict[str, Any]:
+def ingest_document(
+    db: Session,
+    document: KnowledgeDocument,
+    file_record: WorkspaceFile,
+    *,
+    progress: Callable[[int, str, str], None] | None = None,
+    figure_dir: Path | None = None,
+) -> dict[str, Any]:
     suffix = Path(file_record.storage_path).suffix.lower()
     if suffix == ".pdf":
-        return ingest_pdf_document(db, document, file_record, progress=progress)
+        return ingest_pdf_document(db, document, file_record, progress=progress, figure_dir=figure_dir)
     if suffix == ".docx":
-        return ingest_docx_document(db, document, file_record, progress=progress)
+        return ingest_docx_document(db, document, file_record, progress=progress, figure_dir=figure_dir)
     raise RuntimeError("知识库仅支持 PDF 或 DOCX 文档")
 
 

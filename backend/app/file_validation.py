@@ -42,6 +42,20 @@ EXPECTED_MIMES: dict[str, set[str]] = {
     ".xml": {"application/xml", "text/xml", "text/plain"},
 }
 
+# Semantic categories are consumed by the upload endpoints after the binary
+# and parser checks below.  Keep the mapping here so every endpoint receives
+# the same result instead of re-implementing suffix detection.
+FILE_CATEGORIES: dict[str, str] = {
+    ".pdf": "document",
+    ".docx": "office", ".pptx": "office", ".xlsx": "office",
+    ".zip": "archive",
+    ".png": "image", ".jpg": "image", ".jpeg": "image", ".webp": "image",
+    ".tif": "image", ".tiff": "image", ".bmp": "image",
+    ".mp4": "video", ".mov": "video", ".avi": "video", ".mkv": "video",
+    ".txt": "text", ".md": "text", ".csv": "text",
+    ".json": "data", ".xml": "data",
+}
+
 
 def _magic_mime(data: bytes, suffix: str) -> str:
     if shutil.which("file"):
@@ -129,10 +143,15 @@ def validate_file_bytes(filename: str, data: bytes, declared_mime: str | None = 
         # libmagic often reports OOXML as application/zip; already allowed above.
         raise FileValidationError(
             f"文件内容与扩展名不匹配：{suffix} 实际识别为 {detected}",
-            details={"detected_mime_type": detected, "checks": checks},
+            details={"detected_mime_type": detected, "checks": checks, "category": FILE_CATEGORIES.get(suffix, "binary")},
         )
 
-    details: dict[str, Any] = {"detected_mime_type": detected, "checks": checks, "parser": None}
+    details: dict[str, Any] = {
+        "detected_mime_type": detected,
+        "checks": checks,
+        "parser": None,
+        "category": FILE_CATEGORIES.get(suffix, "binary"),
+    }
     try:
         if suffix == ".pdf":
             if not data.startswith(b"%PDF-"):
@@ -175,7 +194,12 @@ def validate_file_bytes(filename: str, data: bytes, declared_mime: str | None = 
         elif suffix in {".txt", ".md", ".csv"}:
             data.decode("utf-8-sig")
             details["parser"] = {"type": "utf-8"}
-    except FileValidationError:
+    except FileValidationError as exc:
+        # Rejected files use the same validation payload as accepted files;
+        # callers must not have to infer category from the filename again.
+        exc.details.setdefault("detected_mime_type", detected)
+        exc.details.setdefault("checks", checks)
+        exc.details.setdefault("category", FILE_CATEGORIES.get(suffix, "binary"))
         raise
     except (UnidentifiedImageError, OSError, ValueError, json.JSONDecodeError, UnicodeDecodeError, ElementTree.ParseError) as exc:
         raise FileValidationError(f"文件解析失败：{exc}", details=details) from exc

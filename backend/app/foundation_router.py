@@ -14,8 +14,9 @@ from sqlalchemy.orm import Session, selectinload
 
 from .audit import write_audit
 from .database import MEDIA_DIR, get_db
-from .file_service import ALLOWED_SUFFIXES, InvalidStoredUpload, can_access_file, cleanup_expired_files, store_upload
-from .models import AuditLog, TaskEvent, TaskFile, User, WorkspaceFile, WorkspaceTask, USER_ROLES
+from .file_service import ALLOWED_SUFFIXES, InvalidStoredUpload, can_access_file, cleanup_expired_files, is_managed_storage_path, store_upload
+from .models import AuditLog, KnowledgeDocument, TaskEvent, TaskFile, User, WorkspaceFile, WorkspaceTask, USER_ROLES
+from .paper_deletion import PaperDeletionResult, delete_document_rows, finalize_paper_deletion, merge_deletion_results
 from .permissions import ROLE_LABELS, has_permission
 from .security import admin_user, current_user, require_permission, user_permissions
 from .simulation import SUPPORTED_SOFTWARE
@@ -167,7 +168,7 @@ def queue_video_analysis(
     confidentiality: str = Form(default="internal"),
     allow_external_ai: bool = Form(default=False),
     db: Session = Depends(get_db),
-    user: User = Depends(current_user),
+    user: User = Depends(require_permission("media.video")),
 ):
     try:
         record, duplicate = store_upload(
@@ -349,8 +350,7 @@ def download_file(file_id: int, request: Request, db: Session = Depends(get_db),
     if not record or record.deleted_at is not None or not can_access_file(user, record, "download"):
         raise HTTPException(status_code=404, detail="file not found")
     path = Path(record.storage_path).resolve()
-    media_root = MEDIA_DIR.resolve()
-    if not path.exists() or path == media_root or media_root not in path.parents:
+    if not path.exists() or not is_managed_storage_path(path):
         raise HTTPException(status_code=404, detail="file content not found")
     write_audit(db, action="file.downloaded", resource_type="workspace_file", resource_id=record.id, actor=user, **_request_meta(request))
     return FileResponse(path, filename=record.original_name, media_type=record.mime_type)
@@ -361,14 +361,24 @@ def delete_file(file_id: int, request: Request, db: Session = Depends(get_db), u
     record = db.get(WorkspaceFile, file_id)
     if not record or record.deleted_at is not None or not can_access_file(user, record, "delete"):
         raise HTTPException(status_code=404, detail="file not found")
-    try:
-        Path(record.storage_path).unlink(missing_ok=True)
-    except OSError as exc:
-        raise HTTPException(status_code=500, detail=f"文件删除失败：{exc}") from exc
-    record.deleted_at = datetime.now(timezone.utc)
+    path = Path(record.storage_path).resolve()
+    if not is_managed_storage_path(path):
+        raise HTTPException(status_code=404, detail="file content not found")
+
+    # A paper source may be reached from the generic File Center as well as
+    # from the Knowledge Base.  Route both paths through the same cascade so
+    # structured pages/tables/figures/chunks and paper tasks cannot be orphaned.
+    deletion = PaperDeletionResult()
+    linked_documents = db.scalars(select(KnowledgeDocument).where(KnowledgeDocument.file_id == record.id)).all()
+    for document in linked_documents:
+        merge_deletion_results(deletion, delete_document_rows(db, document))
+    if not linked_documents:
+        record.deleted_at = datetime.now(timezone.utc)
+        deletion.remove_paths.append(Path(record.storage_path))
     db.commit()
+    finalize_paper_deletion(deletion)
     write_audit(db, action="file.deleted", resource_type="workspace_file", resource_id=record.id, actor=user, **_request_meta(request))
-    return {"deleted": file_id}
+    return {"deleted": file_id, "knowledge_documents_deleted": deletion.document_ids, "structured_results_deleted": bool(linked_documents), "task_results_cleared": deletion.task_results_cleared, "tasks_deleted": deletion.tasks_deleted}
 
 
 @router.get("/api/data/export")

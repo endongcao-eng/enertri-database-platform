@@ -19,6 +19,9 @@ from app.space_energy_catalog import (
 
 class _Response:
     def __init__(self, payload: dict):
+        # Match the part of httpx.Response used by _request_json.  The
+        # production client checks status_code before decoding the payload.
+        self.status_code = 200
         self.payload = payload
 
     def raise_for_status(self):

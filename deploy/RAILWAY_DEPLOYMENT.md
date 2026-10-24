@@ -68,7 +68,7 @@ python backend/scripts/bootstrap.py
 /api/ready
 ```
 
-只有数据库迁移版本与代码 HEAD 一致时才会返回就绪。
+`/api/ready` 现在同时检查数据库 `SELECT 1`、Volume 两个存储根目录的可写性、磁盘剩余空间、数据库迁移版本和 Worker 心跳。`TASK_EXECUTION_MODE=database_worker` 时，Worker 必须在最近 90 秒内写入心跳，否则服务返回 503；`/api/health` 会返回各依赖的诊断详情。
 
 ## 首次发布后的检查
 
@@ -82,6 +82,7 @@ GET https://<域名>/api/ready
 - pre-deploy migration 成功；
 - Gunicorn 已监听 `$PORT`；
 - Worker 已启动并能连接 PostgreSQL；
+- `/api/health` 中 `dependencies.worker.workers` 能看到最近的 Worker 心跳；
 - 上传目录位于 `/data/media`；
 - 没有 SQLite fallback、SECRET_KEY 或数据库连接错误。
 

@@ -1,19 +1,39 @@
 from __future__ import annotations
 
 import os
+import socket
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from sqlalchemy import func, select
 
 from .database import SessionLocal, engine
-from .models import TaskEvent, WorkspaceTask
+from .models import TaskEvent, WorkerHeartbeat, WorkspaceTask
 
 LEASE_SECONDS = max(30, int(os.getenv("TASK_LEASE_SECONDS", "90")))
+WORKER_VERSION = os.getenv("VERSION", "4.7")
 
 
 def utcnow() -> datetime:
     return datetime.now(timezone.utc)
+
+
+def touch_worker_heartbeat(worker_id: str, *, status: str = "running") -> bool:
+    """Persist worker liveness without allowing a heartbeat DB error to kill it."""
+    try:
+        with SessionLocal() as db:
+            row = db.get(WorkerHeartbeat, worker_id)
+            if row is None:
+                row = WorkerHeartbeat(worker_id=worker_id, hostname=socket.gethostname(), pid=os.getpid())
+                db.add(row)
+            row.status = status
+            row.version = WORKER_VERSION
+            row.last_seen_at = utcnow()
+            db.commit()
+        return True
+    except Exception as exc:
+        print(f"[EnerTri worker] heartbeat update failed: {exc}", flush=True)
+        return False
 
 
 def claim_next_task(worker_id: str) -> dict[str, Any] | None:

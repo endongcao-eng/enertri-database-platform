@@ -7,11 +7,12 @@ import socket
 import time
 import uuid
 
-from .task_queue import claim_next_task, fail_claimed_task, heartbeat_task, recover_expired_tasks, task_state
+from .task_queue import claim_next_task, fail_claimed_task, heartbeat_task, recover_expired_tasks, task_state, touch_worker_heartbeat
 from .task_service import run_claimed_task
 
 POLL_SECONDS = max(0.2, float(os.getenv("TASK_POLL_SECONDS", "1.0")))
 HEARTBEAT_SECONDS = max(5.0, float(os.getenv("TASK_HEARTBEAT_SECONDS", "20")))
+WORKER_HEARTBEAT_SECONDS = max(5.0, float(os.getenv("WORKER_HEARTBEAT_SECONDS", "15")))
 
 
 def default_worker_id() -> str:
@@ -22,6 +23,7 @@ class DatabaseTaskWorker:
     def __init__(self, worker_id: str | None = None):
         self.worker_id = worker_id or default_worker_id()
         self.running = True
+        self._last_worker_heartbeat = 0.0
 
     def stop(self, *_args) -> None:
         self.running = False
@@ -35,6 +37,9 @@ class DatabaseTaskWorker:
         last_heartbeat = 0.0
         while process.is_alive() and self.running:
             now = time.monotonic()
+            if now - self._last_worker_heartbeat >= WORKER_HEARTBEAT_SECONDS:
+                touch_worker_heartbeat(self.worker_id, status="running")
+                self._last_worker_heartbeat = now
             if now - last_heartbeat >= HEARTBEAT_SECONDS:
                 if not heartbeat_task(task_id, self.worker_id):
                     process.terminate()
@@ -58,12 +63,16 @@ class DatabaseTaskWorker:
             fail_claimed_task(task_id, self.worker_id, f"任务子进程异常退出，exitcode={process.exitcode}")
 
     def run_forever(self) -> None:
+        touch_worker_heartbeat(self.worker_id, status="running")
         recovered = recover_expired_tasks()
         print(f"[EnerTri worker] id={self.worker_id} recovered_expired={recovered}", flush=True)
         signal.signal(signal.SIGTERM, self.stop)
         signal.signal(signal.SIGINT, self.stop)
         last_recovery = time.monotonic()
         while self.running:
+            if time.monotonic() - self._last_worker_heartbeat >= WORKER_HEARTBEAT_SECONDS:
+                touch_worker_heartbeat(self.worker_id, status="running")
+                self._last_worker_heartbeat = time.monotonic()
             if time.monotonic() - last_recovery >= 30:
                 recover_expired_tasks()
                 last_recovery = time.monotonic()
@@ -72,6 +81,7 @@ class DatabaseTaskWorker:
                 time.sleep(POLL_SECONDS)
                 continue
             self.execute_claim(claim)
+        touch_worker_heartbeat(self.worker_id, status="stopped")
 
 
 def main() -> None:

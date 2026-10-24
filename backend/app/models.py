@@ -235,6 +235,17 @@ class WorkspaceTask(Base):
     events = relationship("TaskEvent", cascade="all, delete-orphan", back_populates="task", order_by="TaskEvent.id")
 
 
+class WorkerHeartbeat(Base):
+    """Last liveness signal from each database task worker process."""
+    __tablename__ = "worker_heartbeats"
+    worker_id = Column(String(160), primary_key=True)
+    hostname = Column(String(255), nullable=False)
+    pid = Column(Integer)
+    status = Column(String(24), nullable=False, default="running", index=True)
+    version = Column(String(80))
+    last_seen_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False, index=True)
+
+
 class WorkspaceFile(Base):
     __tablename__ = "workspace_files"
     id = Column(Integer, primary_key=True)

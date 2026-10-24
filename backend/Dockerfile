@@ -35,7 +35,8 @@ RUN set -eux; \
       libmagic1 \
       poppler-utils \
       tesseract-ocr \
-      tesseract-ocr-eng; \
+      tesseract-ocr-eng \
+      tesseract-ocr-chi-sim; \
     rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt ./requirements.txt

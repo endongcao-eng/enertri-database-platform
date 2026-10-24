@@ -5,20 +5,20 @@
     "python": "3.12"
   },
   "buildAptPackages": [
-    "...",
     "libmagic1t64",
     "tesseract-ocr",
-    "tesseract-ocr-eng"
+    "tesseract-ocr-eng",
+    "tesseract-ocr-chi-sim"
   ],
   "deploy": {
     "aptPackages": [
-      "...",
       "ffmpeg",
       "libmagic1t64",
       "poppler-utils",
       "postgresql-client",
       "tesseract-ocr",
-      "tesseract-ocr-eng"
+      "tesseract-ocr-eng",
+      "tesseract-ocr-chi-sim"
     ]
   }
 }

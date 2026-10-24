@@ -20,6 +20,7 @@ from .permissions import has_permission
 
 FILE_STORE_DIR = Path(os.getenv("FILE_STORE_DIR", str(MEDIA_DIR / "files"))).resolve()
 FILE_STORE_DIR.mkdir(parents=True, exist_ok=True)
+STORAGE_ROOTS = (MEDIA_DIR.resolve(), FILE_STORE_DIR.resolve())
 MAX_FILE_BYTES = int(os.getenv("FILE_MAX_MB", os.getenv("WORKSPACE_MAX_FILE_MB", "30"))) * 1024 * 1024
 TEMP_FILE_RETENTION_HOURS = max(1, int(os.getenv("TEMP_FILE_RETENTION_HOURS", "24")))
 ALLOWED_SUFFIXES = {
@@ -27,6 +28,12 @@ ALLOWED_SUFFIXES = {
     ".png", ".jpg", ".jpeg", ".webp", ".tif", ".tiff", ".bmp",
     ".pptx", ".zip", ".mp4", ".mov", ".avi", ".mkv",
 }
+
+
+def is_managed_storage_path(path: Path) -> bool:
+    """Return whether a resolved path is inside an EnerTri storage root."""
+    resolved = path.resolve()
+    return any(resolved != root and root in resolved.parents for root in STORAGE_ROOTS)
 
 
 class InvalidStoredUpload(HTTPException):
