@@ -6,14 +6,15 @@ import secrets
 import shutil
 import time
 import uuid
+import hashlib
 from datetime import datetime, timezone
 from pathlib import Path
 
-from fastapi import Depends, FastAPI, File, HTTPException, Query, Request, UploadFile
+from fastapi import Depends, FastAPI, File, Form, HTTPException, Query, Request, UploadFile
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from sqlalchemy import or_, select, text
+from sqlalchemy import func, or_, select, text
 from sqlalchemy.orm import Session, selectinload
 
 from .database import MEDIA_DIR, SessionLocal, get_db
@@ -601,7 +602,12 @@ def upload_video(
 
 
 @app.post("/api/import/excel", response_model=ImportResult)
-def import_excel(file: UploadFile = File(...), db: Session = Depends(get_db), user: User = Depends(admin_user)):
+def import_excel(
+    file: UploadFile = File(...),
+    category: str | None = Form(default=None, max_length=120),
+    db: Session = Depends(get_db),
+    user: User = Depends(admin_user),
+):
     from openpyxl import load_workbook
     from tempfile import NamedTemporaryFile
 
@@ -613,6 +619,7 @@ def import_excel(file: UploadFile = File(...), db: Session = Depends(get_db), us
         "通俗版术语解释": "definition_zh_popular",
         "简要英文解释": "definition_en",
         "关键词（3–5个，用逗号分隔）": "keywords",
+        "关联词汇": "keywords",
         "相关术语": "related_terms_text",
         "应用场景": "application_scenario",
         "公式 / 模型（如有）": "formula_model",
@@ -663,13 +670,29 @@ def import_excel(file: UploadFile = File(...), db: Session = Depends(get_db), us
                 detail="未找到可导入工作表：第一行必须包含“中文术语”和“英文术语”两列表头",
             )
 
-        default_cat = db.scalar(select(Category).where(Category.code == "DEFAULT"))
-        if not default_cat:
-            default_cat = Category(code="DEFAULT", name_zh="未分类", sort_order=999)
-            db.add(default_cat)
+        category_name = " ".join(str(category or "").split()) or "未分类"
+        # Reuse an existing visible category name. Otherwise create a stable
+        # internal code so the new category can be selected in later edits.
+        import_category = db.scalar(
+            select(Category).where(func.lower(Category.name_zh) == category_name.casefold())
+        )
+        if not import_category:
+            digest = hashlib.sha1(category_name.casefold().encode("utf-8")).hexdigest().upper()
+            category_code = f"IMPORT_{digest[:16]}"
+            suffix = 2
+            while db.scalar(select(Category.id).where(Category.code == category_code)):
+                category_code = f"IMPORT_{digest[:12]}_{suffix}"
+                suffix += 1
+            import_category = Category(
+                code=category_code,
+                name_zh=category_name,
+                description_zh=f"Excel 导入分类：{category_name}",
+                sort_order=999,
+            )
+            db.add(import_category)
             db.flush()
 
-        imported = skipped = 0
+        imported = skipped = categorized = 0
         errors: list[str] = []
         seen_pairs: set[tuple[str, str]] = set()
         pending_relations: list[tuple[Term, int, list[str]]] = []
@@ -695,10 +718,14 @@ def import_excel(file: UploadFile = File(...), db: Session = Depends(get_db), us
                 continue
             seen_pairs.add(pair)
 
-            exists = db.scalar(select(Term.id).where(Term.zh == zh, Term.en == en))
-            if exists:
+            existing = db.scalar(select(Term).where(Term.zh == zh, Term.en == en))
+            if existing:
+                # A repeated upload is still an explicit classification
+                # action. Preserve the existing content and move the term to
+                # the category selected for this workbook.
+                existing.category_id = import_category.id
                 skipped += 1
-                errors.append(f"第 {row_number} 行已存在：{zh} / {en}，已跳过")
+                categorized += 1
                 continue
 
             review_status = str(data.get("review_status") or "draft").strip().lower()
@@ -706,7 +733,7 @@ def import_excel(file: UploadFile = File(...), db: Session = Depends(get_db), us
                 review_status = "draft"
 
             payload = TermCreate(
-                category_id=default_cat.id,
+                category_id=import_category.id,
                 zh=zh,
                 en=en,
                 ru=str(data.get("ru") or "").strip() or None,
@@ -738,7 +765,13 @@ def import_excel(file: UploadFile = File(...), db: Session = Depends(get_db), us
         db.commit()
         if len(errors) > 200:
             errors = errors[:200] + ["错误/跳过记录过多，仅显示前 200 条"]
-        return ImportResult(imported=imported, skipped=skipped, errors=errors)
+        return ImportResult(
+            imported=imported,
+            skipped=skipped,
+            categorized=categorized,
+            category=import_category.name_zh,
+            errors=errors,
+        )
 
     except HTTPException:
         raise

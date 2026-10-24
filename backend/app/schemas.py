@@ -97,6 +97,8 @@ class TermOut(TermBase):
 class ImportResult(BaseModel):
     imported: int
     skipped: int
+    categorized: int = 0
+    category: Optional[str] = None
     errors: List[str] = Field(default_factory=list)
 
 

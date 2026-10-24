@@ -77,9 +77,10 @@ async function loadTermQuiz(termId) {
 async function submitTermQuiz(termId, quizToken, answers) {
   return api(`/terms/${termId}/quiz/submit`, { method: 'POST', body: JSON.stringify({ quiz_token: quizToken, answers }) });
 }
-async function importExcelApi(file) {
+async function importExcelApi(file, categoryName = '') {
   const formData = new FormData();
   formData.append('file', file);
+  if (String(categoryName || '').trim()) formData.append('category', String(categoryName).trim());
   return api('/import/excel', { method: 'POST', body: formData });
 }
 function termToDemo(t) {

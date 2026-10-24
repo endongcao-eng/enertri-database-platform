@@ -28,7 +28,7 @@ os.environ.update({
 from fastapi.testclient import TestClient  # noqa: E402
 from app.main import app  # noqa: E402
 from app.database import SessionLocal  # noqa: E402
-from app.models import KnowledgeChunk, KnowledgeDocument, KnowledgeFigure, KnowledgePage, KnowledgeTable, TaskEvent, TaskFile, User, WorkspaceFile, WorkspaceTask  # noqa: E402
+from app.models import Category, KnowledgeChunk, KnowledgeDocument, KnowledgeFigure, KnowledgePage, KnowledgeTable, TaskEvent, TaskFile, Term, User, WorkspaceFile, WorkspaceTask  # noqa: E402
 from app.security import hash_password  # noqa: E402
 from app.task_queue import claim_next_task, recover_expired_tasks  # noqa: E402
 from app.task_service import create_task  # noqa: E402
@@ -96,6 +96,20 @@ def _demo_scanned_chinese_pdf_bytes() -> bytes:
     data = doc.tobytes(garbage=4, deflate=True)
     doc.close()
     return data
+
+
+def _demo_excel_bytes(rows: list[tuple[str, str]]) -> bytes:
+    from openpyxl import Workbook
+
+    workbook = Workbook()
+    sheet = workbook.active
+    sheet.title = "术语"
+    sheet.append(["中文术语", "英文术语", "学术版术语解释", "关联词汇"])
+    for zh, en in rows:
+        sheet.append([zh, en, f"{zh} 的测试定义", "能源, 动力"])
+    stream = io.BytesIO()
+    workbook.save(stream)
+    return stream.getvalue()
 
 
 class V41FoundationTest(unittest.TestCase):
@@ -304,6 +318,40 @@ class V41FoundationTest(unittest.TestCase):
             again = self.client.post("/api/literature/publications/central-test-001/save", headers=self.student_headers, json={})
         self.assertEqual(again.status_code, 200, again.text)
         self.assertTrue(again.json()["already_saved"])
+
+    def test_excel_import_creates_or_reuses_category_and_reclassifies_duplicates(self):
+        excel = _demo_excel_bytes([("流场反演", "Flow-field inversion")])
+        response = self.client.post(
+            "/api/import/excel",
+            headers=self.admin_headers,
+            files={"file": ("ai-flow-terms.xlsx", excel, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")},
+            data={"category": "航空热防护"},
+        )
+        self.assertEqual(response.status_code, 200, response.text)
+        payload = response.json()
+        self.assertEqual(payload["imported"], 1, payload)
+        self.assertEqual(payload["categorized"], 0, payload)
+        self.assertEqual(payload["category"], "航空热防护")
+
+        with SessionLocal() as db:
+            category = db.query(Category).filter(Category.name_zh == "航空热防护").one()
+            term = db.query(Term).filter(Term.zh == "流场反演", Term.en == "Flow-field inversion").one()
+            self.assertEqual(term.category_id, category.id)
+            category_id = category.id
+
+        duplicate = self.client.post(
+            "/api/import/excel",
+            headers=self.admin_headers,
+            files={"file": ("ai-flow-terms-again.xlsx", excel, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")},
+            data={"category": "航空热防护"},
+        )
+        self.assertEqual(duplicate.status_code, 200, duplicate.text)
+        duplicate_payload = duplicate.json()
+        self.assertEqual(duplicate_payload["imported"], 0, duplicate_payload)
+        self.assertEqual(duplicate_payload["categorized"], 1, duplicate_payload)
+        with SessionLocal() as db:
+            self.assertEqual(db.query(Category).filter(Category.name_zh == "航空热防护").count(), 1)
+            self.assertEqual(db.query(Term).filter(Term.zh == "流场反演").one().category_id, category_id)
 
     def test_chinese_scanned_pdf_uses_bilingual_ocr(self):
         with patch.dict(os.environ, {"OCR_LANG": "chi_sim+eng"}), patch("pytesseract.image_to_string", return_value="摘要 这是中文扫描论文的能源动力研究结果与结论。") as ocr:

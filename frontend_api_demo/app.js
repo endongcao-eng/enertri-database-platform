@@ -24,6 +24,7 @@ const State = {
   adminFilter: '',
   adminStatus: 'all',
   importBusy: false,
+  importCategory: '',
   importResult: null,
   importError: '',
   editingId: null,
@@ -156,7 +157,7 @@ function importResultHtml() {
   if (State.importError) return `<div class="notice import-result error">导入失败：${escapeHtml(State.importError)}</div>`;
   if (!State.importResult) return '';
   const errors = State.importResult.errors || [];
-  return `<div class="notice import-result success"><strong>导入完成：</strong>成功 ${State.importResult.imported || 0} 条，跳过 ${State.importResult.skipped || 0} 条。${errors.length ? `<details><summary>查看 ${errors.length} 条错误/警告</summary><ul>${errors.map(err => `<li>${escapeHtml(err)}</li>`).join('')}</ul></details>` : ''}</div>`;
+  return `<div class="notice import-result success"><strong>导入完成：</strong>新增 ${State.importResult.imported || 0} 条，已归类 ${State.importResult.categorized || 0} 条，跳过 ${State.importResult.skipped || 0} 条。${State.importResult.category ? `分类：${escapeHtml(State.importResult.category)}。` : ''}${errors.length ? `<details><summary>查看 ${errors.length} 条错误/警告</summary><ul>${errors.map(err => `<li>${escapeHtml(err)}</li>`).join('')}</ul></details>` : ''}</div>`;
 }
 function render() {
   if (State.loading) { app.innerHTML = '<div class="page-shell"><div class="card panel">正在连接数据库 API...</div></div>'; return; }
@@ -307,6 +308,7 @@ function bindAdmin() {
   document.getElementById('newTermBtn').onclick = () => { State.editingId = null; renderAdmin(); };
   document.getElementById('refreshBtn').onclick = async () => { await refreshData(); renderAdmin(); };
   document.getElementById('importExcelBtn').onclick = importExcelFromAdmin;
+  ensureExcelCategoryInput();
   document.getElementById('clearFormBtn').onclick = () => { State.editingId = null; renderAdmin(); };
   document.getElementById('clearArticleBtn')?.addEventListener('click', () => { State.editingArticleId = null; renderAdmin(); });
   document.querySelectorAll('.js-article-edit').forEach(b => b.onclick = () => { State.editingArticleId = Number(b.dataset.id); renderAdmin(); });
@@ -330,6 +332,32 @@ function bindAdmin() {
   document.querySelectorAll('.js-delete').forEach(b => b.onclick = async () => { if (!confirm('确定删除该词条吗？')) return; await api(`/terms/${b.dataset.id}`, {method:'DELETE'}); await refreshData(); renderAdmin(); });
   document.getElementById('termForm').onsubmit = saveTerm;
 }
+function ensureExcelCategoryInput() {
+  const fileInput = document.getElementById('excelFileInput');
+  const row = fileInput?.closest('.import-row');
+  if (!fileInput || !row) return;
+  const panel = fileInput.closest('.excel-import-panel');
+  const intro = panel?.querySelector('.section-head p.muted');
+  if (intro) intro.textContent = '选择符合模板表头的 .xlsx 文件，提交前填写分类；不存在的分类会自动创建。';
+  const legacyHint = row.nextElementSibling;
+  if (legacyHint?.classList.contains('muted')) legacyHint.textContent = '必需列：中文术语、英文术语。其他列如关键词、解释、参考文献、审核状态会自动映射。';
+  if (document.getElementById('excelCategoryInput')) return;
+  const input = document.createElement('input');
+  input.className = 'input';
+  input.id = 'excelCategoryInput';
+  input.type = 'text';
+  input.maxLength = 120;
+  input.value = State.importCategory || '';
+  input.placeholder = '分类，例如：航空热防护';
+  input.setAttribute('aria-label', 'Excel 导入分类');
+  input.title = '留空时使用“未分类”';
+  input.addEventListener('input', e => { State.importCategory = e.target.value; });
+  fileInput.insertAdjacentElement('afterend', input);
+  const hint = document.createElement('p');
+  hint.className = 'muted';
+  hint.textContent = '分类留空时使用“未分类”。重复词条不会重复创建，但会归入本次选择的分类。';
+  row.insertAdjacentElement('afterend', hint);
+}
 async function importExcelFromAdmin() {
   const input = document.getElementById('excelFileInput');
   const file = input?.files?.[0];
@@ -343,12 +371,14 @@ async function importExcelFromAdmin() {
     State.importError = '目前仅支持 .xlsx 格式，请使用 Excel 工作簿文件。';
     return renderAdmin();
   }
+  const category = document.getElementById('excelCategoryInput')?.value.trim() || '';
+  State.importCategory = category;
   State.importBusy = true;
   State.importResult = null;
   State.importError = '';
   renderAdmin();
   try {
-    State.importResult = await importExcelApi(file);
+    State.importResult = await importExcelApi(file, category);
     await refreshData();
   } catch (e) {
     State.importError = e.message || '导入失败';
