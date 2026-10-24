@@ -1,0 +1,37 @@
+EnerTri V4.6 Stage 4 Validation
+Date: 2026-08-28
+
+Independent regression results:
+- tests/test_v4_1_foundation.py: 5 passed
+- tests/test_v4_3_capability_standards.py: 2 passed
+- tests/test_v4_4_research_profile.py: 3 passed
+- tests/test_v4_5_project_matching.py: 3 passed
+- tests/test_v4_6_development_planning.py: 3 passed
+- tests/test_v4_smoke.py: 1 passed (isolated rerun)
+
+Static checks:
+- python -m compileall backend/app backend/scripts backend/alembic/versions: passed
+- node --check frontend_api_demo/*.js: passed
+
+Live acceptance:
+- API version: 4.6.0
+- database revision: v4_6_development_planning
+- browser console errors: 0
+- browser page errors: 0
+
+Student demo:
+- goal: 芯片热管理与微纳热输运成长目标
+- match: 78.4%
+- capability readiness: 90.4%
+- knowledge readiness: 43.9%
+- critical gaps: 1
+
+Teacher demo:
+- goal: 图神经网络驱动的微纳材料热输运研究
+- match: 66.0%
+- capability readiness: 75.7%
+- knowledge readiness: 47.7%
+- critical gaps: 3
+
+Note:
+The combined sequential pytest shell invocation hit the outer execution timeout before the smoke test emitted a result. The smoke test was then executed independently and passed 1/1. No failing assertion was observed in the timed-out combined run.

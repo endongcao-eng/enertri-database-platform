@@ -1,0 +1,1934 @@
+--- a/.github/workflows/verify.yml
++++ b/.github/workflows/verify.yml
+@@ -0,0 +1,22 @@
++name: Verify deployment candidate
++on: [push, pull_request]
++jobs:
++  regression:
++    runs-on: ubuntu-latest
++    steps:
++      - uses: actions/checkout@v4
++      - uses: actions/setup-python@v5
++        with:
++          python-version: '3.12'
++      - run: pip install -r backend/requirements.txt
++      - run: python scripts/run_regression.py
++      - run: python -m compileall -q backend/app backend/scripts scripts
++  dependency-audit:
++    runs-on: ubuntu-latest
++    steps:
++      - uses: actions/checkout@v4
++      - uses: actions/setup-python@v5
++        with:
++          python-version: '3.12'
++      - run: pip install pip-audit
++      - run: pip-audit -r backend/requirements.txt
+--- a/.gitignore
++++ b/.gitignore
+@@ -0,0 +1,9 @@
++.env
++backend/.env
++*.db
++__pycache__/
++*.pyc
++uploads/
++backups/
++trial-accounts.csv
++.sites-runtime/
+--- a/README.md
++++ b/README.md
+@@ -1,3 +1,5 @@
++> 网页试用部署准备版（2026-09-10）：请优先阅读 [架构审查](review/ARCHITECTURE_REVIEW.md)、[部署手册](deploy/DEPLOYMENT.md) 和 [本次验证](review/VALIDATION.md)。当前尚未通过公网放行门槛；下文原版本说明保留作历史参考，演示账号仅用于开发环境。
++
+ # EnerTri 科研与焊接智能平台 V4.7 · 第五阶段
+ 
+ EnerTri V4.7 第五阶段把 V4.6 的“目标 → 缺口 → 推荐”继续推进为可执行、可追踪、可回流的科研成长闭环。课程、专业书、论文知识库、科研实践和可参与项目进入同一条个人路线图；完成标准学习资源后系统只生成低可信待核验证据，教师核验后才升级为高可信证据，并回流 V4.4 个人科研画像重新计算目标匹配。
+--- a/RELEASE_MANIFEST.json
++++ b/RELEASE_MANIFEST.json
+@@ -1,81 +1,22 @@
+ {
+-  "name": "EnerTri 科研与焊接智能平台",
+-  "version": "4.7.0",
+-  "release_date": "2026-08-28",
+-  "release_focus": "V4.7 第五阶段：课程/专业书/论文/科研实践/项目一体化执行路线与证据回流动态成长闭环",
+-  "main_modules": [
+-    "V4.7 五类资源一体化成长路线",
+-    "V4.7 路线执行状态与成长快照",
+-    "V4.7 完成项 -> 低可信待核验证据 -> 教师核验闭环",
+-    "V4.6 学生选课/成长路径与教师新方向知识缺口",
+-    "V4.5 项目人才匹配与团队组队",
+-    "V4.4 学生个人科研证据画像",
+-    "V4.3 科研知识与能力标准库",
+-    "V4.2 任务/权限/论文知识系统"
+-  ],
+-  "database": {
+-    "head_revision": "v4_7_dynamic_development_loop",
+-    "baseline_revision": "v4_0_baseline",
+-    "v4_7_tables": [
+-      "development_plan_items",
+-      "development_snapshots"
+-    ],
+-    "v4_6_tables": [
+-      "development_goals"
+-    ],
+-    "v4_5_tables": [
+-      "research_projects",
+-      "project_capability_requirements",
+-      "project_knowledge_requirements"
+-    ],
+-    "v4_4_tables": [
+-      "student_evidence"
+-    ]
+-  },
+-  "stage5_seed": {
+-    "demo_book_resources": 1,
+-    "demo_publications": 3,
+-    "demo_projects": 2,
+-    "student_roadmap_items": 10,
+-    "teacher_roadmap_items": 11
+-  },
+-  "live_acceptance": {
+-    "api_version": "4.7.0",
+-    "student_goal": "芯片热管理与微纳热输运成长目标",
+-    "teacher_goal": "图神经网络驱动的微纳材料热输运研究",
+-    "resource_types": [
+-      "book",
+-      "course",
+-      "project_task",
+-      "publication",
+-      "research_project"
+-    ],
+-    "completed_item": "芯片热管理与电子封装热设计",
+-    "route_progress_before": 0.0,
+-    "route_progress_after": 10.0,
+-    "pending_evidence_before": 1,
+-    "pending_evidence_after": 2,
+-    "snapshots_before": 1,
+-    "snapshots_after": 2,
+-    "match_before": 76.5,
+-    "match_after_provisional": 80.6,
+-    "evidence_confidence_before": 80.7,
+-    "evidence_confidence_after_provisional": 72.1,
+-    "renderer_errors": 0
+-  },
++  "name": "EnerTri 网页试用部署准备版",
++  "version": "4.7.0-webprep.2",
++  "api_business_version": "4.7.0",
++  "date": "2026-09-10",
++  "status": "preparation_candidate_not_public_ready",
++  "database_head": "v4_7_trial_controls",
+   "validation": {
+-    "fresh_migration_to_v4_7": "passed",
+-    "v4_7_stage5_tests": "3/3 passed",
+-    "v4_6_stage4_regression": "3/3 passed",
+-    "v4_5_stage3_regression": "3/3 passed",
+-    "v4_4_stage2_regression": "3/3 passed",
+-    "v4_3_stage1_regression": "2/2 passed",
+-    "v4_2_foundation_blocker_regression": "5/5 passed",
+-    "v4_smoke_matrix": "1/1 passed",
++    "isolated_sqlite_tests": 36,
++    "test_modules": 8,
+     "python_compile": "passed",
+     "javascript_syntax": "passed",
+-    "live_api_and_stage5_frontend_renderer": "passed",
+-    "browser_console_errors": 0,
+-    "browser_page_errors": 0
+-  }
++    "yaml_parse": "passed",
++    "postgresql_docker_https": "not_run",
++    "browser_preview": "unavailable",
++    "external_ai": "not_run",
++    "load_test": "not_run",
++    "dependency_audit": "target-environment-required",
++    "trial_controls_tests": 10
++  },
++  "prior_manifest": "review/input_release_manifest.json"
+ }
+--- a/VERSION
++++ b/VERSION
+@@ -1 +1 @@
+-4.7.0
++4.7.0-webprep.1
+--- a/backend/.dockerignore
++++ b/backend/.dockerignore
+@@ -0,0 +1,7 @@
++__pycache__/
++*.pyc
++.env
++.env.*
++*.db
++media/
++tests/
+--- a/backend/.env.production.example
++++ b/backend/.env.production.example
+@@ -1,46 +1,38 @@
+-# EnerTri V4.2 生产环境示例（Docker Compose 内部 PostgreSQL）
+-DATABASE_URL=postgresql+psycopg://enertri_user:CHANGE_ME_STRONG_DB_PASSWORD@db:5432/enertri
+-SECRET_KEY=CHANGE_ME_TO_A_LONG_RANDOM_SECRET_KEY
+-ACCESS_TOKEN_EXPIRE_MINUTES=1440
++APP_ENV=production
++DATABASE_URL=postgresql+psycopg://enertri_user:REPLACE_WITH_SAME_DB_PASSWORD@db:5432/enertri
++SECRET_KEY=REPLACE_WITH_RANDOM_SECRET_AT_LEAST_32_CHARACTERS
++BOOTSTRAP_ADMIN_USERNAME=admin
++BOOTSTRAP_ADMIN_PASSWORD=REPLACE_WITH_UNIQUE_PASSWORD_AT_LEAST_16_CHARACTERS
++APP_BOOTSTRAP_ON_STARTUP=false
++ACCESS_TOKEN_EXPIRE_MINUTES=120
++CORS_ORIGINS=https://trial.example.org
+ MEDIA_DIR=/app/media
++FILE_STORE_DIR=/app/media/files
+ ARTIFACT_DIR=/app/media/artifacts
+ WORKSPACE_DIR=/app/media/workspace
+-FILE_STORE_DIR=/app/media/files
+-CORS_ORIGINS=https://enertri.example.com
+-APP_ENV=production
+-
+-OPENAI_API_KEY=CHANGE_ME
+-OPENAI_MODEL=gpt-5.1
+-OPENAI_BASE_URL=https://api.openai.com/v1
+-AI_REQUEST_TIMEOUT_SECONDS=180
+-OPENALEX_API_KEY=CHANGE_ME
+-LITERATURE_CONTACT_EMAIL=CHANGE_ME
+-LITERATURE_TIMEOUT_SECONDS=30
+-
+-FILE_MAX_MB=50
++TASK_EXECUTION_MODE=database_worker
++SIMULATION_EXECUTION_ENABLED=false
++OPENAI_API_KEY=
+ WORKSPACE_MAX_FILE_MB=30
+ WORKSPACE_MAX_FILES=8
+-TEMP_FILE_RETENTION_HOURS=24
+-
+-# Web 进程必须保持 database_worker；不要在 Gunicorn Worker 内执行长任务。
+-TASK_EXECUTION_MODE=database_worker
+-TASK_POLL_SECONDS=1
+-TASK_LEASE_SECONDS=90
+-TASK_HEARTBEAT_SECONDS=20
+-TASK_DEFAULT_TIMEOUT_SECONDS=1800
+-TASK_TIMEOUT_PAPER_INGEST_SECONDS=3600
+-TASK_STEP_DELAY_SECONDS=0.05
+-
+-OCR_LANG=eng
+-OCR_MIN_TEXT_CHARS=60
+-
+-# 仅旧的“未纳入 Alembic 管理但严格匹配 V4.0 基线”的生产数据库首次升级需要。
+-# 先完成数据库和文件备份、人工结构核验，再临时设置此值执行 init；升级完成后移除。
+-V4_BASELINE_CONFIRM=I_HAVE_VERIFIED_V4_0_BACKUP
+-
+-SIMULATION_EXECUTION_ENABLED=false
+-SIM_HYPERMESH_COMMAND=
+-SIM_ANSYS_MAPDL_COMMAND=
+-SIM_ANSYS_FLUENT_COMMAND=
+-SIM_MARC_COMMAND=
+-SIM_FLOW3D_COMMAND=
++LOGIN_ACCOUNT_LIMIT=5
++LOGIN_IP_LIMIT=120
++LOGIN_WINDOW_SECONDS=900
++TASK_USER_ACTIVE_LIMIT=3
++TASK_GLOBAL_ACTIVE_LIMIT=100
++TASK_USER_DAILY_LIMIT=20
++TASK_GLOBAL_RUNNING_LIMIT=2
++TASK_USER_RUNNING_LIMIT=1
++AI_BUDGET_ENABLED=false
++AI_BUDGET_MODEL=
++AI_INPUT_USD_PER_MILLION=
++AI_OUTPUT_USD_PER_MILLION=
++AI_REQUEST_RESERVATION_USD=0.10
++AI_USER_DAILY_USD=1
++AI_GLOBAL_DAILY_USD=10
++AI_USER_DAILY_CALLS=20
++AI_GLOBAL_DAILY_CALLS=200
++AI_USER_CONCURRENCY=1
++AI_GLOBAL_CONCURRENCY=2
++AI_MAX_INPUT_BYTES=16000
++AI_MAX_OUTPUT_TOKENS=1024
+--- a/backend/alembic/versions/0009_web_trial.py
++++ b/backend/alembic/versions/0009_web_trial.py
+@@ -0,0 +1,21 @@
++"""Shared quiz state for multi-process web deployment."""
++from alembic import op
++import sqlalchemy as sa
++revision = "v4_7_web_trial"
++down_revision = "v4_7_dynamic_development_loop"
++branch_labels = None
++depends_on = None
++
++
++def upgrade():
++    op.create_table("quiz_sessions",
++        sa.Column("token_hash", sa.String(64), primary_key=True),
++        sa.Column("term_id", sa.Integer(), sa.ForeignKey("terms.id", ondelete="CASCADE"), nullable=False),
++        sa.Column("answers_json", sa.Text(), nullable=False),
++        sa.Column("expires_at", sa.Integer(), nullable=False))
++    op.create_index("ix_quiz_sessions_expires_at", "quiz_sessions", ["expires_at"])
++
++
++def downgrade():
++    op.drop_index("ix_quiz_sessions_expires_at", table_name="quiz_sessions")
++    op.drop_table("quiz_sessions")
+--- a/backend/alembic/versions/0010_trial_controls.py
++++ b/backend/alembic/versions/0010_trial_controls.py
+@@ -0,0 +1,25 @@
++"""Persistent authentication and budget controls."""
++from alembic import op
++import sqlalchemy as sa
++revision="v4_7_trial_controls"
++down_revision="v4_7_web_trial"
++branch_labels=None
++depends_on=None
++
++def upgrade():
++    op.add_column("users",sa.Column("token_version",sa.Integer(),nullable=False,server_default="0"))
++    op.add_column("users",sa.Column("must_change_password",sa.Boolean(),nullable=False,server_default=sa.false()))
++    op.execute("UPDATE users SET token_version=1, must_change_password=true")
++    op.create_table("safety_locks",sa.Column("id",sa.Integer(),primary_key=True),sa.Column("value",sa.Integer(),nullable=False))
++    op.execute("INSERT INTO safety_locks (id,value) VALUES (1,0)")
++    op.create_table("rate_buckets",sa.Column("key",sa.String(64),primary_key=True),sa.Column("count",sa.Integer(),nullable=False),sa.Column("expires_at",sa.Integer(),nullable=False))
++    op.create_index("ix_rate_buckets_expires_at","rate_buckets",["expires_at"])
++    op.create_table("ai_budget_reservations",sa.Column("id",sa.String(36),primary_key=True),sa.Column("user_id",sa.Integer(),sa.ForeignKey("users.id"),nullable=False),sa.Column("day",sa.String(10),nullable=False),sa.Column("reserved_usd_micros",sa.Integer(),nullable=False),sa.Column("expires_at",sa.Integer(),nullable=False),sa.Column("status",sa.String(24),nullable=False),sa.Column("usage_json",sa.Text()))
++    op.create_index("ix_ai_budget_day","ai_budget_reservations",["day","user_id"])
++
++def downgrade():
++    op.drop_table("ai_budget_reservations")
++    op.drop_table("rate_buckets")
++    op.drop_table("safety_locks")
++    op.drop_column("users","must_change_password")
++    op.drop_column("users","token_version")
+--- a/backend/app/account_router.py
++++ b/backend/app/account_router.py
+@@ -0,0 +1,36 @@
++from fastapi import APIRouter, Depends, HTTPException
++from pydantic import BaseModel, Field
++from sqlalchemy import select, update
++from sqlalchemy.orm import Session
++from .database import get_db
++from .models import User
++from .security import current_user, verify_password, hash_password
++from .controls import rate_limit, lock_controls
++from .audit import write_audit
++router=APIRouter(prefix="/api/auth",tags=["account"])
++
++class PasswordChange(BaseModel):
++    current_password: str = Field(min_length=1,max_length=256)
++    new_password: str = Field(min_length=16,max_length=72)
++
++@router.post("/password")
++def change_password(payload:PasswordChange,db:Session=Depends(get_db),actor:User=Depends(current_user)):
++    rate_limit([f"change-password:{actor.id}"],[5],900)
++    lock_controls(db)
++    user=db.scalar(select(User).where(User.id==actor.id).with_for_update().execution_options(populate_existing=True))
++    if not verify_password(payload.current_password,user.password_hash):
++        raise HTTPException(400,"当前密码不正确")
++    if len(payload.new_password.encode())>72 or payload.new_password==payload.current_password:
++        raise HTTPException(400,"新密码必须与原密码不同，且不超过72个UTF-8字节")
++    user.password_hash=hash_password(payload.new_password)
++    user.token_version+=1
++    user.must_change_password=False
++    write_audit(db,action="auth.password.changed",resource_type="user",resource_id=user.id,actor=user,commit=False)
++    db.commit()
++    return {"ok":True,"reauthenticate":True}
++
++@router.post("/logout")
++def logout(db:Session=Depends(get_db),actor:User=Depends(current_user)):
++    db.execute(update(User).where(User.id==actor.id).values(token_version=User.token_version+1))
++    db.commit()
++    return {"ok":True,"all_sessions_revoked":True}
+--- a/backend/app/ai_service.py
++++ b/backend/app/ai_service.py
+@@ -94,7 +94,7 @@
+             raise AIResponseError("AI 服务未返回可解析的文本结果")
+         return output
+ 
+-    def generate_text(
++    def _unmetered_generate_text(
+         self,
+         prompt: str,
+         *,
+@@ -109,6 +109,7 @@
+             "input": [{"role": "user", "content": self._content_items(prompt, files)}],
+             # Avoid creating reusable response state for unpublished papers or production data.
+             "store": False,
++            "max_output_tokens": int(os.getenv("AI_MAX_OUTPUT_TOKENS", "1024")),
+         }
+         if instructions:
+             body["instructions"] = instructions
+@@ -128,10 +129,44 @@
+             except Exception:
+                 pass
+             raise AIResponseError(f"AI 服务请求失败（{response.status_code}）：{detail}")
+-        return self._extract_output_text(response.json())
++        payload = response.json()
++        return self._extract_output_text(payload), payload.get("usage", {})
+ 
+-    def generate_json(self, prompt: str, *, instructions: str | None = None) -> dict[str, Any]:
+-        text = self.generate_text(prompt, instructions=instructions, reasoning_effort="medium")
++    def generate_text(self, prompt: str, *, user_id: int | None = None, files=None, instructions=None, reasoning_effort="medium") -> str:
++        if not self.available:
++            raise AIUnavailableError("未配置外部 AI 服务")
++        if os.getenv("AI_BUDGET_ENABLED", "false").lower() != "true":
++            raise AIUnavailableError("外部 AI 费用保护尚未启用，请联系管理员")
++        # File/image tokenization and provider-specific billing have no safe generic
++        # bound. Keep these paid routes disabled until separately budgeted.
++        files=list(files or [])
++        if files:
++            raise AIUnavailableError("文件/图像外部 AI 暂未开放；可使用本地解析与OCR")
++        if len((prompt+(instructions or "")).encode()) > int(os.getenv("AI_MAX_INPUT_BYTES", "16000")):
++            raise AIUnavailableError("AI 输入超出试用长度额度")
++        if self.model != os.getenv("AI_BUDGET_MODEL", ""):
++            raise AIUnavailableError("模型未纳入费用核算配置")
++        from decimal import Decimal
++        from .controls import reserve_ai, finish_ai, usd_micros
++        input_rate=Decimal(os.getenv("AI_INPUT_USD_PER_MILLION", "0"))
++        output_rate=Decimal(os.getenv("AI_OUTPUT_USD_PER_MILLION", "0"))
++        if not input_rate.is_finite() or not output_rate.is_finite() or input_rate<=0 or output_rate<=0:
++            raise AIUnavailableError("请先核对模型计价并配置正数费率")
++        # UTF-8 byte count + protocol allowance is conservative for text-only BPE.
++        bound=(Decimal(len((prompt+(instructions or "")).encode())+2048)*input_rate + Decimal(int(os.getenv("AI_MAX_OUTPUT_TOKENS","1024")))*output_rate)
++        if bound > usd_micros("AI_REQUEST_RESERVATION_USD", "0.10"):
++            raise AIUnavailableError("本次请求最大估算费用超过单次预算")
++        rid=reserve_ai(user_id)
++        try:
++            output, usage=self._unmetered_generate_text(prompt, files=files, instructions=instructions, reasoning_effort=reasoning_effort)
++            finish_ai(rid,{"provider_usage":usage,"model":self.model,"input_usd_per_million":str(input_rate),"output_usd_per_million":str(output_rate)})
++            return output
++        except BaseException:
++            finish_ai(rid,failed=True)
++            raise
++
++    def generate_json(self, prompt: str, *, user_id: int | None = None, instructions: str | None = None) -> dict[str, Any]:
++        text = self.generate_text(prompt, user_id=user_id, instructions=instructions, reasoning_effort="medium")
+         text = re.sub(r"^```(?:json)?\s*|\s*```$", "", text.strip(), flags=re.I | re.S)
+         try:
+             return json.loads(text)
+--- a/backend/app/controls.py
++++ b/backend/app/controls.py
+@@ -0,0 +1,86 @@
++"""Shared database controls. No per-process limit state or provider retries."""
++import hashlib
++import json
++import os
++import time
++import uuid
++from datetime import datetime, timezone
++from decimal import Decimal, ROUND_CEILING
++from fastapi import HTTPException
++from sqlalchemy import select, update, delete, func
++from .database import SessionLocal
++from .models import SafetyLock, RateBucket, AIBudgetReservation, WorkspaceTask, User
++from .permissions import has_permission
++
++
++def lock_controls(db):
++    # A real write serializes SQLite too. PostgreSQL takes a row lock until commit.
++    result=db.execute(update(SafetyLock).where(SafetyLock.id==1).values(value=0))
++    if result.rowcount!=1:
++        raise RuntimeError("Safety controls migration missing")
++
++
++def rate_limit(keys, maximum, seconds):
++    now=int(time.time()); window=now//seconds; denied=False
++    with SessionLocal.begin() as db:
++        lock_controls(db)
++        db.execute(delete(RateBucket).where(RateBucket.expires_at<=now))
++        for key,limit in zip(keys,maximum):
++            digest=hashlib.sha256(f"{key}:{window}".encode()).hexdigest()
++            row=db.get(RateBucket,digest)
++            if row is None:
++                row=RateBucket(key=digest,count=0,expires_at=(window+1)*seconds);db.add(row)
++            if row.count>=limit: denied=True
++            row.count=min(row.count+1,limit+1)
++    if denied:
++        raise HTTPException(429,"尝试过于频繁，请稍后再试",headers={"Retry-After":str(seconds-now%seconds)})
++
++
++def task_admission(db,user_id):
++    from .production import is_production
++    lock_controls(db)
++    active=("queued","running")
++    own=db.scalar(select(func.count()).select_from(WorkspaceTask).where(WorkspaceTask.user_id==user_id,WorkspaceTask.status.in_(active)))
++    total=db.scalar(select(func.count()).select_from(WorkspaceTask).where(WorkspaceTask.status.in_(active)))
++    default=3 if is_production() else 1000
++    if own>=int(os.getenv("TASK_USER_ACTIVE_LIMIT",str(default))) or total>=int(os.getenv("TASK_GLOBAL_ACTIVE_LIMIT","100" if is_production() else "10000")):
++        db.rollback();raise HTTPException(429,"任务队列额度已用完，请等待现有任务完成",headers={"Retry-After":"30"})
++    midnight=datetime.now(timezone.utc).replace(hour=0,minute=0,second=0,microsecond=0)
++    daily=db.scalar(select(func.count()).select_from(WorkspaceTask).where(WorkspaceTask.user_id==user_id,WorkspaceTask.created_at>=midnight))
++    if daily>=int(os.getenv("TASK_USER_DAILY_LIMIT","20" if is_production() else "10000")):
++        db.rollback();raise HTTPException(429,"今日任务次数已用完，UTC 零点恢复")
++
++
++def usd_micros(name,default):
++    value=Decimal(os.getenv(name,default))
++    if not value.is_finite() or value<=0: raise ValueError(f"Invalid {name}")
++    return int((value*1000000).to_integral_value(rounding=ROUND_CEILING))
++
++
++def reserve_ai(user_id):
++    day=datetime.now(timezone.utc).date().isoformat();now=int(time.time())
++    amount=usd_micros("AI_REQUEST_RESERVATION_USD","0.10")
++    with SessionLocal.begin() as db:
++        lock_controls(db)
++        user=db.get(User,user_id) if user_id is not None else None
++        if not user or not user.is_active or user.must_change_password or not has_permission(user.role,"ai.external"):
++            raise HTTPException(403,"当前账号不能调用外部 AI")
++        for uid,limit_name,default,calls_name,calls_default in [(user_id,"AI_USER_DAILY_USD","1","AI_USER_DAILY_CALLS","20"),(None,"AI_GLOBAL_DAILY_USD","10","AI_GLOBAL_DAILY_CALLS","200")]:
++            query=select(func.coalesce(func.sum(AIBudgetReservation.reserved_usd_micros),0),func.count()).where(AIBudgetReservation.day==day)
++            running=select(func.count()).select_from(AIBudgetReservation).where(AIBudgetReservation.status=="reserved",AIBudgetReservation.expires_at>now)
++            if uid is not None:
++                query=query.where(AIBudgetReservation.user_id==uid);running=running.where(AIBudgetReservation.user_id==uid)
++            used,count=db.execute(query).one()
++            slots=int(os.getenv("AI_USER_CONCURRENCY" if uid is not None else "AI_GLOBAL_CONCURRENCY","1" if uid is not None else "2"))
++            if used+amount>usd_micros(limit_name,default) or count>=int(os.getenv(calls_name,calls_default)) or db.scalar(running)>=slots:
++                raise HTTPException(429,"AI 预算、次数或并发额度已用完，请稍后重试")
++        rid=str(uuid.uuid4())
++        db.add(AIBudgetReservation(id=rid,user_id=user_id,day=day,reserved_usd_micros=amount,status="reserved",expires_at=now+int(os.getenv("AI_REQUEST_TIMEOUT_SECONDS","180"))+300))
++    return rid
++
++
++def finish_ai(rid,usage=None,failed=False):
++    # Never refund on uncertain network outcome. Reservations are a conservative ledger,
++    # not the provider invoice. Crash reservations still count against the daily budget.
++    with SessionLocal.begin() as db:
++        db.execute(update(AIBudgetReservation).where(AIBudgetReservation.id==rid).values(status="failed" if failed else "completed",usage_json=json.dumps(usage or {})))
+--- a/backend/app/database.py
++++ b/backend/app/database.py
+@@ -11,7 +11,7 @@
+ 
+ DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./enertri.db")
+ connect_args = {"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {}
+-engine = create_engine(DATABASE_URL, connect_args=connect_args, future=True)
++engine = create_engine(DATABASE_URL, connect_args=connect_args, future=True, pool_pre_ping=True)
+ SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False, future=True)
+ 
+ MEDIA_DIR = Path(os.getenv("MEDIA_DIR", "./media")).resolve()
+--- a/backend/app/foundation_router.py
++++ b/backend/app/foundation_router.py
+@@ -418,12 +418,13 @@
+ 
+ @router.get("/api/admin/migrations")
+ def migration_status(db: Session = Depends(get_db), _: User = Depends(admin_user)):
++    from .migration_bootstrap import HEAD_REVISION
+     revision = db.execute(text("SELECT version_num FROM alembic_version")).scalar_one_or_none()
+     recent = db.scalars(select(AuditLog).where(AuditLog.action == "database.migration.completed").order_by(AuditLog.id.desc()).limit(10)).all()
+     return {
+         "current_revision": revision,
+-        "expected_revision": "v4_7_dynamic_development_loop",
+-        "status": "succeeded" if revision == "v4_7_dynamic_development_loop" else "attention",
++        "expected_revision": HEAD_REVISION,
++        "status": "succeeded" if revision == HEAD_REVISION else "attention",
+         "records": [{"id": row.id, "outcome": row.outcome, "details": json.loads(row.detail_json) if row.detail_json else None, "created_at": row.created_at} for row in recent],
+     }
+ 
+--- a/backend/app/main.py
++++ b/backend/app/main.py
+@@ -7,9 +7,8 @@
+ import time
+ from datetime import datetime, timezone
+ from pathlib import Path
+-from threading import Lock
+-
+-from fastapi import Depends, FastAPI, File, HTTPException, Query, UploadFile
++
++from fastapi import Depends, FastAPI, File, HTTPException, Query, Request, UploadFile
+ from fastapi.middleware.cors import CORSMiddleware
+ from fastapi.staticfiles import StaticFiles
+ from sqlalchemy import or_, select
+@@ -51,7 +50,9 @@
+     allow_methods=["*"],
+     allow_headers=["*"],
+ )
+-app.mount("/media", StaticFiles(directory=str(MEDIA_DIR)), name="media")
++app.mount("/media/videos", StaticFiles(directory=str(MEDIA_DIR / "videos")), name="public_videos")
++from .account_router import router as account_router
++app.include_router(account_router)
+ app.include_router(workspace_router)
+ app.include_router(foundation_router)
+ app.include_router(knowledge_router)
+@@ -83,17 +84,32 @@
+ 
+ @app.get("/api/health")
+ def health():
+-    return {"ok": True, "version": "4.7.0", "media_dir": str(MEDIA_DIR), "task_execution_mode": os.getenv("TASK_EXECUTION_MODE", "database_worker")}
++    return {"ok": True, "version": "4.7.0", "task_execution_mode": os.getenv("TASK_EXECUTION_MODE", "database_worker")}
++
++
++@app.get("/api/ready")
++def readiness():
++    from .migration_bootstrap import current_revision, HEAD_REVISION
++    try:
++        if current_revision() != HEAD_REVISION:
++            raise RuntimeError("schema mismatch")
++    except Exception:
++        raise HTTPException(status_code=503, detail="Database is not ready")
++    return {"ok": True}
+ 
+ 
+ @app.post("/api/auth/login", response_model=TokenOut)
+-def login(payload: LoginRequest, db: Session = Depends(get_db)):
++def login(payload: LoginRequest, request: Request, db: Session = Depends(get_db)):
++    from .controls import rate_limit
++    rate_limit(["login:user:"+payload.username, "login:ip:"+(request.client.host if request.client else "unknown")], [int(os.getenv("LOGIN_ACCOUNT_LIMIT","5")),int(os.getenv("LOGIN_IP_LIMIT","120"))], int(os.getenv("LOGIN_WINDOW_SECONDS","900")))
+     user = db.scalar(select(User).where(User.username == payload.username))
+     if not user or not verify_password(payload.password, user.password_hash):
++        write_audit(db, action="auth.login.failed", resource_type="user", actor_user_id=user.id if user else None, outcome="failed")
+         raise HTTPException(status_code=401, detail="用户名或密码错误")
+     if not user.is_active:
+         raise HTTPException(status_code=403, detail="账户已停用")
+-    token = create_access_token(subject=user.username, role=user.role)
++    write_audit(db, action="auth.login.succeeded", resource_type="user", actor=user)
++    token = create_access_token(subject=user.username, role=user.role, token_version=user.token_version)
+     return TokenOut(access_token=token, user=UserOut.model_validate(user))
+ 
+ 
+@@ -210,17 +226,7 @@
+     return progress
+ 
+ 
+-QUIZ_TTL_SECONDS = 30 * 60
+-_quiz_sessions: dict[str, dict] = {}
+-_quiz_lock = Lock()
+-
+-
+-def _cleanup_quiz_sessions() -> None:
+-    cutoff = time.time() - QUIZ_TTL_SECONDS
+-    with _quiz_lock:
+-        expired = [token for token, item in _quiz_sessions.items() if item["created_at"] < cutoff]
+-        for token in expired:
+-            _quiz_sessions.pop(token, None)
++from .quiz_store import save_quiz, consume_quiz
+ 
+ 
+ def _dedupe_options(values: list[str], fallback: list[str]) -> list[str]:
+@@ -294,14 +300,8 @@
+         public_questions.append(public_question)
+         answer_key[public_question["id"]] = private_answer
+ 
+-    _cleanup_quiz_sessions()
+     quiz_token = secrets.token_urlsafe(32)
+-    with _quiz_lock:
+-        _quiz_sessions[quiz_token] = {
+-            "term_id": term.id,
+-            "created_at": time.time(),
+-            "answers": answer_key,
+-        }
++    save_quiz(quiz_token, term.id, answer_key)
+     return QuizOut(term_id=term.id, title=f"{term.zh} 随堂小测", quiz_token=quiz_token, questions=public_questions)
+ 
+ 
+@@ -387,14 +387,10 @@
+     if not term:
+         raise HTTPException(status_code=404, detail="term not found")
+ 
+-    _cleanup_quiz_sessions()
+-    with _quiz_lock:
+-        # 令牌一次性使用，避免提交后看到答案再用同一套题刷分。
+-        session = _quiz_sessions.pop(payload.quiz_token, None)
+-    if not session or session["term_id"] != term_id:
++    answer_key = consume_quiz(payload.quiz_token, term_id)
++    if answer_key is None:
+         raise HTTPException(status_code=400, detail="测验已过期或与当前词条不匹配，请重新生成题目")
+ 
+-    answer_key: dict[str, dict] = session["answers"]
+     results: list[dict] = []
+     correct_count = 0
+     for question_id, expected in answer_key.items():
+--- a/backend/app/migration_bootstrap.py
++++ b/backend/app/migration_bootstrap.py
+@@ -12,7 +12,7 @@
+ from .database import engine
+ 
+ BASELINE_REVISION = "v4_0_baseline"
+-HEAD_REVISION = "v4_7_dynamic_development_loop"
++HEAD_REVISION = "v4_7_trial_controls"
+ 
+ # V4.2 refuses to infer a baseline from table names alone. These fields are stable V4.0 fingerprints.
+ V4_BASELINE_COLUMNS: dict[str, dict[str, str]] = {
+--- a/backend/app/models.py
++++ b/backend/app/models.py
+@@ -42,6 +42,8 @@
+ class User(Base):
+     __tablename__ = "users"
+     id = Column(Integer, primary_key=True)
++    token_version = Column(Integer, nullable=False, default=0, server_default="0")
++    must_change_password = Column(Boolean, nullable=False, default=False, server_default="0")
+     username = Column(String(80), nullable=False, unique=True, index=True)
+     password_hash = Column(Text, nullable=False)
+     role = Column(String(32), nullable=False, default="learning_user", index=True)
+@@ -721,3 +723,33 @@
+     artifact_type = Column(String(80), nullable=False)
+     metadata_json = Column(Text)
+     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
++
++
++class QuizSession(Base):
++    __tablename__ = "quiz_sessions"
++    token_hash = Column(String(64), primary_key=True)
++    term_id = Column(Integer, ForeignKey("terms.id", ondelete="CASCADE"), nullable=False)
++    answers_json = Column(Text, nullable=False)
++    expires_at = Column(Integer, nullable=False, index=True)
++
++
++class SafetyLock(Base):
++    __tablename__="safety_locks"
++    id=Column(Integer,primary_key=True)
++    value=Column(Integer,nullable=False)
++
++class RateBucket(Base):
++    __tablename__="rate_buckets"
++    key=Column(String(64),primary_key=True)
++    count=Column(Integer,nullable=False)
++    expires_at=Column(Integer,nullable=False,index=True)
++
++class AIBudgetReservation(Base):
++    __tablename__="ai_budget_reservations"
++    id=Column(String(36),primary_key=True)
++    user_id=Column(Integer,ForeignKey("users.id"),nullable=False)
++    day=Column(String(10),nullable=False)
++    reserved_usd_micros=Column(Integer,nullable=False)
++    expires_at=Column(Integer,nullable=False)
++    status=Column(String(24),nullable=False)
++    usage_json=Column(Text)
+--- a/backend/app/production.py
++++ b/backend/app/production.py
+@@ -0,0 +1,23 @@
++"""Fail closed on unsafe production configuration; never print secret values."""
++import os
++
++
++def is_production():
++    return os.getenv("APP_ENV", "development").lower() in {"production", "prod"}
++
++
++def validate_production():
++    if not is_production():
++        return
++    errors = []
++    secret = os.getenv("SECRET_KEY", "")
++    if len(secret) < 32 or any(x in secret.lower() for x in ("change", "example", "replace", "dev-secret")):
++        errors.append("SECRET_KEY must be a random secret of at least 32 characters")
++    if not os.getenv("DATABASE_URL", "").startswith("postgresql"):
++        errors.append("Production requires PostgreSQL")
++    if os.getenv("APP_BOOTSTRAP_ON_STARTUP", "false").lower() != "false":
++        errors.append("Run the one-shot bootstrap service instead of API startup seeding")
++    if os.getenv("TASK_EXECUTION_MODE") != "database_worker":
++        errors.append("Production requires database_worker")
++    if errors:
++        raise RuntimeError("; ".join(errors))
+--- a/backend/app/quiz_store.py
++++ b/backend/app/quiz_store.py
+@@ -0,0 +1,29 @@
++import hashlib
++import json
++import time
++from sqlalchemy import delete
++from .database import SessionLocal
++from .models import QuizSession
++
++
++def _digest(token):
++    return hashlib.sha256(token.encode()).hexdigest()
++
++
++def save_quiz(token, term_id, answers, ttl=1800):
++    now = int(time.time())
++    with SessionLocal.begin() as db:
++        db.execute(delete(QuizSession).where(QuizSession.expires_at < now))
++        db.add(QuizSession(token_hash=_digest(token), term_id=term_id,
++                           answers_json=json.dumps(answers), expires_at=now + ttl))
++
++
++def consume_quiz(token, term_id):
++    with SessionLocal.begin() as db:
++        # Atomic DELETE RETURNING prevents replay across API processes.
++        row = db.execute(delete(QuizSession).where(
++            QuizSession.token_hash == _digest(token),
++            QuizSession.term_id == term_id,
++            QuizSession.expires_at > int(time.time()),
++        ).returning(QuizSession.answers_json)).first()
++        return json.loads(row[0]) if row else None
+--- a/backend/app/schemas.py
++++ b/backend/app/schemas.py
+@@ -15,11 +15,12 @@
+     role: str
+     display_name: str
+     research_direction: Optional[str] = None
++    must_change_password: bool = False
+ 
+ 
+ class LoginRequest(BaseModel):
+-    username: str
+-    password: str
++    username: str = Field(min_length=1, max_length=80)
++    password: str = Field(min_length=1, max_length=256)
+ 
+ 
+ class TokenOut(BaseModel):
+--- a/backend/app/security.py
++++ b/backend/app/security.py
+@@ -10,49 +10,13 @@
+ from datetime import datetime, timedelta, timezone
+ from typing import Optional
+ 
+-from fastapi import Depends, HTTPException, status
++from fastapi import Depends, HTTPException, Request, status
+ from fastapi.security import OAuth2PasswordBearer
+ from sqlalchemy import select
+ from sqlalchemy.orm import Session
+ 
+-try:  # Production image installs python-jose.
+-    from jose import JWTError, jwt
+-except ImportError:  # Lightweight local/test fallback.
+-    class JWTError(Exception):
+-        pass
+-
+-    class _FallbackJWT:
+-        @staticmethod
+-        def encode(payload: dict, key: str, algorithm: str = "HS256") -> str:
+-            data = dict(payload)
+-            exp = data.get("exp")
+-            if isinstance(exp, datetime):
+-                data["exp"] = int(exp.timestamp())
+-            body = base64.urlsafe_b64encode(json.dumps(data, separators=(",", ":")).encode()).rstrip(b"=")
+-            sig = hmac.new(key.encode(), body, hashlib.sha256).digest()
+-            return f"{body.decode()}.{base64.urlsafe_b64encode(sig).rstrip(b'=').decode()}"
+-
+-        @staticmethod
+-        def decode(token: str, key: str, algorithms: list[str] | None = None) -> dict:
+-            try:
+-                body_text, sig_text = token.split(".", 1)
+-                body = body_text.encode()
+-                padding = b"=" * (-len(sig_text) % 4)
+-                signature = base64.urlsafe_b64decode(sig_text.encode() + padding)
+-                expected = hmac.new(key.encode(), body, hashlib.sha256).digest()
+-                if not hmac.compare_digest(signature, expected):
+-                    raise JWTError("bad signature")
+-                padding = b"=" * (-len(body_text) % 4)
+-                payload = json.loads(base64.urlsafe_b64decode(body + padding))
+-                if payload.get("exp") and int(payload["exp"]) < int(time.time()):
+-                    raise JWTError("expired")
+-                return payload
+-            except JWTError:
+-                raise
+-            except Exception as exc:
+-                raise JWTError(str(exc)) from exc
+-
+-    jwt = _FallbackJWT()
++import jwt
++from jwt import InvalidTokenError as JWTError
+ 
+ try:  # Production image installs passlib+bcrypt.
+     from passlib.context import CryptContext
+@@ -62,6 +26,9 @@
+ from .database import get_db
+ from .models import User
+ from .permissions import ROLE_PERMISSIONS, has_permission
++
++from .production import validate_production
++validate_production()
+ 
+ SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-change-me")
+ ALGORITHM = "HS256"
+@@ -88,13 +55,15 @@
+         except Exception:
+             return False
+     if pwd_context:
+-        return pwd_context.verify(password, password_hash)
++        if len(password.encode()) > 72: return False
++        try: return pwd_context.verify(password, password_hash)
++        except (ValueError, TypeError): return False
+     return False
+ 
+ 
+-def create_access_token(subject: str, role: str, expires_delta: Optional[timedelta] = None) -> str:
++def create_access_token(subject: str, role: str, expires_delta: Optional[timedelta] = None, token_version: int = 0) -> str:
+     expire = datetime.now(timezone.utc) + (expires_delta or timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
+-    return jwt.encode({"sub": subject, "role": role, "exp": expire}, SECRET_KEY, algorithm=ALGORITHM)
++    return jwt.encode({"sub": subject, "role": role, "exp": expire, "ver": token_version}, SECRET_KEY, algorithm=ALGORITHM)
+ 
+ 
+ def _resolve_user(token: str | None, db: Session, *, required: bool) -> User | None:
+@@ -112,7 +81,7 @@
+             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="登录状态无效")
+         return None
+     user = db.scalar(select(User).where(User.username == username))
+-    if not user or not user.is_active:
++    if not user or not user.is_active or payload.get("ver", 0) != user.token_version:
+         if required:
+             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="用户不存在或已停用")
+         return None
+@@ -120,12 +89,15 @@
+ 
+ 
+ def optional_current_user(token: str | None = Depends(oauth2_scheme), db: Session = Depends(get_db)) -> User | None:
+-    return _resolve_user(token, db, required=False)
++    user = _resolve_user(token, db, required=False)
++    return None if user and user.must_change_password else user
+ 
+ 
+-def current_user(token: str | None = Depends(oauth2_scheme), db: Session = Depends(get_db)) -> User:
++def current_user(request: Request, token: str | None = Depends(oauth2_scheme), db: Session = Depends(get_db)) -> User:
+     user = _resolve_user(token, db, required=True)
+     assert user is not None
++    if user.must_change_password and request.url.path not in {"/api/auth/me", "/api/auth/password", "/api/auth/logout"}:
++        raise HTTPException(403, detail="PASSWORD_CHANGE_REQUIRED")
+     return user
+ 
+ 
+--- a/backend/app/task_queue.py
++++ b/backend/app/task_queue.py
+@@ -20,7 +20,14 @@
+     """Atomically claim one queued task. PostgreSQL uses SKIP LOCKED for multi-worker safety."""
+     with SessionLocal() as db:
+         with db.begin():
+-            stmt = select(WorkspaceTask).where(WorkspaceTask.status == "queued").order_by(WorkspaceTask.id).limit(1)
++            from .controls import lock_controls
++            lock_controls(db)
++            global_limit=int(os.getenv("TASK_GLOBAL_RUNNING_LIMIT", "2"))
++            user_limit=int(os.getenv("TASK_USER_RUNNING_LIMIT", "1"))
++            running_count=db.scalar(select(func.count()).select_from(WorkspaceTask).where(WorkspaceTask.status=="running"))
++            if running_count>=global_limit: return None
++            busy=select(WorkspaceTask.user_id).where(WorkspaceTask.status=="running").group_by(WorkspaceTask.user_id).having(func.count()>=user_limit)
++            stmt = select(WorkspaceTask).where(WorkspaceTask.status == "queued", WorkspaceTask.user_id.not_in(busy)).order_by(WorkspaceTask.id).limit(1)
+             if engine.dialect.name == "postgresql":
+                 stmt = stmt.with_for_update(skip_locked=True)
+             else:
+--- a/backend/app/task_service.py
++++ b/backend/app/task_service.py
+@@ -132,6 +132,8 @@
+     retry_of_id: int | None = None,
+     timeout_seconds: int | None = None,
+ ) -> WorkspaceTask:
++    from .controls import task_admission
++    task_admission(db, user_id)
+     task = WorkspaceTask(
+         task_code=str(uuid.uuid4()),
+         user_id=user_id,
+@@ -285,7 +287,7 @@
+                 PAPER_PROMPT + (f"\n用户特别关注：{payload.get('focus')}" if payload.get("focus") else ""),
+                 files=[ai_file],
+                 instructions="你是材料、焊接和工程科研文献分析专家。",
+-                reasoning_effort="high",
++                user_id=task.user_id, reasoning_effort="high",
+             )
+             mode = "external_ai"
+             db.add(AIUsageRecord(task_id=task.id, user_id=task.user_id, provider="OpenAI-compatible", model=task.model_name or "configured-model", external=True))
+@@ -323,7 +325,7 @@
+             content = ai_service.generate_text(
+                 f"请把以下内容整理为学术汇报PPT的Markdown提纲，每页一个二级标题、3-6条要点，不编造数据。\n\n{source_text}",
+                 instructions="你是严谨的学术汇报编辑。",
+-                reasoning_effort="medium",
++                user_id=task.user_id, reasoning_effort="medium",
+             )
+             db.add(AIUsageRecord(task_id=task.id, user_id=task.user_id, provider="OpenAI-compatible", model=task.model_name or "configured-model", external=True))
+             db.commit()
+@@ -440,7 +442,7 @@
+                         f"分析焊接/工程视频关键帧。关注点：{payload.get('focus') or '过程稳定性、异常事件与质量线索'}。区分观察、推断和未知；不得编造时间、尺寸或缺陷等级。",
+                         files=frames,
+                         instructions="你是焊接视频与工程视觉分析专家。",
+-                        reasoning_effort="high",
++                        user_id=task.user_id, reasoning_effort="high",
+                     )
+                     mode = "external_ai"
+                     db.add(AIUsageRecord(task_id=task.id, user_id=task.user_id, provider="OpenAI-compatible", model=task.model_name or "configured-model", external=True))
+--- a/backend/app/task_worker.py
++++ b/backend/app/task_worker.py
+@@ -62,7 +62,11 @@
+         print(f"[EnerTri worker] id={self.worker_id} recovered_expired={recovered}", flush=True)
+         signal.signal(signal.SIGTERM, self.stop)
+         signal.signal(signal.SIGINT, self.stop)
++        last_recovery = time.monotonic()
+         while self.running:
++            if time.monotonic() - last_recovery >= 30:
++                recover_expired_tasks()
++                last_recovery = time.monotonic()
+             claim = claim_next_task(self.worker_id)
+             if not claim:
+                 time.sleep(POLL_SECONDS)
+--- a/backend/app/workspace_router.py
++++ b/backend/app/workspace_router.py
+@@ -207,14 +207,14 @@
+     return f"""请作为客观、严格且建设性的同行评审专家审阅所附研究论文，并结合下列检索到的相关文献元数据进行比对。\n\n相关文献：\n{json.dumps(literature, ensure_ascii=False, indent=2)}\n\n按以下结构输出中文 Markdown：\n# 总体评价与推荐意见（接收/小修/大修/拒稿，给出置信度）\n# 论文贡献和优点\n# 与现有文献相比的原创性\n# 研究设计与方法问题\n# 数据、统计和图表问题\n# 结论是否被证据支持\n# 可复现性、伦理和数据可用性\n# 必须修改的问题（编号）\n# 建议修改的问题（编号）\n# 给编辑的客观结论\n只能引用提供的文献元数据和论文原文；不得虚构比对文献内容。"""
+ 
+ 
+-def _maybe_augment(prompt: str, result: dict[str, Any], use_ai: bool) -> str | None:
++def _maybe_augment(prompt: str, result: dict[str, Any], use_ai: bool, user_id: int) -> str | None:
+     if not use_ai:
+         return None
+     try:
+         return ai_service.generate_text(
+             f"{prompt}\n\n规则引擎结果：\n{json.dumps(result, ensure_ascii=False, indent=2)}",
+             instructions="你是焊接冶金和焊接工程专家。先尊重规则结果，再指出输入不足和验证要求；不要把初步建议写成已批准 WPS。",
+-            reasoning_effort="medium",
++            user_id=user_id, reasoning_effort="medium",
+         )
+     except (AIUnavailableError, AIResponseError) as exc:
+         return f"AI 补充分析不可用：{exc}"
+@@ -406,7 +406,7 @@
+     ai_file = _read_upload(file, ALLOWED_ANALYSIS_SUFFIXES)
+     prompt = PAPER_ANALYSIS_PROMPT + (f"\n用户特别关注：{focus}" if focus else "")
+     try:
+-        output = ai_service.generate_text(prompt, files=[ai_file], instructions="你是材料、焊接和工程科研文献分析专家。", reasoning_effort="high")
++        output = ai_service.generate_text(prompt, files=[ai_file], instructions="你是材料、焊接和工程科研文献分析专家。", user_id=user.id, reasoning_effort="high")
+     except (AIUnavailableError, AIResponseError) as exc:
+         raise _ai_error(exc)
+     job = _record_job(db, user, domain="research", task_type="paper_analysis", title=f"论文阅读：{ai_file.filename}", input_data={"filename": ai_file.filename, "focus": focus}, output_text=output)
+@@ -428,7 +428,7 @@
+         except Exception as exc:
+             literature = {"items": [], "warning": str(exc)}
+     try:
+-        output = ai_service.generate_text(_paper_review_prompt(literature), files=[ai_file], instructions="你是独立同行评审专家，不迎合作者。", reasoning_effort="high")
++        output = ai_service.generate_text(_paper_review_prompt(literature), files=[ai_file], instructions="你是独立同行评审专家，不迎合作者。", user_id=user.id, reasoning_effort="high")
+     except (AIUnavailableError, AIResponseError) as exc:
+         raise _ai_error(exc)
+     job = _record_job(db, user, domain="research", task_type="paper_review", title=f"论文审稿：{ai_file.filename}", input_data={"filename": ai_file.filename, "literature_query": literature_query}, output_text=output, output_json={"literature": literature})
+@@ -438,7 +438,7 @@
+ @router.post("/writing/generate")
+ def generate_writing(payload: WritingRequest, db: Session = Depends(get_db), user: User = Depends(require_permission("ai.external"))):
+     try:
+-        output = ai_service.generate_text(_writing_prompt(payload), instructions="你是负责任的学术写作助手，禁止伪造数据、引用或研究成果。", reasoning_effort="high")
++        output = ai_service.generate_text(_writing_prompt(payload), instructions="你是负责任的学术写作助手，禁止伪造数据、引用或研究成果。", user_id=user.id, reasoning_effort="high")
+     except (AIUnavailableError, AIResponseError) as exc:
+         raise _ai_error(exc)
+     artifact_path = None
+@@ -479,7 +479,7 @@
+     base = IMAGE_PROMPTS.get(analysis_type, "分析该科研或工程图像，提取可观察特征、可能机制、定量线索和不确定性。")
+     prompt = f"{base}\n样品/工艺背景：{context or '未提供'}\n按“观察结果—定量信息—机理解释—结论—局限—建议补充数据”输出。"
+     try:
+-        output = ai_service.generate_text(prompt, files=[ai_file], instructions="你是材料表征和焊接检测专家。不得伪造标尺、峰值或定量数据。", reasoning_effort="high")
++        output = ai_service.generate_text(prompt, files=[ai_file], instructions="你是材料表征和焊接检测专家。不得伪造标尺、峰值或定量数据。", user_id=user.id, reasoning_effort="high")
+     except (AIUnavailableError, AIResponseError) as exc:
+         raise _ai_error(exc)
+     job = _record_job(db, user, domain="analysis", task_type=f"image_{analysis_type}", title=f"{analysis_type} 分析：{ai_file.filename}", input_data={"filename": ai_file.filename, "context": context}, output_text=output)
+@@ -531,7 +531,7 @@
+     if warnings:
+         prompt += "\n系统警告：" + "；".join(warnings)
+     try:
+-        output = ai_service.generate_text(prompt, files=ai_files, instructions="你是焊接过程多模态感知和质量评估专家。", reasoning_effort="high")
++        output = ai_service.generate_text(prompt, files=ai_files, instructions="你是焊接过程多模态感知和质量评估专家。", user_id=user.id, reasoning_effort="high")
+     except (AIUnavailableError, AIResponseError) as exc:
+         raise _ai_error(exc)
+     job = _record_job(db, user, domain="production", task_type="multimodal_quality", title="焊接多模态质量评估", input_data={"files": names, "task": task, "context": context, "warnings": warnings}, output_text=output, output_json={"warnings": warnings})
+@@ -568,7 +568,7 @@
+     result = assess_weldability(payload.model_dump())
+     if use_ai and not has_permission(user.role, "ai.external"):
+         raise HTTPException(status_code=403, detail="当前角色不可调用外部 AI")
+-    result["ai_interpretation"] = _maybe_augment("评估该材料的焊接性、缺陷和接头性能。", result, use_ai)
++    result["ai_interpretation"] = _maybe_augment("评估该材料的焊接性、缺陷和接头性能。", result, use_ai, user.id)
+     job = _record_job(db, user, domain="production", task_type="weldability", title=f"焊接性：{payload.material_name or payload.base_material or '材料'}", input_data=payload.model_dump(), output_json=result)
+     return {"job": _job_to_dict(job), **result}
+ 
+@@ -578,7 +578,7 @@
+     result = {"elements": analyze_elements(payload.composition), "note": "元素作用依赖基体、含量、热处理和相互作用，以下为通用焊接冶金提示。"}
+     if use_ai and not has_permission(user.role, "ai.external"):
+         raise HTTPException(status_code=403, detail="当前角色不可调用外部 AI")
+-    result["ai_interpretation"] = _maybe_augment("分析各合金元素的协同作用和焊接影响。", result, use_ai)
++    result["ai_interpretation"] = _maybe_augment("分析各合金元素的协同作用和焊接影响。", result, use_ai, user.id)
+     job = _record_job(db, user, domain="production", task_type="alloy_elements", title=f"合金元素：{payload.material_name or '材料'}", input_data=payload.model_dump(), output_json=result)
+     return {"job": _job_to_dict(job), **result}
+ 
+@@ -588,7 +588,7 @@
+     result = process_plan(payload.model_dump())
+     if use_ai and not has_permission(user.role, "ai.external"):
+         raise HTTPException(status_code=403, detail="当前角色不可调用外部 AI")
+-    result["ai_interpretation"] = _maybe_augment("审查并补充初步焊接工艺窗口和性能预测。", result, use_ai)
++    result["ai_interpretation"] = _maybe_augment("审查并补充初步焊接工艺窗口和性能预测。", result, use_ai, user.id)
+     job = _record_job(db, user, domain="production", task_type="process_plan", title=f"焊接工艺：{payload.material_name or '材料'}", input_data=payload.model_dump(), output_json=result)
+     return {"job": _job_to_dict(job), **result}
+ 
+@@ -598,7 +598,7 @@
+     result = select_filler(payload.model_dump())
+     if use_ai and not has_permission(user.role, "ai.external"):
+         raise HTTPException(status_code=403, detail="当前角色不可调用外部 AI")
+-    result["ai_interpretation"] = _maybe_augment("根据母材、服役条件和工艺选择焊材，并说明选择边界。", result, use_ai)
++    result["ai_interpretation"] = _maybe_augment("根据母材、服役条件和工艺选择焊材，并说明选择边界。", result, use_ai, user.id)
+     job = _record_job(db, user, domain="production", task_type="filler_selection", title=f"焊材选择：{payload.material_name or payload.base_material or '材料'}", input_data=payload.model_dump(), output_json=result)
+     return {"job": _job_to_dict(job), **result}
+ 
+@@ -608,7 +608,7 @@
+     result = analyze_defect(payload.model_dump())
+     if use_ai and not has_permission(user.role, "ai.external"):
+         raise HTTPException(status_code=403, detail="当前角色不可调用外部 AI")
+-    result["ai_interpretation"] = _maybe_augment("结合材料、厚度、结构和过程背景分析缺陷根因与解决方案。", result, use_ai)
++    result["ai_interpretation"] = _maybe_augment("结合材料、厚度、结构和过程背景分析缺陷根因与解决方案。", result, use_ai, user.id)
+     job = _record_job(db, user, domain="production", task_type="defect_analysis", title=f"缺陷分析：{payload.defect_type or '未知'}", input_data=payload.model_dump(), output_json=result)
+     return {"job": _job_to_dict(job), **result}
+ 
+--- a/backend/requirements.txt
++++ b/backend/requirements.txt
+@@ -1,12 +1,12 @@
+-fastapi==0.115.0
++fastapi==0.141.1
+ uvicorn[standard]==0.30.6
+ sqlalchemy==2.0.35
+-pydantic==2.8.2
+-python-multipart==0.0.9
++pydantic==2.13.5
++python-multipart==0.0.32
+ openpyxl==3.1.5
+ passlib[bcrypt]==1.7.4
+-python-jose[cryptography]==3.3.0
+-python-dotenv==1.0.1
++PyJWT==2.13.0
++python-dotenv==1.2.3
+ psycopg[binary]==3.2.1
+ bcrypt==4.0.1
+ gunicorn==23.0.0
+@@ -20,3 +20,5 @@
+ PyMuPDF>=1.24,<2
+ pdfplumber>=0.11,<1
+ pytesseract>=0.3.13,<1
++
++starlette==1.6.0
+--- a/backend/scripts/bootstrap.py
++++ b/backend/scripts/bootstrap.py
+@@ -22,7 +22,24 @@
+ 
+ 
+ def main() -> None:
++    from app.production import is_production, validate_production
++    validate_production()
+     migration = upgrade_database("head")
++    if is_production():
++        import os
++        from sqlalchemy import select
++        from app.models import User
++        with SessionLocal() as db:
++            username = os.getenv("BOOTSTRAP_ADMIN_USERNAME", "admin")
++            if not db.scalar(select(User).where(User.username == username)):
++                password = os.getenv("BOOTSTRAP_ADMIN_PASSWORD", "")
++                if not 16 <= len(password.encode()) <= 72 or password.lower().startswith(("change", "example", "replace")):
++                    raise RuntimeError("Set a unique BOOTSTRAP_ADMIN_PASSWORD of at least 16 characters")
++                db.add(User(username=username, password_hash=hash_password(password), role="system_admin", display_name="平台管理员", must_change_password=True))
++                db.commit()
++            write_audit(db, action="database.migration.completed", resource_type="database", resource_id=migration["current_revision"], details={"mode": "production_no_demo_seed"})
++        print({"ok": True, "revision": migration["current_revision"], "demo_seeded": False})
++        return
+     with SessionLocal() as db:
+         seed_defaults(db, hash_password)
+         standard_seed = seed_capability_standards(db)
+--- a/backend/scripts/create_trial_users.py
++++ b/backend/scripts/create_trial_users.py
+@@ -0,0 +1,41 @@
++"""Import pre-assigned personal accounts from stdin CSV. No plaintext output.
++Required columns: username,display_name,password; optional role (default learning_user).
++Entire batch is atomic; existing accounts are rejected rather than overwritten.
++"""
++import csv
++import sys
++from pathlib import Path
++sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
++from sqlalchemy import select
++from app.database import SessionLocal
++from app.models import User
++from app.security import hash_password
++from app.audit import write_audit
++
++
++def main():
++    rows = list(csv.DictReader(sys.stdin))
++    if not rows or len(rows) > 150:
++        raise SystemExit("Supply between 1 and 150 accounts")
++    names = set()
++    with SessionLocal.begin() as db:
++        for row in rows:
++            name = row.get("username", "").strip()
++            display = row.get("display_name", "").strip()
++            password = row.get("password", "")
++            role = row.get("role") or "learning_user"
++            if not name or len(name)>80 or not display or len(display)>120 or not 16 <= len(password.encode()) <= 72:
++                raise SystemExit("Invalid username, display name or password length (16–72 UTF-8 bytes)")
++            if role not in {"learning_user", "researcher", "production_engineer", "review_expert"}:
++                raise SystemExit("Bulk import cannot grant administrator roles")
++            if name in names or db.scalar(select(User.id).where(User.username == name)):
++                raise SystemExit("Duplicate/existing account: batch aborted")
++            names.add(name)
++            db.add(User(username=name, display_name=display, password_hash=hash_password(password), role=role, must_change_password=True))
++    with SessionLocal() as db:
++        write_audit(db, action="trial.accounts.imported", resource_type="user", resource_id="batch", details={"count": len(rows)})
++    print(f"Created {len(rows)} personal accounts; passwords omitted")
++
++
++if __name__ == "__main__":
++    main()
+--- a/backend/scripts/reset_password.py
++++ b/backend/scripts/reset_password.py
+@@ -0,0 +1,19 @@
++"""Operator-only password reset. Run interactively on the server; never prints secrets."""
++import argparse, getpass, sys
++from pathlib import Path
++sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
++from sqlalchemy import select
++from app.database import SessionLocal
++from app.models import User
++from app.security import hash_password
++from app.audit import write_audit
++p=argparse.ArgumentParser();p.add_argument("username");args=p.parse_args()
++password=getpass.getpass("New temporary password: ")
++confirm=getpass.getpass("Confirm temporary password: ")
++if password!=confirm or not 16<=len(password.encode())<=72: raise SystemExit("Password mismatch or invalid UTF-8 length")
++with SessionLocal.begin() as db:
++    user=db.scalar(select(User).where(User.username==args.username).with_for_update())
++    if not user: raise SystemExit("Account not found")
++    user.password_hash=hash_password(password);user.token_version+=1;user.must_change_password=True
++    write_audit(db,action="auth.operator.reset",resource_type="user",resource_id=user.id,details={"forced_change":True},commit=False)
++print("Password reset; all sessions revoked; next login must change password")
+--- a/backend/tests/test_trial_controls.py
++++ b/backend/tests/test_trial_controls.py
+@@ -0,0 +1,97 @@
++import os,tempfile,unittest,json,sys,subprocess,re
++from pathlib import Path
++from unittest.mock import patch
++from concurrent.futures import ThreadPoolExecutor
++TMP=tempfile.TemporaryDirectory();root=Path(TMP.name)
++os.environ.update(DATABASE_URL='sqlite:///'+str(root/'db.sqlite'),MEDIA_DIR=str(root/'media'),SECRET_KEY='test-controls-secret-which-is-long-enough',APP_ENV='development',APP_BOOTSTRAP_ON_STARTUP='true',TASK_EXECUTION_MODE='database_worker')
++from fastapi.testclient import TestClient
++from fastapi import HTTPException
++from sqlalchemy import delete,update
++from app.main import app
++from app.database import SessionLocal
++from app.models import User,WorkspaceTask,RateBucket,AIBudgetReservation,KnowledgeBase,KnowledgeDocument
++from app.security import hash_password,create_access_token
++from app.controls import rate_limit,reserve_ai,finish_ai
++from app.task_service import create_task
++from app.task_queue import claim_next_task
++from app.ai_service import AIService,AIFile,AIUnavailableError
++
++class TrialControls(unittest.TestCase):
++    @classmethod
++    def setUpClass(cls):
++        cls.ctx=TestClient(app);cls.c=cls.ctx.__enter__();cls.ids={}
++        with SessionLocal.begin() as db:
++            for name,role in [('alice','learning_user'),('bob','learning_user'),('research','researcher'),('review','review_expert'),('operator','admin')]:
++                u=User(username=name,display_name=name,role=role,password_hash=hash_password('OriginalPassword-12345'));db.add(u);db.flush();cls.ids[name]=u.id
++    @classmethod
++    def tearDownClass(cls):cls.ctx.__exit__(None,None,None)
++    def h(self,name):
++        with SessionLocal() as db:
++            u=db.get(User,self.ids[name]);return {'Authorization':'Bearer '+create_access_token(u.username,u.role,token_version=u.token_version)}
++    def setUp(self):
++        with SessionLocal.begin() as db:db.execute(delete(RateBucket));db.execute(delete(AIBudgetReservation))
++    def test_login_limit(self):
++        with patch.dict(os.environ,LOGIN_ACCOUNT_LIMIT='2',LOGIN_IP_LIMIT='100'):
++            for i in range(2):self.assertEqual(self.c.post('/api/auth/login',json={'username':'nonexistent','password':'x'},headers={'X-Forwarded-For':str(i)}).status_code,401)
++            r=self.c.post('/api/auth/login',json={'username':'nonexistent','password':'x'});self.assertEqual(r.status_code,429);self.assertIn('retry-after',r.headers)
++    def test_rate_limit_shared_atomic_across_processes(self):
++        code="from app.controls import rate_limit;from fastapi import HTTPException\ntry:rate_limit(['shared'],[3],900)\nexcept HTTPException:raise SystemExit(42)"
++        with ThreadPoolExecutor(max_workers=6) as pool:results=list(pool.map(lambda _:subprocess.run([sys.executable,'-c',code],env=os.environ.copy(),capture_output=True).returncode,range(8)))
++        self.assertEqual(results.count(0),3,results);self.assertEqual(results.count(42),5,results)
++    def test_forced_change_revokes_old_tokens(self):
++        with SessionLocal.begin() as db:db.execute(update(User).where(User.id==self.ids['alice']).values(must_change_password=True))
++        old=self.h('alice');self.assertEqual(self.c.get('/api/research-profile/profile',headers=old).status_code,403)
++        r=self.c.post('/api/auth/password',headers=old,json={'current_password':'OriginalPassword-12345','new_password':'NewPersonalPassword-67890'});self.assertEqual(r.status_code,200,r.text)
++        self.assertEqual(self.c.get('/api/auth/me',headers=old).status_code,401)
++        r=self.c.post('/api/auth/login',json={'username':'alice','password':'NewPersonalPassword-67890'});self.assertEqual(r.status_code,200);self.assertFalse(r.json()['user']['must_change_password'])
++    def test_wrong_current_password(self):
++        r=self.c.post('/api/auth/password',headers=self.h('bob'),json={'current_password':'wrong','new_password':'NewPersonalPassword-67890'});self.assertEqual(r.status_code,400)
++    def test_logout_revokes_all_sessions(self):
++        old=self.h('bob');self.assertEqual(self.c.post('/api/auth/logout',headers=old).status_code,200);self.assertEqual(self.c.get('/api/auth/me',headers=old).status_code,401)
++    def test_task_admission_and_worker_limit(self):
++        with SessionLocal.begin() as db:db.execute(delete(WorkspaceTask))
++        with patch.dict(os.environ,TASK_USER_ACTIVE_LIMIT='2',TASK_GLOBAL_ACTIVE_LIMIT='3',TASK_GLOBAL_RUNNING_LIMIT='1',TASK_USER_RUNNING_LIMIT='1'):
++            with SessionLocal() as db:
++                for _ in range(2):create_task(db,user_id=self.ids['alice'],task_type='ppt_generation',title='quota-test',input_data={})
++                with self.assertRaises(HTTPException):create_task(db,user_id=self.ids['alice'],task_type='ppt_generation',title='excess',input_data={})
++                create_task(db,user_id=self.ids['bob'],task_type='ppt_generation',title='quota-test',input_data={})
++                with self.assertRaises(HTTPException):create_task(db,user_id=self.ids['bob'],task_type='ppt_generation',title='excess',input_data={})
++            self.assertIsNotNone(claim_next_task('worker-a'));self.assertIsNone(claim_next_task('worker-b'))
++    def test_ai_failure_not_refunded(self):
++        with patch.dict(os.environ,AI_REQUEST_RESERVATION_USD='0.10',AI_USER_DAILY_USD='0.20',AI_GLOBAL_DAILY_USD='0.20'):
++            rid=reserve_ai(self.ids['research'])
++            with self.assertRaises(HTTPException):reserve_ai(self.ids['research'])
++            finish_ai(rid,failed=True);rid=reserve_ai(self.ids['research']);finish_ai(rid)
++            with self.assertRaises(HTTPException):reserve_ai(self.ids['research'])
++    def test_ai_owner_files_input_bounds(self):
++        with patch.dict(os.environ,OPENAI_API_KEY='test',AI_BUDGET_ENABLED='true',AI_BUDGET_MODEL='test',OPENAI_MODEL='test',AI_INPUT_USD_PER_MILLION='1',AI_OUTPUT_USD_PER_MILLION='1'):
++            service=AIService()
++            with patch.object(service,'_unmetered_generate_text',return_value=('answer',{'input_tokens':10})) as upstream:
++                with self.assertRaises(HTTPException):service.generate_text('hello',user_id=self.ids['bob'])
++                with self.assertRaises(AIUnavailableError):service.generate_text('hello',user_id=self.ids['research'],files=[AIFile('file.txt',b'private')])
++                with self.assertRaises(AIUnavailableError):service.generate_text('x'*20000,user_id=self.ids['research'])
++                upstream.assert_not_called();self.assertEqual(service.generate_text('hello',user_id=self.ids['research']),'answer');upstream.assert_called_once()
++    def test_all_protected_routes_anonymous(self):
++        def deps(d):return [getattr(d.call,'__name__','')]+[n for child in d.dependencies for n in deps(child)]
++        inventory=[]
++        for route in app.routes:
++            if not hasattr(route,'dependant'):continue
++            protected='current_user' in deps(route.dependant)
++            for method in sorted(route.methods):
++                row={'path':route.path,'method':method,'authentication':protected}
++                if protected:
++                    r=self.c.request(method,re.sub(r'\{[^}]+\}','1',route.path));row['anonymous_status']=r.status_code;self.assertIn(r.status_code,[401,403],row)
++                inventory.append(row)
++        if os.getenv('PERMISSION_INVENTORY_PATH'):Path(os.environ['PERMISSION_INVENTORY_PATH']).write_text(json.dumps(inventory,ensure_ascii=False,indent=2))
++    def test_owner_role_matrix(self):
++        h=self.h('bob');r=self.c.post('/api/files/upload',headers=h,files={'file':('owned.txt',b'private sample','text/plain')});self.assertEqual(r.status_code,200,r.text);fid=r.json()['id']
++        r=self.c.post('/api/development-planning/goals',headers=h,json={'goal_type':'student_growth','title':'Private Goal'});self.assertEqual(r.status_code,200,r.text);gid=r.json()['id']
++        with SessionLocal.begin() as db:
++            kb=KnowledgeBase(name='private',scope_type='personal',owner_user_id=self.ids['bob'],allow_team_search=False);db.add(kb);db.flush()
++            doc=KnowledgeDocument(knowledge_base_id=kb.id,owner_user_id=self.ids['bob'],title='private doc',source_type='upload',status='ready');db.add(doc);db.flush();did=doc.id
++        for role in ['alice','research','review','operator','bob']:
++            headers=self.h(role);allowed=role in ['bob','operator']
++            r=self.c.get(f"/api/research-profile/profile?user_id={self.ids['bob']}",headers=headers);self.assertEqual(r.status_code,200 if allowed else 403,(role,r.text))
++            r=self.c.get(f'/api/files/{fid}/download',headers=headers);self.assertIn(r.status_code,[200] if allowed else [403,404],(role,r.text))
++            r=self.c.get(f'/api/development-planning/goals/{gid}/analysis',headers=headers);self.assertEqual(r.status_code,200 if allowed else 403,(role,r.text))
++            r=self.c.get(f'/api/knowledge/documents/{did}',headers=headers);self.assertEqual(r.status_code,200 if role=='bob' else 404,(role,r.text))
+--- a/backend/tests/test_v4_1_foundation.py
++++ b/backend/tests/test_v4_1_foundation.py
+@@ -411,7 +411,7 @@
+ 
+         migration = self.client.get("/api/admin/migrations", headers=self.admin_headers)
+         self.assertEqual(migration.status_code, 200)
+-        self.assertEqual(migration.json()["current_revision"], "v4_7_dynamic_development_loop")
++        self.assertEqual(migration.json()["current_revision"], "v4_7_trial_controls")
+         self.assertEqual(migration.json()["status"], "succeeded")
+ 
+         users = self.client.get("/api/admin/users", headers=self.admin_headers)
+--- a/backend/tests/test_web_trial.py
++++ b/backend/tests/test_web_trial.py
+@@ -0,0 +1,63 @@
++"""Web deployment regression tests; run in a separate process from legacy suites."""
++import os
++import tempfile
++import unittest
++import subprocess
++import sys
++from pathlib import Path
++from unittest.mock import patch
++ROOT = tempfile.TemporaryDirectory()
++os.environ.update(DATABASE_URL="sqlite:///"+str(Path(ROOT.name)/"test.db"), MEDIA_DIR=str(Path(ROOT.name)/"media"), SECRET_KEY="isolated-test-secret", APP_ENV="development", APP_BOOTSTRAP_ON_STARTUP="true", TASK_EXECUTION_MODE="inline")
++from fastapi.testclient import TestClient
++from app.main import app
++from app.database import SessionLocal, MEDIA_DIR
++from app.models import Term
++from app.quiz_store import save_quiz, consume_quiz
++from app.production import validate_production
++
++
++class WebTrialTests(unittest.TestCase):
++    @classmethod
++    def setUpClass(cls):
++        cls.ctx=TestClient(app);cls.client=cls.ctx.__enter__()
++        with SessionLocal.begin() as db:
++            term=Term(zh="测试",en="Test",definition_zh_academic="测试",review_status="approved")
++            db.add(term);db.flush();cls.term=term.id
++
++    @classmethod
++    def tearDownClass(cls):
++        cls.ctx.__exit__(None,None,None)
++
++    def test_private_media_cannot_bypass_auth(self):
++        for folder in ("files", "artifacts", "workspace"):
++            d=MEDIA_DIR/folder; d.mkdir(exist_ok=True);(d/"secret.txt").write_text("private")
++            self.assertEqual(self.client.get(f"/media/{folder}/secret.txt").status_code,404)
++        (MEDIA_DIR/"videos"/"test.txt").write_text("public")
++        self.assertEqual(self.client.get("/media/videos/test.txt").status_code,200)
++
++    def test_quiz_shared_between_processes_and_one_use(self):
++        save_quiz("cross-process", self.term, {"q": {"answer":"A"}})
++        code=f"from app.quiz_store import consume_quiz; assert consume_quiz('cross-process',{self.term})['q']['answer']=='A'"
++        subprocess.run([sys.executable,"-c",code],check=True,env=os.environ.copy())
++        self.assertIsNone(consume_quiz("cross-process",self.term))
++
++    def test_quiz_expiration_and_wrong_term(self):
++        save_quiz("expired",self.term,{},ttl=-1)
++        self.assertIsNone(consume_quiz("expired",self.term))
++        save_quiz("bound",self.term,{"q":1})
++        self.assertIsNone(consume_quiz("bound",self.term+1))
++        self.assertEqual(consume_quiz("bound",self.term),{"q":1})
++
++    def test_readiness_and_no_filesystem_disclosure(self):
++        self.assertEqual(self.client.get("/api/ready").status_code,200)
++        self.assertNotIn("media_dir",self.client.get("/api/health").json())
++        with patch("app.migration_bootstrap.current_revision", return_value="old"):
++            self.assertEqual(self.client.get("/api/ready").status_code,503)
++
++    def test_unsafe_production_refused(self):
++        with patch.dict(os.environ, {"APP_ENV":"production","SECRET_KEY":"dev-secret-change-me"}):
++            with self.assertRaises(RuntimeError): validate_production()
++
++    def test_safe_production_config_accepted(self):
++        with patch.dict(os.environ, {"APP_ENV":"production","SECRET_KEY":"a"*64,"DATABASE_URL":"postgresql+psycopg://u:p@db/app","TASK_EXECUTION_MODE":"database_worker","APP_BOOTSTRAP_ON_STARTUP":"false"}):
++            validate_production()
+--- a/caddy/Caddyfile
++++ b/caddy/Caddyfile
+@@ -0,0 +1,29 @@
++{$SITE_DOMAIN} {
++    encode zstd gzip
++    request_body {
++        max_size 64MB
++    }
++    header {
++        X-Content-Type-Options nosniff
++        Referrer-Policy same-origin
++        X-Frame-Options DENY
++        -Server
++    }
++    handle /api/* {
++        reverse_proxy backend:8000 {
++            header_up X-Forwarded-For {remote_host}
++        }
++    }
++    handle /media/videos/* {
++        reverse_proxy backend:8000 {
++            header_up X-Forwarded-For {remote_host}
++        }
++    }
++    handle /media/* {
++        respond 404
++    }
++    handle {
++        root * /srv/frontend
++        file_server
++    }
++}
+--- a/caddy/Caddyfile.local
++++ b/caddy/Caddyfile.local
+@@ -1,17 +1,29 @@
+ :8080 {
+-    encode gzip zstd
+-
++    encode zstd gzip
++    request_body {
++        max_size 64MB
++    }
++    header {
++        X-Content-Type-Options nosniff
++        Referrer-Policy same-origin
++        X-Frame-Options DENY
++        -Server
++    }
+     handle /api/* {
+-        reverse_proxy backend:8000
++        reverse_proxy backend:8000 {
++            header_up X-Forwarded-For {remote_host}
++        }
+     }
+-
++    handle /media/videos/* {
++        reverse_proxy backend:8000 {
++            header_up X-Forwarded-For {remote_host}
++        }
++    }
+     handle /media/* {
+-        reverse_proxy backend:8000
++        respond 404
+     }
+-
+     handle {
+         root * /srv/frontend
+-        try_files {path} /index.html
+         file_server
+     }
+ }
+--- a/deploy/DEPLOYMENT.md
++++ b/deploy/DEPLOYMENT.md
+@@ -0,0 +1,118 @@
++# 百人试用部署操作手册
++
++本文件针对现有 FastAPI/PostgreSQL/本地文件卷架构。当前状态：**准备候选版，不可直接公网放行**。先阅读 `review/ARCHITECTURE_REVIEW.md` 中 P0 清单和 `review/SECURITY_AND_OPERATIONS_RUNBOOK.md`。没有创建公网网站、域名或云服务器。
++
++## 1. 上线前必须通过
++
++- 修复并扫描 Python/系统依赖漏洞，生成经过回归的生产锁文件和固定镜像版本；当前 requirements 有已知受影响版本。
++- 在干净构建机执行最终 `pip-audit -r backend/requirements.txt`；本地运行时无法完成远程索引扫描，不能把源码版本变更当成扫描证明。
++- 实现登录限流、账号改密/重置和任务/AI/磁盘配额，验证跨用户访问隔离。
++- 确认试用内容、100 名具名账号、数据使用/删除与外部 AI 传输规则；首批不要开放商业仿真执行。
++- 准备域名、DNS、Linux 主机、Docker Engine + Compose 插件；4 vCPU/8GB 只是初始压测配置。
++- 以下命令均在项目根目录执行；命令中的域名是示例，必须替换为自己的预发布域名。
++
++## 2. 环境配置
++
++复制模板，不要提交密钥文件：
++
++```bash
++cp deploy/trial.env.example .env
++cp backend/.env.production.example backend/.env
++chmod 600 .env backend/.env
++```
++
++使用密码管理器生成独立随机凭据。根目录 `.env` 填 `SITE_DOMAIN`（仅域名）及不少于 32 位十六进制随机 `DB_PASSWORD`。`backend/.env` 中数据库 URL 必须使用同一个数据库密码；SECRET_KEY 至少 32 字符；初始管理员密码至少 16 字符，不超过 bcrypt 的 72 个 UTF-8 字节。
++
++`CORS_ORIGINS` 填同一 HTTPS 源。所有 media/artifacts/workspace/files 路径均指向 `/app/media` 下目录。AI key 默认留空，商业仿真执行默认 false。不能把生产配置改为 development 来跳过检查。
++
++```bash
++python3 scripts/preflight.py
++```
++
++preflight 不打印秘密值，也不连接服务器。它仅校验配置，不能替代漏洞、证书、权限和压测验收。模板未填写时应返回 BLOCKED。
++
++## 3. 在隔离服务器构建与验收
++
++确认上面的 P0 条件已完成再启动预发布。数据库用新卷，上传目录使用新环境目录；源码包附带的历史示例 uploads 不应不加审核地复制到正式试用数据卷。可以先将它移至离线归档位置，再创建空 uploads。
++
++```bash
++docker compose config --quiet
++docker compose build
++docker compose run --rm --no-deps caddy caddy validate --config /etc/caddy/Caddyfile
++docker compose up -d
++```
++
++顺序是 DB 健康 → init 执行迁移/创建管理员 → backend/worker → Caddy。Caddy 自动申请证书，需要正确 DNS、网络和 80/443 入站。保持数据库/API 不对公网映射；限制 SSH 到管理员网络。
++
++新生产库只创建管理员，不导入演示学生、课程、画像、项目或路线。先使用管理员导入经过审核的术语 Excel，并配置真实标准资源、能力映射、项目需求；演示 seed 不代表真实数据，应仅在开发环境用来复现页面。
++
++```bash
++docker compose ps
++docker compose logs --tail=100 init backend worker
++curl --fail https://trial.example.org/api/health
++curl --fail https://trial.example.org/api/ready
++```
++
++`/api/ready` 核对数据库和 revision；必须另外检查 Worker、上传和任务完成/下载。不得将生产 .env 或含密钥的 compose 展开结果复制到工单。
++
++0010 迁移会让已有账号的旧 token 失效并要求改密；请预先通知用户并准备临时凭据。若升级中途失败，保留数据库备份和旧镜像，先在隔离副本修复迁移，不要重复执行未知状态的 SQL。
++
++## 4. 试用账号
++
++准备受限访问的 CSV，列名 `username,display_name,password,role`，每人独立随机密码；role 默认为 learning_user。不要给学生 researcher 权限来绕过 AI 门槛，是否开放 AI 应按试用范围明确分配。
++
++```bash
++chmod 600 trial-accounts.csv
++docker compose exec -T backend python scripts/create_trial_users.py < trial-accounts.csv
++```
++
++导入最多 150 条，不覆盖已存在账号，不批量创建管理员。重复或不合法输入使整批回滚。脚本没有替你向任何人发送密码。通过受控渠道分配个人凭据，并按组织规则安全处置 CSV。自助首次改密/找回和管理员重置仍需开发，未完成前不向百人放行。
++
++## 5. 必做验证
++
++安装项目依赖后：
++
++```bash
++python scripts/run_regression.py
++```
++
++先在预发布上运行只读探针：
++
++```bash
++python scripts/load_probe.py https://trial.example.org --users 20 --requests 400
++python scripts/load_probe.py https://trial.example.org --users 100 --requests 1000
++```
++
++外部 AI 费用保护默认关闭。只有在供应商计价已经核对后，才在 `backend/.env` 填写 `AI_BUDGET_MODEL`、输入/输出费率并设置 `AI_BUDGET_ENABLED=true`；文件和图像外部 AI 在当前版本仍会被拒绝，避免无法可靠估算费用。
++
++脚本报告错误率、p95/p99 和吞吐，出现错误或 p95 > 1 秒则失败。它**不覆盖登录、写操作、PDF/OCR、AI、真实思考时间和用户会话**。须另做真实账号混合负载、跨用户隔离、双 API 进程测验及多 Worker 抢占测试。没有运行结果前不得声称支持百人并发。
++
++浏览器验收至少包括桌面和手机：登录、会话过期、搜索分页、学习记录、小测、上传、任务进度/取消/失败/下载、证据提交与核验、成长路线完成回流，检查控制台、错误提示和键盘可用性。
++
++## 6. 备份、恢复和回滚
++
++源码版本、数据库、uploads 必须可关联。`scripts/backup.sh` 对 SQL 和文件分别备份，**在线运行时不保证相同时间点**。维护窗口内先停止写入及 Worker，确认没有仍在执行的外部任务，再备份：
++
++```bash
++docker compose stop caddy backend worker
++bash scripts/backup.sh
++docker compose start backend worker caddy
++```
++
++备份失败时先修复和重做，不要因为启动成功就忽略。SQL 中含个人数据及散列密码，文件备份含上传内容，应加密异机保存。按试用容忍度设定 RPO/RTO，例如 RPO 24h、RTO 2h 作为初始目标，必须演练验证。
++
++恢复必须先在空的隔离数据库和空 uploads 上演练，不能往已有数据的生产库盲目执行 SQL：
++
++```bash
++bash scripts/restore_db.sh backups/enertri_实际时间.sql
++```
++
++配对恢复同一轮 uploads 归档，然后检查文件哈希、登录、证据/任务链和受控下载。不要使用 `docker compose down -v` 作为常规重启命令。
++
++新增 0009 只增加 quiz_sessions；回退到旧应用时应安排维护窗口并评估旧应用的双进程测验缺陷，不要机械 downgrade。涉及真实业务数据迁移时优先使用经演练的备份恢复与固定旧镜像，保留回滚所需文件版本。
++
++## 7. 运行责任与成本
++
++指定唯一值班/联系渠道，监控 API 延迟/5xx、数据库连接、磁盘余量、备份年龄、Worker 心跳、队列长度/等待时间、任务失败及 AI 费用。现有 queue_stats 不是完整监控平台；容器 healthcheck 也不会自动恢复所有 unhealthy 状态。
++
++分批放行：5 人内部 → 20 人 → 100 人。扩 Worker 前先测数据库连接和磁盘/OCR竞争；多个 Worker 会增加外部调用并发与费用。共享文件卷是单机方案，多主机扩展需要重新设计共享存储与任务部署。
+--- a/deploy/trial.env.example
++++ b/deploy/trial.env.example
+@@ -0,0 +1,3 @@
++# Copy to ROOT .env; use a random hexadecimal DB password.
++SITE_DOMAIN=trial.example.org
++DB_PASSWORD=REPLACE_WITH_RANDOM_HEX
+--- a/docker-compose.yml
++++ b/docker-compose.yml
+@@ -15,7 +15,7 @@
+     environment:
+       POSTGRES_DB: enertri
+       POSTGRES_USER: enertri_user
+-      POSTGRES_PASSWORD: CHANGE_ME_STRONG_DB_PASSWORD
++      POSTGRES_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env}
+     volumes:
+       - postgres_data:/var/lib/postgresql/data
+     healthcheck:
+@@ -31,6 +31,8 @@
+       - ./backend/.env
+     environment:
+       APP_ENV: production
++      TASK_EXECUTION_MODE: database_worker
++      MEDIA_DIR: /app/media
+     volumes:
+       - ./uploads:/app/media
+     depends_on:
+@@ -45,6 +47,9 @@
+     env_file:
+       - ./backend/.env
+     environment:
++      APP_ENV: production
++      MEDIA_DIR: /app/media
++      FORWARDED_ALLOW_IPS: "*"
+       FILE_STORE_DIR: /app/media/files
+       TASK_STEP_DELAY_SECONDS: ${TASK_STEP_DELAY_SECONDS:-0.15}
+       TASK_EXECUTION_MODE: database_worker
+@@ -53,6 +58,12 @@
+     depends_on:
+       init:
+         condition: service_completed_successfully
++    healthcheck:
++      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/ready', timeout=3)"]
++      interval: 15s
++      timeout: 5s
++      retries: 5
++      start_period: 20s
+     expose:
+       - "8000"
+ 
+@@ -62,6 +73,9 @@
+     env_file:
+       - ./backend/.env
+     environment:
++      APP_ENV: production
++      MEDIA_DIR: /app/media
++      FORWARDED_ALLOW_IPS: "*"
+       FILE_STORE_DIR: /app/media/files
+       TASK_EXECUTION_MODE: database_worker
+       TASK_LEASE_SECONDS: ${TASK_LEASE_SECONDS:-90}
+@@ -77,6 +91,8 @@
+ 
+   caddy:
+     image: caddy:2
++    environment:
++      SITE_DOMAIN: ${SITE_DOMAIN:?Set SITE_DOMAIN in .env}
+     container_name: enertri_caddy
+     restart: unless-stopped
+     ports:
+@@ -88,7 +104,8 @@
+       - caddy_data:/data
+       - caddy_config:/config
+     depends_on:
+-      - backend
++      backend:
++        condition: service_healthy
+ 
+ volumes:
+   postgres_data:
+--- a/frontend_api_demo/account.js
++++ b/frontend_api_demo/account.js
+@@ -0,0 +1,13 @@
++function renderPasswordChange(message='') {
++  app.innerHTML=`<main class="page-shell"><section class="card panel"><h2>修改密码</h2><p>${State.user?.must_change_password?'首次登录或重置后需要设置个人密码。':'修改后所有设备需要重新登录。'}</p><p>至少16个字符，最多72个UTF-8字节。建议使用密码管理器生成密码。</p><form id="passwordForm"><label class="label" for="currentPassword">当前密码</label><input class="input" id="currentPassword" type="password" autocomplete="current-password" required><label class="label" for="newPassword">新密码</label><input class="input" id="newPassword" type="password" autocomplete="new-password" minlength="16" required><label class="label" for="confirmPassword">确认新密码</label><input class="input" id="confirmPassword" type="password" autocomplete="new-password" required><p role="alert">${escapeHtml(message)}</p><button class="btn primary" type="submit">修改并重新登录</button></form></section></main>`;
++  document.getElementById('passwordForm').onsubmit=async e=>{
++    e.preventDefault();
++    const current=document.getElementById('currentPassword').value;
++    const next=document.getElementById('newPassword').value;
++    if(next!==document.getElementById('confirmPassword').value)return renderPasswordChange('两次新密码不一致');
++    if(new TextEncoder().encode(next).length>72)return renderPasswordChange('新密码超过72个UTF-8字节');
++    const button=e.currentTarget.querySelector('button');button.disabled=true;
++    try {await api('/auth/password',{method:'POST',body:JSON.stringify({current_password:current,new_password:next})});saveAuth(null,null);State.user=null;State.route='login';renderLogin('密码已修改，请使用新密码登录。');}
++    catch(err){if(err.status===401){State.user=null;State.route='login';renderLogin('会话已失效，请重新登录。');}else renderPasswordChange(err.message);}
++  };
++}
+--- a/frontend_api_demo/api-client.js
++++ b/frontend_api_demo/api-client.js
+@@ -17,7 +17,8 @@
+   if (!res.ok) {
+     let detail = await res.text();
+     try { detail = JSON.parse(detail).detail || detail; } catch {}
+-    throw new Error(detail);
++    if (res.status === 401) saveAuth(null,null);
++    const error = new Error(typeof detail === "string" ? detail : JSON.stringify(detail)); error.status=res.status; throw error;
+   }
+   return res.status === 204 ? null : res.json();
+ }
+@@ -29,7 +30,8 @@
+   if (!res.ok) {
+     let detail = await res.text();
+     try { detail = JSON.parse(detail).detail || detail; } catch {}
+-    throw new Error(detail);
++    if (res.status === 401) saveAuth(null,null);
++    const error = new Error(typeof detail === "string" ? detail : JSON.stringify(detail)); error.status=res.status; throw error;
+   }
+   const disposition = res.headers.get('Content-Disposition') || '';
+   const utf8Name = disposition.match(/filename\*=UTF-8''([^;]+)/i);
+--- a/frontend_api_demo/app.js
++++ b/frontend_api_demo/app.js
+@@ -26,7 +26,14 @@
+ 
+ boot();
+ async function boot() {
+-  try { await refreshData(); }
++  try {
++    if (getToken()) {
++      try { State.user = await api('/auth/me'); saveAuth(getToken(), State.user); }
++      catch (e) { if(e.status !== 401) throw e; State.user = null; }
++    }
++    if (State.user?.must_change_password) { State.loading=false; return renderPasswordChange(); }
++    await refreshData();
++  }
+   catch (e) { State.error = e.message; }
+   State.loading = false;
+   render();
+@@ -85,7 +92,8 @@
+ }
+ function render() {
+   if (State.loading) { app.innerHTML = '<div class="page-shell"><div class="card panel">正在连接数据库 API...</div></div>'; return; }
+-  if (State.error) { app.innerHTML = `<div class="page-shell"><div class="card panel"><h2>无法连接 API</h2><p>${escapeHtml(State.error)}</p><p class="muted">请先启动后端：<code>cd backend && uvicorn app.main:app --reload</code></p></div></div>`; return; }
++  if (State.error) { app.innerHTML = `<div class="page-shell"><div class="card panel"><h2>无法连接 API</h2><p>${escapeHtml(State.error)}</p><p class="muted">服务暂时不可用，请稍后刷新；持续失败时请联系试用管理员。</p></div></div>`; return; }
++  if (State.user?.must_change_password || State.route === 'password') return renderPasswordChange();
+   if (State.route === 'login') return renderLogin();
+   if (State.route === 'admin') return renderAdmin();
+   if (State.route === 'workspace') return renderWorkspace();
+@@ -108,7 +116,7 @@
+   const workspaceNav = State.user
+     ? `${State.route === 'workspace' ? '<button class="btn secondary" id="toHomeBtn">返回前台</button>' : '<button class="btn primary" id="toWorkspaceBtn">智能工作台</button>'}<button class="btn ${State.route === 'knowledge' ? 'primary' : 'secondary'}" id="toKnowledgeBtn">论文知识库</button><button class="btn ${State.route === 'capability-standards' ? 'primary' : 'secondary'}" id="toCapabilityStandardsBtn">能力标准库</button><button class="btn ${State.route === 'research-profile' ? 'primary' : 'secondary'}" id="toResearchProfileBtn">个人科研画像</button>${isAdmin?`<button class="btn ${State.route === 'project-matching' ? 'primary' : 'secondary'}" id="toProjectMatchingBtn">项目人才匹配</button>`:''}<button class="btn ${State.route === 'development-planning' ? 'primary' : 'secondary'}" id="toDevelopmentPlanningBtn">成长与方向规划</button><button class="btn ${State.route === 'development-execution' ? 'primary' : 'secondary'}" id="toDevelopmentExecutionBtn">成长执行闭环</button><button class="btn secondary" id="toTasksBtn">任务中心</button><button class="btn secondary" id="toFilesBtn">文件管理</button>`
+     : '';
+-  return `<header class="topbar"><div class="brand"><div class="brand-mark">ET</div><div><h1>${escapeHtml(title)}</h1><p>${escapeHtml(subtitle)}</p></div></div><div class="topbar-actions">${State.user ? `<span class="badge">${escapeHtml(State.user.display_name)} · ${escapeHtml(State.user.role)}</span>${workspaceNav}${adminNav}<button class="btn ghost" id="logoutBtn">退出</button>` : '<button class="btn primary" id="toLoginBtn">登录学习</button>'}</div></header>`;
++  return `<header class="topbar"><div class="brand"><div class="brand-mark">ET</div><div><h1>${escapeHtml(title)}</h1><p>${escapeHtml(subtitle)}</p></div></div><div class="topbar-actions">${State.user ? `<span class="badge">${escapeHtml(State.user.display_name)} · ${escapeHtml(State.user.role)}</span>${workspaceNav}${adminNav}<button class="btn secondary" id="changePasswordBtn">修改密码</button><button class="btn ghost" id="logoutBtn">退出</button>` : '<button class="btn primary" id="toLoginBtn">登录学习</button>'}</div></header>`;
+ }
+ function termCardHtml(term) {
+   const p = progressFor(term.id);
+@@ -154,7 +162,7 @@
+   bindCommon();
+ }
+ function renderLogin(message = '') {
+-  app.innerHTML = `<div class="login-wrap"><section class="login-showcase"><div>${topbar('EnerTri 登录','数据库平台')}</div></section><section class="login-card-wrap"><div class="card login-card"><h2>账户登录</h2><p>演示账号：admin/admin123 或 student/123456</p>${message ? `<div class="notice">${escapeHtml(message)}</div>` : ''}<div class="form-grid"><div><label class="label">用户名</label><input class="input" id="loginUser" value="student"></div><div><label class="label">密码</label><input class="input" id="loginPass" type="password" value="123456"></div><div class="inline-actions"><button class="btn primary" id="loginSubmit">登录</button><button class="btn secondary" id="backHomeBtn">返回首页</button></div></div></div></section></div>`;
++  app.innerHTML = `<div class="login-wrap"><section class="login-showcase"><div>${topbar('EnerTri 登录','数据库平台')}</div></section><section class="login-card-wrap"><div class="card login-card"><h2>账户登录</h2><p>请使用管理员分配的个人试用账号登录。</p>${message ? `<div class="notice">${escapeHtml(message)}</div>` : ''}<div class="form-grid"><div><label class="label">用户名</label><input class="input" id="loginUser" autocomplete="username"></div><div><label class="label">密码</label><input class="input" id="loginPass" type="password" autocomplete="current-password"></div><div class="inline-actions"><button class="btn primary" id="loginSubmit">登录</button><button class="btn secondary" id="backHomeBtn">返回首页</button></div></div></div></section></div>`;
+   document.getElementById('loginSubmit').onclick = doLogin;
+   document.getElementById('backHomeBtn').onclick = () => { State.route = 'home'; render(); };
+ }
+@@ -189,7 +197,8 @@
+   document.getElementById('toFilesBtn')?.addEventListener('click', () => openFileCenter());
+   document.getElementById('toAuditBtn')?.addEventListener('click', () => openAuditCenter());
+   document.getElementById('toHomeBtn')?.addEventListener('click', async () => { clearInterval(Foundation.poller); State.route = 'home'; clearQuiz(); await refreshData(); render(); });
+-  document.getElementById('logoutBtn')?.addEventListener('click', () => { saveAuth(null, null); State.user = null; State.progressMap = {}; State.route = 'home'; refreshData().then(render); });
++  document.getElementById('changePasswordBtn')?.addEventListener('click', () => { State.route='password'; render(); });
++  document.getElementById('logoutBtn')?.addEventListener('click', async () => { try { await api('/auth/logout',{method:'POST'}); } catch(e) { if(e.status!==401) { alert('退出失败，请重试'); return; } } saveAuth(null, null); State.user=null; State.progressMap={}; State.route='home'; await refreshData(); render(); });
+   document.querySelectorAll('.js-favorite').forEach(btn => btn.onclick = () => toggleFavorite(Number(btn.dataset.id)));
+   document.querySelectorAll('.js-learned').forEach(btn => btn.onclick = () => toggleLearned(Number(btn.dataset.id)));
+   document.getElementById('loadQuizBtn')?.addEventListener('click', loadCurrentQuiz);
+@@ -272,7 +281,7 @@
+   render();
+ }
+ async function doLogin() {
+-  try { State.user = await loginApi(document.getElementById('loginUser').value.trim(), document.getElementById('loginPass').value.trim()); await refreshData(); State.route = ['admin','system_admin'].includes(State.user.role) ? 'admin' : 'home'; render(); }
++  try { State.user = await loginApi(document.getElementById('loginUser').value.trim(), document.getElementById('loginPass').value); if(State.user.must_change_password) {State.route='password';return render();} await refreshData(); State.route = ['admin','system_admin'].includes(State.user.role) ? 'admin' : 'home'; render(); }
+   catch(e) { renderLogin(e.message); }
+ }
+ async function saveTerm(e) {
+--- a/frontend_api_demo/index.html
++++ b/frontend_api_demo/index.html
+@@ -18,6 +18,7 @@
+   <script src="project-matching.js"></script>
+   <script src="development-planning.js"></script>
+   <script src="development-execution.js"></script>
++  <script src="account.js"></script>
+   <script src="app.js"></script>
+ </body>
+ </html>
+--- a/scripts/backup.sh
++++ b/scripts/backup.sh
+@@ -8,6 +8,6 @@
+ docker compose exec -T db pg_dump -U enertri_user -d enertri > "$BACKUP_DIR/enertri_${STAMP}.sql"
+ 
+ echo "[2/2] Backing up uploads..."
+-tar -czf "$BACKUP_DIR/uploads_${STAMP}.tar.gz" uploads 2>/dev/null || true
++tar -czf "$BACKUP_DIR/uploads_${STAMP}.tar.gz" uploads
+ 
+ echo "Backup completed: $BACKUP_DIR"
+--- a/scripts/backup_bundle.py
++++ b/scripts/backup_bundle.py
+@@ -0,0 +1,93 @@
++"""Consistent PostgreSQL + uploads backup, offline verify, isolated restore drill.
++Run at project root. Never restores into an existing database. Requires Docker for
++backup/drill; verify works offline. Plaintext output is private (0700 directory).
++"""
++import argparse,csv,fcntl,hashlib,io,json,os,subprocess,tarfile,tempfile,time,uuid
++from pathlib import Path
++ROOT=Path(__file__).resolve().parents[1]
++
++def run(args,**kwargs):
++    return subprocess.run(args,cwd=ROOT,check=True,**kwargs)
++
++def digest(path):
++    h=hashlib.sha256()
++    with open(path,'rb') as f:
++        for block in iter(lambda:f.read(1024*1024),b''):h.update(block)
++    return h.hexdigest()
++
++def verify(folder):
++    folder=Path(folder).resolve()
++    manifest=json.loads((folder/'manifest.json').read_text())
++    if set(manifest['sha256'])!={'database.dump','uploads.tar.gz'}:raise ValueError('Unexpected manifest file list')
++    for name,value in manifest['sha256'].items():
++        if (folder/name).is_symlink() or digest(folder/name)!=value:raise ValueError('Backup checksum mismatch')
++    with tarfile.open(folder/'uploads.tar.gz') as tar:
++        for item in tar:
++            path=Path(item.name)
++            if path.is_absolute() or '..' in path.parts or not path.parts or path.parts[0]!='uploads' or not (item.isfile() or item.isdir()):
++                raise ValueError('Unsafe archive member')
++    return manifest
++
++def backup(destination):
++    dest=Path(destination).resolve()
++    if dest.is_relative_to(ROOT/'uploads'):raise ValueError('Backup cannot be stored inside uploads')
++    dest.mkdir(mode=0o700,parents=True,exist_ok=False)
++    running=[]
++    with open(ROOT/'.backup.lock','w') as lock:
++        fcntl.flock(lock,fcntl.LOCK_EX|fcntl.LOCK_NB)
++        current=run(['docker','compose','ps','--status','running','--services'],capture_output=True,text=True).stdout.split()
++        if 'db' not in current:raise ValueError('Database is not running')
++        running=[x for x in ['caddy','backend','worker'] if x in current]
++        try:
++            if running:run(['docker','compose','stop',*running])
++            with open(dest/'database.dump','wb') as f:
++                run(['docker','compose','exec','-T','db','pg_dump','-Fc','-U','enertri_user','-d','enertri'],stdout=f)
++            uploads=ROOT/'uploads'
++            for file in uploads.rglob('*'):
++                if file.is_symlink():raise ValueError('Symlinks in uploads must be reviewed before backup')
++            with tarfile.open(dest/'uploads.tar.gz','w:gz') as tar:tar.add(uploads,arcname='uploads')
++            manifest={'format':1,'created_utc':time.strftime('%Y-%m-%dT%H:%M:%SZ',time.gmtime()),'version':(ROOT/'VERSION').read_text().strip(),'sha256':{name:digest(dest/name) for name in ['database.dump','uploads.tar.gz']}}
++            (dest/'manifest.json').write_text(json.dumps(manifest,indent=2))
++            for file in dest.iterdir():file.chmod(0o600)
++            verify(dest)
++        finally:
++            if running:run(['docker','compose','start',*running])
++    print('Backup verified:',dest)
++
++def drill(folder):
++    folder=Path(folder).resolve();verify(folder)
++    name='enertri-restore-drill-'+uuid.uuid4().hex[:10]
++    created=False
++    with tempfile.TemporaryDirectory(prefix='enertri-restore-') as scratch:
++        dest=Path(scratch)
++        with tarfile.open(folder/'uploads.tar.gz') as tar:tar.extractall(dest,filter='data')
++        try:
++            run(['docker','run','--name',name,'--network','none','-e','POSTGRES_HOST_AUTH_METHOD=trust','-d','postgres:16'],capture_output=True)
++            created=True
++            for _ in range(60):
++                probe=subprocess.run(['docker','exec',name,'pg_isready','-U','postgres'],capture_output=True)
++                if probe.returncode==0:break
++                time.sleep(1)
++            else:raise RuntimeError('Restore database did not start')
++            run(['docker','exec',name,'createdb','-U','postgres','enertri'])
++            with open(folder/'database.dump','rb') as f:
++                run(['docker','exec','-i',name,'pg_restore','--exit-on-error','--no-owner','--no-privileges','-U','postgres','-d','enertri'],stdin=f)
++            sql="COPY (SELECT storage_path,sha256 FROM workspace_files WHERE deleted_at IS NULL) TO STDOUT WITH CSV"
++            records=run(['docker','exec',name,'psql','-v','ON_ERROR_STOP=1','-U','postgres','-d','enertri','-c',sql],capture_output=True,text=True).stdout
++            checked=0
++            for path,sha in csv.reader(io.StringIO(records)):
++                rel=Path(path).relative_to('/app/media')
++                if '..' in rel.parts:raise ValueError('Unsafe stored path')
++                file=dest/'uploads'/rel
++                if not file.is_file() or digest(file)!=sha:raise ValueError('Restored file missing or checksum mismatch')
++                checked+=1
++            counts=run(['docker','exec',name,'psql','-v','ON_ERROR_STOP=1','-U','postgres','-d','enertri','-Atc','SELECT count(*) FROM users; SELECT count(*) FROM terms; SELECT count(*) FROM student_evidence; SELECT version_num FROM alembic_version;'],capture_output=True,text=True).stdout.splitlines()
++            print(json.dumps({'restore':'passed','file_hashes_checked':checked,'users_terms_evidence_revision':counts}))
++        finally:
++            if created:run(['docker','rm','-f',name],capture_output=True)
++
++if __name__=='__main__':
++    p=argparse.ArgumentParser();p.add_argument('action',choices=['backup','verify','drill']);p.add_argument('folder');a=p.parse_args()
++    if a.action=='backup':backup(a.folder)
++    elif a.action=='verify':verify(a.folder);print('Checksum and archive safety checks passed')
++    else:drill(a.folder)
+--- a/scripts/load_probe.py
++++ b/scripts/load_probe.py
+@@ -0,0 +1,26 @@
++"""Read-only HTTP load probe for an owned STAGING URL; no AI calls or credentials.
++Example: python scripts/load_probe.py https://trial.example.org --users 20 --requests 400
++This measures public read routes only, not authenticated or background-task capacity.
++"""
++import argparse, concurrent.futures, json, math, time, urllib.request
++from urllib.parse import urlsplit
++p=argparse.ArgumentParser();p.add_argument('base_url');p.add_argument('--users',type=int,default=20);p.add_argument('--requests',type=int,default=400)
++a=p.parse_args()
++if not 1<=a.users<=100 or not 1<=a.requests<=10000: p.error('users 1..100; requests 1..10000')
++u=urlsplit(a.base_url)
++if u.scheme not in {'http','https'} or not u.hostname or u.username or u.password: p.error('Supply an HTTP(S) URL without credentials')
++paths=['/api/categories','/api/terms?status=approved&limit=50','/api/articles?status=approved&limit=20']
++def one(i):
++    start=time.monotonic()
++    try:
++        with urllib.request.urlopen(a.base_url.rstrip('/')+paths[i%len(paths)],timeout=20) as r:
++            body=json.load(r)
++            valid=r.status==200 and isinstance(body,list)
++            return (time.monotonic()-start)*1000,valid
++    except Exception: return (time.monotonic()-start)*1000,False
++start=time.monotonic()
++with concurrent.futures.ThreadPoolExecutor(max_workers=a.users) as pool: results=list(pool.map(one,range(a.requests)))
++duration=time.monotonic()-start
++lat=sorted(x[0] for x in results);errors=sum(not x[1] for x in results)
++print(json.dumps({'scope':'public-read-only','concurrency':a.users,'requests':len(results),'errors':errors,'error_rate':errors/len(results),'p95_ms':round(lat[math.ceil(.95*len(lat))-1],1),'p99_ms':round(lat[math.ceil(.99*len(lat))-1],1),'requests_per_second':round(len(results)/duration,1)},indent=2))
++raise SystemExit(1 if errors or lat[math.ceil(.95*len(lat))-1]>1000 else 0)
+--- a/scripts/preflight.py
++++ b/scripts/preflight.py
+@@ -0,0 +1,41 @@
++"""Offline deployment configuration validation; does not print secret values."""
++from pathlib import Path
++from urllib.parse import urlsplit, unquote
++import re
++import sys
++root = Path(__file__).resolve().parents[1]
++
++
++def read_env(path):
++    if not path.exists():
++        return {}
++    return dict(line.split("=",1) for line in path.read_text().splitlines() if line and not line.startswith("#") and "=" in line)
++
++
++def main():
++    outer=read_env(root/".env"); inner=read_env(root/"backend/.env")
++    errors=[]
++    for name in ("caddy/Caddyfile", "frontend_api_demo/index.html", "backend/.env", ".env"):
++        if not (root/name).is_file(): errors.append(f"Missing {name}")
++    domain=outer.get("SITE_DOMAIN", "")
++    if not re.fullmatch(r"[A-Za-z0-9.-]+\.[A-Za-z]{2,}", domain) or "example" in domain:
++        errors.append("Set a real SITE_DOMAIN without a scheme or path")
++    password=outer.get("DB_PASSWORD", "")
++    if not re.fullmatch(r"[a-fA-F0-9]{32,}", password): errors.append("DB_PASSWORD must be at least 32 random hex characters")
++    u=urlsplit(inner.get("DATABASE_URL", ""))
++    if not u.scheme.startswith("postgresql") or u.hostname != "db" or u.username != "enertri_user" or u.path != "/enertri" or unquote(u.password or "") != password:
++        errors.append("DATABASE_URL must match the Compose database and DB_PASSWORD")
++    for name, minimum in (("SECRET_KEY",32),("BOOTSTRAP_ADMIN_PASSWORD",16)):
++        value=inner.get(name, "")
++        if len(value)<minimum or any(x in value.lower() for x in ("replace", "change", "example")):
++            errors.append(f"Set a unique {name}")
++    for name,value in (("APP_ENV","production"),("APP_BOOTSTRAP_ON_STARTUP","false"),("TASK_EXECUTION_MODE","database_worker"),("SIMULATION_EXECUTION_ENABLED","false")):
++        if inner.get(name)!=value: errors.append(f"Require {name}={value}")
++    if inner.get("CORS_ORIGINS") != "https://"+domain: errors.append("CORS_ORIGINS must match the HTTPS domain")
++    if errors:
++        print("BLOCKED\n"+"\n".join(errors)); return 1
++    print("Configuration checks passed. Container, dependency, security and load gates still required."); return 0
++
++
++if __name__ == "__main__":
++    sys.exit(main())
+--- a/scripts/restore_db.sh
++++ b/scripts/restore_db.sh
+@@ -9,4 +9,4 @@
+   echo "File not found: $SQL_FILE"
+   exit 1
+ fi
+-cat "$SQL_FILE" | docker compose exec -T db psql -U enertri_user -d enertri
++cat "$SQL_FILE" | docker compose exec -T db psql -v ON_ERROR_STOP=1 -U enertri_user -d enertri
+--- a/scripts/run_regression.py
++++ b/scripts/run_regression.py
+@@ -0,0 +1,12 @@
++"""Legacy tests mutate process environment; isolate each module."""
++import subprocess
++import sys
++from pathlib import Path
++root=Path(__file__).resolve().parents[1]
++failed=[]
++for path in sorted((root/"backend/tests").glob("test_*.py")):
++    name="tests."+path.stem
++    result=subprocess.run([sys.executable,"-m","unittest",name],cwd=root/"backend")
++    if result.returncode: failed.append(name)
++print("Failed modules:",failed)
++sys.exit(bool(failed))

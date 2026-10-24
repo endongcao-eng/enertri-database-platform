@@ -1,0 +1,113 @@
+x-backend-image: &backend-image
+  image: enertri-v44-backend:production
+  build:
+    context: ./backend
+    args:
+      PYTHON_BASE_IMAGE: ${PYTHON_BASE_IMAGE:-python:3.12-slim-bookworm}
+      APT_MIRROR: ${APT_MIRROR:-}
+      APT_SECURITY_MIRROR: ${APT_SECURITY_MIRROR:-}
+
+services:
+  db:
+    image: postgres:16
+    container_name: enertri_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: enertri
+      POSTGRES_USER: enertri_user
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U enertri_user -d enertri"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  init:
+    <<: *backend-image
+    restart: "no"
+    env_file:
+      - ./backend/.env
+    environment:
+      APP_ENV: production
+      TASK_EXECUTION_MODE: database_worker
+      MEDIA_DIR: /app/media
+    volumes:
+      - ./uploads:/app/media
+    depends_on:
+      db:
+        condition: service_healthy
+    command: ["python", "scripts/bootstrap.py"]
+
+  backend:
+    <<: *backend-image
+    container_name: enertri_backend
+    restart: unless-stopped
+    env_file:
+      - ./backend/.env
+    environment:
+      APP_ENV: production
+      MEDIA_DIR: /app/media
+      FORWARDED_ALLOW_IPS: "*"
+      FILE_STORE_DIR: /app/media/files
+      TASK_STEP_DELAY_SECONDS: ${TASK_STEP_DELAY_SECONDS:-0.15}
+      TASK_EXECUTION_MODE: database_worker
+    volumes:
+      - ./uploads:/app/media
+    depends_on:
+      init:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/ready', timeout=3)"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    expose:
+      - "8000"
+
+  worker:
+    <<: *backend-image
+    restart: unless-stopped
+    env_file:
+      - ./backend/.env
+    environment:
+      APP_ENV: production
+      MEDIA_DIR: /app/media
+      FORWARDED_ALLOW_IPS: "*"
+      FILE_STORE_DIR: /app/media/files
+      TASK_EXECUTION_MODE: database_worker
+      TASK_LEASE_SECONDS: ${TASK_LEASE_SECONDS:-90}
+      TASK_HEARTBEAT_SECONDS: ${TASK_HEARTBEAT_SECONDS:-20}
+      TASK_POLL_SECONDS: ${TASK_POLL_SECONDS:-1}
+      OCR_LANG: ${OCR_LANG:-eng}
+    volumes:
+      - ./uploads:/app/media
+    depends_on:
+      init:
+        condition: service_completed_successfully
+    command: ["python", "scripts/task_worker.py"]
+
+  caddy:
+    image: caddy:2
+    environment:
+      SITE_DOMAIN: ${SITE_DOMAIN:?Set SITE_DOMAIN in .env}
+    container_name: enertri_caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./frontend_api_demo:/srv/frontend:ro
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      backend:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
+  caddy_data:
+  caddy_config:

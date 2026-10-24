@@ -1,0 +1,24 @@
+-- EnerTri V4.7 第五阶段数据库结构说明
+--
+-- 本文件仅作结构导航；自 V4.1 起 Alembic 是唯一建库/升级来源。
+-- 迁移链：
+--   0001_v4_0_baseline.py
+--   0002_v4_1_foundation.py
+--   0003_v4_2_knowledge_system.py
+--   0004_v4_3_capability_standard_library.py
+--   0005_v4_4_student_research_profile.py
+--   0006_v4_5_project_talent_matching.py
+--   0007_v4_6_development_planning.py
+--   0008_v4_7_dynamic_development_loop.py
+--
+-- 升级：cd backend && python scripts/migrate.py upgrade head
+-- 当前期望 revision：v4_7_dynamic_development_loop
+--
+-- V4.3：knowledge_nodes / knowledge_relations / capabilities / capability_knowledge_links /
+--       learning_resources / resource_knowledge_links / resource_capability_links
+-- V4.4：student_evidence
+-- V4.5：research_projects / project_capability_requirements / project_knowledge_requirements
+-- V4.6：development_goals
+-- V4.7：development_plan_items / development_snapshots
+--
+-- 请勿手工复制 CREATE TABLE 绕过 Alembic，否则 alembic_version 与真实结构可能失配。

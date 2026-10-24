@@ -364,11 +364,28 @@ def get_document(document_id: int, db: Session = Depends(get_db), user: User = D
     figures = db.scalars(select(KnowledgeFigure).where(KnowledgeFigure.document_id == doc.id).order_by(KnowledgeFigure.page_number, KnowledgeFigure.id)).all()
     structure = json.loads(doc.structure_json or "{}")
     metadata = json.loads(doc.metadata_json or "{}")
+    # Rows created before webprep.23 did not carry bbox/strategy metadata. In
+    # PDFs those legacy rows are frequently paragraph-shaped text grids (the
+    # exact failure mode fixed by the stricter extractor), so do not render
+    # them as scientific tables. They remain in the database until the user
+    # explicitly reprocesses the original file.
+    hidden_legacy_tables = 0
+    visible_tables = []
+    for table in tables:
+        legacy_pdf_candidate = (
+            Path(source.original_name).suffix.lower() == ".pdf" if source else Path(doc.title).suffix.lower() == ".pdf"
+        ) and not table.bbox_json and (table.extraction_strategy or "unknown") == "unknown" and float(table.confidence or 0) <= 0
+        if legacy_pdf_candidate:
+            hidden_legacy_tables += 1
+            continue
+        visible_tables.append(table)
+    if hidden_legacy_tables:
+        metadata.setdefault("table_extraction", {})["hidden_legacy_table_count"] = hidden_legacy_tables
     return {
         "id": doc.id, "title": doc.title, "status": "missing" if source_missing else doc.status, "parse_status": doc.status, "page_count": doc.page_count, "file_id": doc.file_id, "source_exists": source_exists, "source_missing": source_missing, "file_type": Path(source.original_name).suffix.lower() if source else Path(doc.title).suffix.lower(), "knowledge_base_id": doc.knowledge_base_id,
         "structure": structure, "metadata": metadata,
         "pages": [{"page_number": p.page_number, "text": p.text, "ocr_used": p.ocr_used, "extraction_method": p.extraction_method, "page_url": f"/api/files/{doc.file_id}/download#page={p.page_number}" if doc.file_id else None} for p in pages],
-        "tables": [{"id": t.id, "table_number": t.table_number, "page_number": t.page_number, "title": t.title, "data": json.loads(t.data_json or "[]"), "markdown": t.markdown, "bbox": json.loads(t.bbox_json) if t.bbox_json else None, "extraction_strategy": t.extraction_strategy, "confidence": t.confidence, "preview_url": f"/api/knowledge/documents/{doc.id}/tables/{t.id}/preview" if t.preview_path else None, "corrected": bool(t.correction_json)} for t in tables],
+        "tables": [{"id": t.id, "table_number": t.table_number, "page_number": t.page_number, "title": t.title, "data": json.loads(t.data_json or "[]"), "markdown": t.markdown, "bbox": json.loads(t.bbox_json) if t.bbox_json else None, "extraction_strategy": t.extraction_strategy, "confidence": t.confidence, "preview_url": f"/api/knowledge/documents/{doc.id}/tables/{t.id}/preview" if t.preview_path else None, "corrected": bool(t.correction_json)} for t in visible_tables],
         "figures": [{"id": f.id, "figure_number": f.figure_number, "page_number": f.page_number, "caption": f.caption, "preview_url": f"/api/knowledge/documents/{doc.id}/figures/{f.id}/preview" if f.image_path else None} for f in figures],
     }
 

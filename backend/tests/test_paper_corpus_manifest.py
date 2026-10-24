@@ -33,6 +33,57 @@ class PaperCorpusManifestTest(unittest.TestCase):
             self.assertEqual([item["page_number"] for item in tables[:4]], [1, 1, 1, 1])
             pdf.close()
 
+    def test_paragraphs_are_not_promoted_to_tables_by_text_strategy(self):
+        import fitz
+        import pdfplumber
+        from app.paper_pipeline import _extract_pdf_tables
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "prose.pdf"
+            pdf = fitz.open()
+            page = pdf.new_page(width=595, height=842)
+            for index in range(30):
+                page.insert_text((48, 70 + index * 21), "This paragraph discusses space energy conversion and thermal management.", fontsize=9)
+            path.write_bytes(pdf.tobytes(garbage=4, deflate=True))
+            pdf.close()
+            opened = fitz.open(str(path))
+            tables, diagnostics = _extract_pdf_tables(opened, [{"page_number": 1, "text": opened[0].get_text("text")}], path, pdfplumber)
+            self.assertEqual(tables, [])
+            self.assertGreater(diagnostics["rejected_candidate_count"], 0)
+            self.assertIn("paragraph_like_text_grid", diagnostics["rejection_reasons"])
+            opened.close()
+
+    def test_two_column_prose_is_not_promoted_to_character_grid(self):
+        import fitz
+        import pdfplumber
+        from app.paper_pipeline import _extract_pdf_tables
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "two-column-prose.pdf"
+            pdf = fitz.open()
+            page = pdf.new_page(width=595, height=842)
+            for index in range(30):
+                page.insert_text(
+                    (40, 65 + index * 22),
+                    f"{index + 1}. This paragraph discusses space energy conversion and thermal management in detail.",
+                    fontsize=8,
+                )
+                page.insert_text(
+                    (305, 65 + index * 22),
+                    f"System efficiency and power density are reviewed; reference {index + 1} reports 12.{index + 1}%.",
+                    fontsize=8,
+                )
+            path.write_bytes(pdf.tobytes(garbage=4, deflate=True))
+            pdf.close()
+            opened = fitz.open(str(path))
+            tables, diagnostics = _extract_pdf_tables(
+                opened,
+                [{"page_number": 1, "text": opened[0].get_text("text")}],
+                path,
+                pdfplumber,
+            )
+            self.assertEqual(tables, [])
+            self.assertIn("fragmented_text_grid", diagnostics["rejection_reasons"])
+            opened.close()
+
 
 if __name__ == "__main__":
     unittest.main()

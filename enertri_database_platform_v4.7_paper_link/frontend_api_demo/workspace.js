@@ -1,0 +1,169 @@
+const Workspace = {
+  tab: 'research',
+  busy: false,
+  result: null,
+  error: '',
+  status: null,
+  simulations: [],
+};
+
+function wsPretty(value) {
+  if (typeof value === 'string') return value;
+  return JSON.stringify(value, null, 2);
+}
+function wsSetBusy(busy, error = '') { Workspace.busy = busy; Workspace.error = error; renderWorkspace(); }
+const WS_LABELS = {
+  material_name:'材料牌号', material_group:'材料体系', thickness_mm:'厚度（mm）',
+  weldability:'焊接性', cold_cracking_risk:'冷裂纹风险', carbon_equivalent_iiw:'IIW 碳当量',
+  pcm:'Pcm', chromium_equivalent:'铬当量', nickel_equivalent:'镍当量',
+  mechanical_property_outlook:'接头性能趋势', recommended_process:'推荐工艺',
+  current_range:'电流范围', voltage_range:'电压范围', travel_speed_range:'焊速范围',
+  groove:'坡口建议', filler_principle:'焊材原则', interpass_temperature:'层间温度',
+  postheat_pwht:'后热 / PWHT', shielding_and_cleaning:'保护与清理',
+  defect_type:'缺陷类型', observations:'现场现象', note:'说明', base_material:'母材',
+  heat_input_kj_mm_estimate:'估算线能量', sampling_rate_hz_estimate:'估算采样率', duration_s:'持续时间',
+  preliminary_quality:'初步质量评估', score:'评分', grade:'等级',
+};
+function wsLabel(key) { return WS_LABELS[key] || String(key).replaceAll('_', ' '); }
+function wsFormatValue(key, value) {
+  if (value == null || value === '') return '—';
+  if (typeof value === 'number') return Number.isInteger(value) ? String(value) : value.toFixed(Math.abs(value) < 1 ? 4 : 2);
+  if (typeof value === 'boolean') return value ? '是' : '否';
+  return String(value);
+}
+function wsMetric(label, value, tone='') {
+  return `<div class="result-metric ${tone}"><span>${escapeHtml(label)}</span><strong>${escapeHtml(wsFormatValue(label, value))}</strong></div>`;
+}
+function wsList(items, className='result-list') {
+  const values = Array.isArray(items) ? items : [];
+  const renderItem = item => {
+    if (item && typeof item === 'object' && (item.landing_page_url || item.fulltext_url || item.url)) {
+      const open = item.fulltext_url || item.landing_page_url || item.url;
+      return `<li><strong>${escapeHtml(item.title || item.display_name || '文献记录')}</strong><span>${escapeHtml(item.journal || item.source || item.year || '')}</span><div class="inline-actions"><a class="btn small primary" href="${escapeHtml(open)}" target="_blank" rel="noopener noreferrer">打开论文地址</a>${item.fulltext_url && item.fulltext_url !== open ? `<a class="btn small secondary" href="${escapeHtml(item.fulltext_url)}" target="_blank" rel="noopener noreferrer">打开全文</a>` : ''}</div></li>`;
+    }
+    return `<li>${escapeHtml(typeof item === 'string' ? item : wsPretty(item))}</li>`;
+  };
+  return values.length ? `<ul class="${className}">${values.map(renderItem).join('')}</ul>` : '<div class="result-empty">暂无记录</div>';
+}
+function wsTextBlock(label, value) {
+  if (value == null || value === '') return '';
+  return `<div class="result-text-block"><span>${escapeHtml(label)}</span><p>${escapeHtml(String(value))}</p></div>`;
+}
+function renderWeldingResult(result) {
+  const assessment = result.assessment || result;
+  const isAssessment = Boolean(result.weldability || result.cold_cracking_risk || result.carbon_equivalent_iiw || result.assessment?.weldability);
+  const wps = result.preliminary_wps;
+  if (isAssessment && !wps && !result.elements && !result.recommendations && !result.likely_causes) {
+    const preheat = assessment.preheat_celsius || {};
+    const risks = assessment.possible_problems || [];
+    return `<div class="result-hero"><div><span class="eyebrow">ENGINEERING ASSESSMENT</span><h4>${escapeHtml(assessment.material_name || result.base_material || '材料评估')}</h4><p>依据材料体系、化学成分和厚度给出前期工艺筛选结论。</p></div><span class="result-decision ${assessment.weldability === '良好' ? 'good' : assessment.weldability === '较差' ? 'risk' : 'watch'}">${escapeHtml(assessment.weldability || '需进一步评定')}</span></div><div class="result-metric-grid">${wsMetric('焊接性', assessment.weldability, assessment.weldability === '良好' ? 'good' : 'watch')}${wsMetric('冷裂纹风险', assessment.cold_cracking_risk || '—', 'watch')}${wsMetric('IIW 碳当量', assessment.carbon_equivalent_iiw ?? '—')}${wsMetric('Pcm', assessment.pcm ?? '—')}${wsMetric('预热范围', preheat.min != null ? `${preheat.min}–${preheat.max} °C` : '按评定确定')}</div><div class="result-two-col"><section class="result-section"><h5>可能出现的问题</h5>${wsList(risks)}</section><section class="result-section"><h5>接头性能趋势</h5>${wsTextBlock('结论', assessment.mechanical_property_outlook)}</section></div>${wsList(assessment.limitations, 'result-list result-list-note')}</div>`;
+  }
+  if (wps) {
+    const preheat = wps.preheat_celsius || {};
+    const metrics = result.assessment || {};
+    return `<div class="result-hero"><div><span class="eyebrow">PRELIMINARY WPS WINDOW</span><h4>${escapeHtml(metrics.material_name || '焊接工艺窗口')}</h4><p>这是工艺设计起点，参数仍需通过 WPS/PQR 和试板验证。</p></div><span class="result-decision watch">待工艺评定</span></div><div class="result-metric-grid">${wsMetric('焊接性', metrics.weldability || '—')}${wsMetric('推荐工艺', wps.recommended_process)}${wsMetric('电流范围', wps.current_range)}${wsMetric('电压范围', wps.voltage_range)}${wsMetric('预热范围', preheat.min != null ? `${preheat.min}–${preheat.max} °C` : '按评定确定')}</div><section class="result-section"><h5>工艺窗口</h5><div class="result-detail-grid">${Object.entries(wps).filter(([key]) => !['preheat_celsius','recommended_process','current_range','voltage_range'].includes(key)).map(([key,value]) => wsTextBlock(wsLabel(key), value && typeof value === 'object' ? wsPretty(value) : value)).join('')}</div></section>${wsList(result.validation, 'result-list result-list-note')}</div>`;
+  }
+  if (Array.isArray(result.elements)) {
+    return `<div class="result-hero"><div><span class="eyebrow">METALLURGY REVIEW</span><h4>合金元素影响</h4><p>按元素含量展示强化作用、风险与焊接控制重点。</p></div></div><div class="result-table-wrap"><table class="result-table"><thead><tr><th>元素</th><th>含量 wt.%</th><th>正向作用</th><th>主要风险</th><th>焊接控制</th></tr></thead><tbody>${result.elements.map(item => `<tr><td><strong>${escapeHtml(item.element)}</strong></td><td>${escapeHtml(wsFormatValue('content_percent', item.content_percent))}</td><td>${escapeHtml(item.benefit || '—')}</td><td>${escapeHtml(item.risk || '—')}</td><td>${escapeHtml(item.welding || '—')}</td></tr>`).join('')}</tbody></table></div>${wsTextBlock('使用边界', result.note)}</div>`;
+  }
+  if (Array.isArray(result.recommendations)) {
+    return `<div class="result-hero"><div><span class="eyebrow">MATERIAL SELECTION</span><h4>焊材候选建议</h4><p>候选牌号按母材体系和常见匹配原则整理。</p></div><span class="result-decision watch">需核对标准</span></div><div class="result-card-grid">${result.recommendations.map(item => `<article class="result-card"><span class="badge primary">${escapeHtml(item.material_family || '材料体系')}</span><h5>${escapeHtml((item.candidate_fillers || []).join('、'))}</h5><p>${escapeHtml(item.reason || '')}</p></article>`).join('')}</div>${wsList(result.checks, 'result-list result-list-note')}</div>`;
+  }
+  if (Array.isArray(result.likely_causes) || Array.isArray(result.corrective_actions)) {
+    return `<div class="result-hero"><div><span class="eyebrow">DEFECT DIAGNOSIS</span><h4>${escapeHtml(result.defect_type || '焊接缺陷')}</h4><p>${escapeHtml(result.observations || '结合现场现象给出优先排查方向。')}</p></div><span class="result-decision watch">优先排查</span></div><div class="result-two-col"><section class="result-section"><h5>可能原因</h5>${wsList(result.likely_causes)}</section><section class="result-section"><h5>纠正措施</h5>${wsList(result.corrective_actions)}</section></div>${wsList(result.verification, 'result-list result-list-note')}</div>`;
+  }
+  return '';
+}
+function renderGenericResult(result) {
+  if (typeof result === 'string') return `<pre class="result-pre">${escapeHtml(result)}</pre>`;
+  const entries = Object.entries(result || {}).filter(([key]) => !['job','ai_interpretation','output_text','artifact_url','package_url'].includes(key));
+  const scalar = entries.filter(([, value]) => value == null || ['string','number','boolean'].includes(typeof value));
+  const lists = entries.filter(([, value]) => Array.isArray(value));
+  const objects = entries.filter(([, value]) => value && typeof value === 'object' && !Array.isArray(value));
+  return `<div class="result-detail-grid">${scalar.map(([key,value]) => wsTextBlock(wsLabel(key), wsFormatValue(key,value))).join('')}</div>${lists.map(([key,value]) => `<section class="result-section"><h5>${escapeHtml(wsLabel(key))}</h5>${wsList(value)}</section>`).join('')}${objects.map(([key,value]) => `<section class="result-section"><h5>${escapeHtml(wsLabel(key))}</h5><div class="result-detail-grid">${Object.entries(value).map(([child,childValue])=>wsTextBlock(wsLabel(child), typeof childValue === 'object' ? wsPretty(childValue) : wsFormatValue(child,childValue))).join('')}</div></section>`).join('')}`;
+}
+function wsResultHtml() {
+  if (Workspace.busy) return '<div class="card panel workspace-result"><h3>正在处理</h3><p class="muted">文献、模型或文件分析请求正在执行。</p></div>';
+  if (Workspace.error) return `<div class="card panel workspace-result"><h3>处理失败</h3><div class="notice error">${escapeHtml(Workspace.error)}</div></div>`;
+  if (!Workspace.result) return '<div class="card panel workspace-result"><h3>结果区</h3><p class="muted"></p></div>';
+  const artifact = Workspace.result.artifact_url ? `<button class="btn primary" data-ws-download="${escapeHtml(Workspace.result.artifact_url)}" data-ws-filename="generated_artifact">下载生成文件</button>` : '';
+  const packageLink = Workspace.result.package_url ? `<button class="btn primary" data-ws-download="${escapeHtml(Workspace.result.package_url)}" data-ws-filename="simulation_input.zip">下载仿真输入包</button>` : '';
+  const result = Workspace.result;
+  const structured = renderWeldingResult(result) || renderGenericResult(result.output_text || result);
+  const interpretation = result.ai_interpretation ? `<details class="result-interpretation"><summary>补充解释</summary><p>${escapeHtml(result.ai_interpretation)}</p></details>` : '';
+  return `<div class="card panel workspace-result"><div class="section-head"><div><span class="eyebrow">RESULT</span><h3>分析结果</h3></div><div class="inline-actions">${artifact}${packageLink}</div></div><div class="result-body">${structured}</div>${interpretation}</div>`;
+}
+function wsStatusHtml() {
+  const status = Workspace.status;
+  if (!status) return '<span class="badge warning">状态读取中</span>';
+  return `<span class="badge ${status.ai?.configured ? 'success' : 'warning'}">AI ${status.ai?.configured ? status.ai.model : '未配置'}</span><span class="badge primary">文献 ${escapeHtml(status.literature?.primary || 'OpenAlex')}</span><span class="badge ${status.simulation?.execution_enabled ? 'success' : 'warning'}">CAE ${status.simulation?.execution_enabled ? '可执行' : '输入包模式'}</span>`;
+}
+function researchWorkspaceHtml() {
+  return `<div class="workspace-grid"><section class="main-stack">
+    <div class="card panel"><div class="section-head"><h2>全球文献与研究热点</h2></div><div class="form-grid"><div><label class="label">检索主题</label><input class="input" id="litQuery" value="welding additive manufacturing" placeholder="关键词、中英文题名或研究问题"></div><div class="form-row-2"><div><label class="label">起始年份</label><input class="input" id="litYearFrom" type="number" value="2022"></div><div><label class="label">结果数</label><input class="input" id="litLimit" type="number" value="20"></div></div><div class="inline-actions"><button class="btn primary" id="litSearchBtn">查阅文献</button><button class="btn secondary" id="hotspotBtn">抓取热点</button></div><p class="muted">全球学术元数据与合法开放获取链接</p></div></div>
+    <div class="card panel"><div class="section-head"><h2>论文阅读与同行评审</h2></div><div class="form-grid"><div><label class="label">论文文件</label><input class="input" id="paperFile" type="file" accept=".pdf,.docx,.txt,.md"></div><div><label class="label">重点关注</label><input class="input" id="paperFocus" placeholder="例如：试验材料、热源模型、EBSD 结果"></div><div><label class="label">审稿比对检索词</label><input class="input" id="reviewQuery" placeholder="相关文献元数据"></div><div class="inline-actions"><button class="btn primary" id="paperAnalyzeBtn">结构化阅读</button><button class="btn secondary" id="paperReviewBtn">文献比对审稿</button></div></div></div>
+  </section><aside class="main-stack"><div class="card panel"><div class="section-head"><h2>学术写作与 PPT</h2></div><div class="form-grid"><div><label class="label">任务</label><select class="select" id="writingType"><option value="literature_review">文献综述</option><option value="academic_report">学术报告</option><option value="grant_proposal">科研基金本子</option><option value="academic_ppt">学术 PPT</option><option value="production_report">生产问题分析报告</option></select></div><div><label class="label">标题</label><input class="input" id="writingTitle" value="焊接过程智能感知研究进展"></div><div><label class="label">学术思想、数据或写作要求</label><textarea class="textarea tall" id="writingSource" placeholder="研究思想、数据、已有文献元数据或报告要求"></textarea></div><div><label class="label">输出</label><select class="select" id="writingFormat"><option value="markdown">页面文本</option><option value="docx">Word 文档</option><option value="pptx">PowerPoint</option></select></div><button class="btn primary" id="writingBtn">生成</button></div></div></aside></div>`;
+}
+function productionWorkspaceHtml() {
+  return `<div class="workspace-grid"><section class="card panel"><div class="section-head"><h2>焊接生产智能顾问</h2></div><div class="form-grid"><div class="form-row-2"><div><label class="label">材料牌号</label><input class="input" id="materialName" value="Q355"></div><div><label class="label">材料体系</label><select class="select" id="materialGroup"><option value="carbon_low_alloy_steel">碳钢/低合金钢</option><option value="stainless_steel">不锈钢</option><option value="aluminum_alloy">铝合金</option><option value="other">其他</option></select></div></div><div class="form-row-2"><div><label class="label">厚度 mm</label><input class="input" id="materialThickness" type="number" value="20"></div><div><label class="label">接头/结构</label><input class="input" id="jointType" value="butt" placeholder="butt / fillet / 管接头"></div></div><div><label class="label">化学成分 wt.%（JSON）</label><textarea class="textarea" id="compositionJson">{"C":0.18,"Mn":1.45,"Si":0.35,"Cr":0.12,"Ni":0.15,"Cu":0.15,"P":0.025,"S":0.02}</textarea></div><div><label class="label">缺陷与现场现象</label><div class="form-row-2"><select class="select" id="defectType"><option>裂纹</option><option>气孔</option><option>咬边</option><option>夹渣</option><option>未熔合</option><option>未焊透</option></select><input class="input" id="defectObservation" placeholder="位置、方向、尺寸、出现频率、参数变化"></div></div><label class="check-row"><input type="checkbox" id="weldUseAi"> 使用 AI 结合规则结果进一步解释</label><div class="button-grid"><button class="btn primary ws-weld" data-task="weldability">判断焊接性</button><button class="btn secondary ws-weld" data-task="elements">分析合金元素</button><button class="btn secondary ws-weld" data-task="process">给出工艺窗口</button><button class="btn secondary ws-weld" data-task="filler">选择焊材</button><button class="btn secondary ws-weld" data-task="defect">缺陷根因与措施</button></div></div></section><aside class="card panel"><h3>工程边界</h3><ul class="feature-list"><li>材料、厚度、拘束、氢和服役条件需完整输入</li><li>最终通过 WPS/PQR、力学试验和 NDT 验证</li><li>焊材牌号需按实际标准体系和厂家数据核对</li></ul></aside></div>`;
+}
+function analysisWorkspaceHtml() {
+  return `<div class="workspace-grid"><section class="main-stack"><div class="card panel"><div class="section-head"><h2>材料表征与无损检测图像</h2></div><div class="form-grid"><div class="form-row-2"><select class="select" id="imageType"><option>SEM</option><option>TEM</option><option>EBSD</option><option>EDS</option><option value="spectrum">光谱</option><option value="Raman">拉曼光谱</option><option value="Xray_NDT">X 射线探伤</option><option value="UT">超声探伤</option><option value="weld_pool">熔池/焊接过程</option></select><input class="input" id="imageFile" type="file" accept="image/*,.pdf"></div><textarea class="textarea" id="imageContext" placeholder="样品、工艺、倍率、标尺、采集参数或缺陷背景"></textarea><button class="btn primary" id="imageAnalyzeBtn">分析图像</button></div></div><div class="card panel"><div class="section-head"><h2>实时焊接时序数据</h2></div><div class="form-grid"><div class="form-row-2"><input class="input" id="telemetrySession" value="weld-session-001" placeholder="会话 ID"><input class="input" id="telemetryProcess" value="GMAW" placeholder="焊接方法"></div><textarea class="textarea tall" id="telemetrySamples" placeholder='JSON 数组，例如 [{"timestamp_ms":0,"current_a":220,"voltage_v":24,"travel_speed_mm_s":5}]'>[{"timestamp_ms":0,"current_a":218,"voltage_v":23.8,"travel_speed_mm_s":5.0},{"timestamp_ms":100,"current_a":222,"voltage_v":24.2,"travel_speed_mm_s":5.1},{"timestamp_ms":200,"current_a":219,"voltage_v":24.0,"travel_speed_mm_s":4.9}]</textarea><label class="check-row"><input type="checkbox" id="telemetryUseAi"> 使用 AI 解释统计特征与缺陷线索</label><button class="btn primary" id="telemetryAnalyzeBtn">提取特征并评估</button><p class="muted">现场 PLC、焊机或边缘网关可周期性调用 <code>/api/workspace/telemetry/ingest</code>。平台负责批次特征提取，设备协议转换和时间同步由采集网关完成。</p></div></div></section><aside class="main-stack"><div class="card panel"><div class="section-head"><h2>视频分析（异步）</h2></div><div class="form-grid"><input class="input" id="videoFile" type="file" accept=".mp4,.mov,.avi,.mkv,video/*"><textarea class="textarea" id="videoFocus" placeholder="关注熔池稳定性、飞溅、缺陷事件、时间段或工艺变化"></textarea><select class="select" id="videoConf"><option value="internal">内部</option><option value="confidential">保密</option><option value="restricted">严格保密（禁止外发）</option><option value="public">公开</option></select><label class="check-row"><input type="checkbox" id="videoExternal">允许经授权后发送关键帧到外部 AI</label><button class="btn primary" id="videoAnalyzeBtn">提交视频任务</button><p class="muted"></p></div></div><div class="card panel"><div class="section-head"><h2>多模态熔焊质量评估</h2></div><div class="form-grid"><input class="input" id="multiFiles" type="file" multiple accept="image/*,.pdf,.docx,.txt,.csv,.xlsx,.json"><textarea class="textarea" id="multiContext" placeholder="工件、焊接方法、传感器、采样率、已知缺陷和质量标准"></textarea><button class="btn primary" id="multiAnalyzeBtn">融合分析</button><p class="muted">多文件同步分析保留用于小型数据；视频请使用上方异步任务入口。</p></div></div></aside></div>`;
+}
+function simulationWorkspaceHtml() {
+  const rows = Workspace.simulations.map(j => `<tr><td>${j.id}</td><td>${escapeHtml(j.name)}</td><td>${escapeHtml(j.software_label || j.software)}</td><td>${escapeHtml(j.status)}</td><td>${j.package_url ? `<button class="btn small secondary" data-ws-download="${escapeHtml(j.package_url)}" data-ws-filename="simulation_${j.id}.zip">下载</button>` : ''}</td></tr>`).join('');
+  const canCreateSimulation = ['production_engineer','admin','system_admin'].includes(State.user?.role);
+  return `<div class="workspace-grid"><section class="card panel"><div class="section-head"><h2>建模与数值仿真集成</h2></div><div class="form-grid"><div class="form-row-2"><input class="input" id="simName" value="焊接温度场与残余应力分析"><select class="select" id="simSoftware"><option value="hypermesh">HyperMesh</option><option value="ansys_mapdl">ANSYS MAPDL</option><option value="ansys_fluent">ANSYS Fluent</option><option value="marc">MSC Marc</option><option value="flow3d">FLOW-3D</option></select></div><label class="label">仿真参数（JSON）</label><textarea class="textarea tall" id="simParams">{"process":"GMAW","current_a":220,"voltage_v":24,"efficiency":0.8,"travel_speed_mm_s":5,"length_mm":100,"width_mm":50,"thickness_mm":8,"mesh_size_mm":2,"heat_source_model":"Goldak double ellipsoid"}</textarea><button class="btn primary" id="simCreateBtn" ${canCreateSimulation?'':'disabled'}>${canCreateSimulation?'生成仿真输入包':'当前角色无商业仿真权限'}</button><p class="muted"></p></div></section><aside class="card panel"><div class="section-head"><h2>我的仿真任务</h2><button class="btn small secondary" id="simRefreshBtn">刷新</button></div><div class="table-wrap"><table class="table"><thead><tr><th>ID</th><th>名称</th><th>软件</th><th>状态</th><th>包</th></tr></thead><tbody>${rows || '<tr><td colspan="5" class="muted">暂无任务</td></tr>'}</tbody></table></div></aside></div>`;
+}
+function renderWorkspace() {
+  if (!State.user) { beginNavigation('login'); return renderLogin('请先登录智能工作台。'); }
+  const content = Workspace.tab === 'research' ? researchWorkspaceHtml() : Workspace.tab === 'production' ? productionWorkspaceHtml() : Workspace.tab === 'analysis' ? analysisWorkspaceHtml() : simulationWorkspaceHtml();
+  app.innerHTML = `<div class="page-shell">${topbar('EnerTri 智能工作台','科研检索、学术写作、焊接生产、多模态分析与 CAE 集成')}<div class="workspace-status">${wsStatusHtml()}</div><nav class="workspace-tabs"><button data-wstab="research" class="${Workspace.tab==='research'?'active':''}">科研助手</button><button data-wstab="production" class="${Workspace.tab==='production'?'active':''}">生产助手</button><button data-wstab="analysis" class="${Workspace.tab==='analysis'?'active':''}">图像与多模态</button><button data-wstab="simulation" class="${Workspace.tab==='simulation'?'active':''}">仿真集成</button></nav>${content}${wsResultHtml()}</div>`;
+  bindCommon(); bindWorkspace();
+  if (!Workspace.status) loadWorkspaceStatus();
+  if (Workspace.tab === 'simulation' && !Workspace.simulations.length) loadSimulations();
+}
+async function loadWorkspaceStatus() { const navigationId = State.navigationId; try { const status = await api('/workspace/status'); if (!isCurrentNavigation(navigationId, 'workspace')) return; Workspace.status = status; renderWorkspace(); } catch (e) { if (isCurrentNavigation(navigationId, 'workspace')) { Workspace.error = e.message; renderWorkspace(); } } }
+async function loadSimulations() { const navigationId = State.navigationId; try { const simulations = await api('/workspace/simulations'); if (!isCurrentNavigation(navigationId, 'workspace')) return; Workspace.simulations = simulations; renderWorkspace(); } catch (e) { if (isCurrentNavigation(navigationId, 'workspace')) { Workspace.error = e.message; renderWorkspace(); } } }
+function bindWorkspace() {
+  document.querySelectorAll('[data-wstab]').forEach(b => b.onclick = () => { Workspace.tab = b.dataset.wstab; Workspace.result = null; Workspace.error = ''; renderWorkspace(); });
+  document.getElementById('litSearchBtn')?.addEventListener('click', runLiteratureSearch);
+  document.getElementById('hotspotBtn')?.addEventListener('click', runHotspots);
+  document.getElementById('paperAnalyzeBtn')?.addEventListener('click', () => runPaper(false));
+  document.getElementById('paperReviewBtn')?.addEventListener('click', () => runPaper(true));
+  document.getElementById('writingBtn')?.addEventListener('click', runWriting);
+  document.querySelectorAll('.ws-weld').forEach(b => b.onclick = () => runWelding(b.dataset.task));
+  document.getElementById('imageAnalyzeBtn')?.addEventListener('click', runImageAnalysis);
+  document.getElementById('videoAnalyzeBtn')?.addEventListener('click', runVideoAnalysis);
+  document.getElementById('multiAnalyzeBtn')?.addEventListener('click', runMultimodal);
+  document.getElementById('telemetryAnalyzeBtn')?.addEventListener('click', runTelemetry);
+  document.getElementById('simCreateBtn')?.addEventListener('click', runSimulationCreate);
+  document.getElementById('simRefreshBtn')?.addEventListener('click', loadSimulations);
+  document.querySelectorAll('[data-ws-download]').forEach(button => {
+    button.addEventListener('click', async () => {
+      const original = button.textContent;
+      button.disabled = true;
+      button.textContent = '下载中…';
+      try {
+        await apiDownload(button.dataset.wsDownload, button.dataset.wsFilename || 'download.bin');
+      } catch (error) {
+        alert(`下载失败：${error.message || error}`);
+      } finally {
+        button.disabled = false;
+        button.textContent = original;
+      }
+    });
+  });
+}
+async function wsCall(fn) { const navigationId = State.navigationId; Workspace.busy = true; Workspace.error = ''; renderWorkspace(); try { const result = await fn(); if (isCurrentNavigation(navigationId, 'workspace')) Workspace.result = result; } catch (e) { if (isCurrentNavigation(navigationId, 'workspace')) Workspace.error = e.message || String(e); } finally { if (isCurrentNavigation(navigationId, 'workspace')) { Workspace.busy = false; renderWorkspace(); } } }
+async function runLiteratureSearch() { const payload={query:document.getElementById('litQuery').value.trim(),year_from:Number(document.getElementById('litYearFrom').value)||null,limit:Number(document.getElementById('litLimit').value)||20}; await wsCall(() => api('/workspace/literature/search',{method:'POST',body:JSON.stringify(payload)})); }
+async function runHotspots() { const payload={query:document.getElementById('litQuery').value.trim(),recent_years:2,comparison_years:2,limit:20}; await wsCall(() => api('/workspace/literature/hotspots',{method:'POST',body:JSON.stringify(payload)})); }
+async function runPaper(review) { const navigationId=State.navigationId; const file=document.getElementById('paperFile').files[0]; if(!file) return alert('请选择论文文件'); const fd=new FormData(); fd.append('file',file); if(review){fd.append('literature_query',document.getElementById('reviewQuery').value.trim()); return wsCall(()=>api('/workspace/papers/review',{method:'POST',body:fd}));} fd.append('focus',document.getElementById('paperFocus').value.trim()); fd.append('confidentiality','internal'); fd.append('allow_external_ai','false'); try{Workspace.busy=true;renderWorkspace();const task=await api('/tasks/paper-analysis',{method:'POST',body:fd});if(!isCurrentNavigation(navigationId,'workspace'))return;Workspace.busy=false;await openTaskCenter(task.id);}catch(e){if(!isCurrentNavigation(navigationId,'workspace'))return;Workspace.busy=false;Workspace.error=e.message;renderWorkspace();} }
+async function runWriting() { const navigationId=State.navigationId; const literature=Array.isArray(Workspace.result?.items)?Workspace.result.items.slice(0,50):[]; const payload={task_type:document.getElementById('writingType').value,title:document.getElementById('writingTitle').value.trim(),source_text:document.getElementById('writingSource').value,instructions:'',literature,data:{},output_format:document.getElementById('writingFormat').value}; if(payload.output_format==='pptx'){try{Workspace.busy=true;renderWorkspace();const task=await api('/tasks/ppt-generation',{method:'POST',body:JSON.stringify({title:payload.title,source_text:payload.source_text||'# 汇报提纲\n- 背景\n- 方法\n- 结果\n- 结论',use_external_ai:false})});if(!isCurrentNavigation(navigationId,'workspace'))return;Workspace.busy=false;await openTaskCenter(task.id);}catch(e){if(!isCurrentNavigation(navigationId,'workspace'))return;Workspace.busy=false;Workspace.error=e.message;renderWorkspace();}return;} await wsCall(()=>api('/workspace/writing/generate',{method:'POST',body:JSON.stringify(payload)})); }
+function weldingPayload() { let composition={}; try{composition=JSON.parse(document.getElementById('compositionJson').value);}catch{throw new Error('化学成分必须是有效 JSON');} return {material_name:document.getElementById('materialName').value.trim(),material_group:document.getElementById('materialGroup').value,composition,thickness_mm:Number(document.getElementById('materialThickness').value)||0,joint_type:document.getElementById('jointType').value.trim(),defect_type:document.getElementById('defectType').value,observations:document.getElementById('defectObservation').value}; }
+async function runWelding(task) { let payload; try{payload=weldingPayload();}catch(e){return alert(e.message);} const ai=document.getElementById('weldUseAi').checked; await wsCall(()=>api(`/workspace/welding/${task}?use_ai=${ai}`,{method:'POST',body:JSON.stringify(payload)})); }
+async function runImageAnalysis(){const file=document.getElementById('imageFile').files[0];if(!file)return alert('请选择图像或 PDF');const fd=new FormData();fd.append('file',file);fd.append('analysis_type',document.getElementById('imageType').value);fd.append('context',document.getElementById('imageContext').value);await wsCall(()=>api('/workspace/images/analyze',{method:'POST',body:fd}));}
+async function runVideoAnalysis(){const navigationId=State.navigationId;const file=document.getElementById('videoFile').files[0];if(!file)return alert('请选择视频文件');const fd=new FormData();fd.append('file',file);fd.append('focus',document.getElementById('videoFocus').value);fd.append('confidentiality',document.getElementById('videoConf').value);fd.append('allow_external_ai',document.getElementById('videoExternal').checked);try{Workspace.busy=true;renderWorkspace();const task=await api('/tasks/video-analysis',{method:'POST',body:fd});if(!isCurrentNavigation(navigationId,'workspace'))return;Workspace.busy=false;await openTaskCenter(task.id);}catch(e){if(!isCurrentNavigation(navigationId,'workspace'))return;Workspace.busy=false;Workspace.error=e.message;renderWorkspace();}}
+async function runMultimodal(){const files=[...document.getElementById('multiFiles').files];if(!files.length)return alert('请选择文件');const fd=new FormData();files.forEach(f=>fd.append('files',f));fd.append('context',document.getElementById('multiContext').value);await wsCall(()=>api('/workspace/multimodal/analyze',{method:'POST',body:fd}));}
+async function runTelemetry(){let samples;try{samples=JSON.parse(document.getElementById('telemetrySamples').value);}catch{return alert('时序采样必须是有效 JSON 数组');}if(!Array.isArray(samples)||samples.length<2)return alert('至少需要 2 个采样点');const payload={session_id:document.getElementById('telemetrySession').value.trim()||'unnamed-session',process:document.getElementById('telemetryProcess').value.trim(),samples,metadata:{efficiency:0.8}};const useAi=document.getElementById('telemetryUseAi').checked;await wsCall(()=>api(`/workspace/telemetry/ingest?use_ai=${useAi}`,{method:'POST',body:JSON.stringify(payload)}));}
+async function runSimulationCreate(){const navigationId=State.navigationId;let parameters;try{parameters=JSON.parse(document.getElementById('simParams').value);}catch{return alert('仿真参数必须是有效 JSON');}try{Workspace.busy=true;renderWorkspace();const task=await api('/tasks/simulation-package',{method:'POST',body:JSON.stringify({name:document.getElementById('simName').value.trim(),software:document.getElementById('simSoftware').value,software_version:parameters.software_version||null,parameters})});if(!isCurrentNavigation(navigationId,'workspace'))return;Workspace.busy=false;await openTaskCenter(task.id);}catch(e){if(!isCurrentNavigation(navigationId,'workspace'))return;Workspace.busy=false;Workspace.error=e.message;renderWorkspace();}}

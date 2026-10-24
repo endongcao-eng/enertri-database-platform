@@ -1,0 +1,13 @@
+.env
+backend/.env
+*.db
+__pycache__/
+*.pyc
+uploads/
+backend/media/*
+!backend/media/videos/
+!backend/media/videos/.gitkeep
+backups/
+trial-accounts.csv
+.sites-runtime/
+~$*.xlsx

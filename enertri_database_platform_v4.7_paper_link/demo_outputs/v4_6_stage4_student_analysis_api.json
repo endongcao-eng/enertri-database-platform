@@ -1,0 +1,1020 @@
+{
+  "stage": "V4.6 Stage 4",
+  "goal": {
+    "id": 1,
+    "user_id": 2,
+    "user_name": "演示学生",
+    "goal_type": "student_growth",
+    "title": "芯片热管理与微纳热输运成长目标",
+    "description": "希望后续参与芯片热管理、微纳尺度传热与数值模拟方向项目，强化材料热物性、芯片热设计和科研计算能力。",
+    "target_project_id": null,
+    "requirements": {
+      "title": "芯片热管理与微纳热输运成长目标",
+      "capability_requirements": [
+        {
+          "capability_id": 1,
+          "code": "C-HEAT-THEORY",
+          "name_zh": "传热理论分析",
+          "required_level": 4.0,
+          "weight": 1.2,
+          "is_critical": true,
+          "matched_keywords": [
+            "传热",
+            "热物性",
+            "热输运",
+            "热管理",
+            "芯片热"
+          ]
+        },
+        {
+          "capability_id": 2,
+          "code": "C-NUM-MODEL",
+          "name_zh": "数值建模与求解",
+          "required_level": 3.8,
+          "weight": 1.1,
+          "is_critical": true,
+          "matched_keywords": [
+            "数值",
+            "模拟"
+          ]
+        },
+        {
+          "capability_id": 3,
+          "code": "C-PYTHON",
+          "name_zh": "Python 科研计算",
+          "required_level": 3.6,
+          "weight": 1.01,
+          "is_critical": false,
+          "matched_keywords": [
+            "计算"
+          ]
+        },
+        {
+          "capability_id": 6,
+          "code": "C-LITERATURE",
+          "name_zh": "文献调研与证据综合",
+          "required_level": 2.5,
+          "weight": 0.45,
+          "is_critical": false,
+          "matched_keywords": [
+            "科研通用"
+          ]
+        }
+      ],
+      "knowledge_requirements": [
+        {
+          "knowledge_node_id": 4,
+          "code": "K-MAT-THERMO",
+          "name_zh": "材料热物性",
+          "required_level": 3.6,
+          "weight": 0.91,
+          "is_critical": true,
+          "matched_keywords": [
+            "材料热物性",
+            "热物性"
+          ]
+        },
+        {
+          "knowledge_node_id": 5,
+          "code": "K-MICRO-HEAT",
+          "name_zh": "微纳尺度传热",
+          "required_level": 3.4,
+          "weight": 0.83,
+          "is_critical": true,
+          "matched_keywords": [
+            "微纳"
+          ]
+        },
+        {
+          "knowledge_node_id": 20,
+          "code": "K-CHIP-THERM",
+          "name_zh": "芯片热管理",
+          "required_level": 3.6,
+          "weight": 0.91,
+          "is_critical": false,
+          "matched_keywords": [
+            "芯片热",
+            "芯片热管理"
+          ]
+        }
+      ],
+      "note": "V4.5 Stage 3 使用可解释关键词规则生成需求草案；老师确认后再写入正式项目要求，避免 AI 自动标签直接成为硬性筛选条件。"
+    },
+    "status": "active",
+    "created_by": 1,
+    "created_at": "2026-08-28T13:57:52",
+    "updated_at": "2026-08-28T13:57:52"
+  },
+  "profile_summary": {
+    "evidence_count": 5,
+    "verified_evidence_count": 3,
+    "evidence_confidence": 80.7,
+    "covered_knowledge_nodes": 12,
+    "strong_knowledge_nodes": 7,
+    "total_knowledge_nodes": 20,
+    "knowledge_coverage_percent": 60.0,
+    "top_capability_score": 74.0
+  },
+  "target_requirements": {
+    "source": "saved_goal_requirement_model",
+    "title": "芯片热管理与微纳热输运成长目标",
+    "capability_requirements": [
+      {
+        "capability_id": 1,
+        "code": "C-HEAT-THEORY",
+        "name_zh": "传热理论分析",
+        "required_level": 4.0,
+        "weight": 1.2,
+        "is_critical": true,
+        "matched_keywords": [
+          "传热",
+          "热物性",
+          "热输运",
+          "热管理",
+          "芯片热"
+        ]
+      },
+      {
+        "capability_id": 2,
+        "code": "C-NUM-MODEL",
+        "name_zh": "数值建模与求解",
+        "required_level": 3.8,
+        "weight": 1.1,
+        "is_critical": true,
+        "matched_keywords": [
+          "数值",
+          "模拟"
+        ]
+      },
+      {
+        "capability_id": 3,
+        "code": "C-PYTHON",
+        "name_zh": "Python 科研计算",
+        "required_level": 3.6,
+        "weight": 1.01,
+        "is_critical": false,
+        "matched_keywords": [
+          "计算"
+        ]
+      },
+      {
+        "capability_id": 6,
+        "code": "C-LITERATURE",
+        "name_zh": "文献调研与证据综合",
+        "required_level": 2.5,
+        "weight": 0.45,
+        "is_critical": false,
+        "matched_keywords": [
+          "科研通用"
+        ]
+      }
+    ],
+    "knowledge_requirements": [
+      {
+        "knowledge_node_id": 4,
+        "code": "K-MAT-THERMO",
+        "name_zh": "材料热物性",
+        "required_level": 3.6,
+        "weight": 0.91,
+        "is_critical": true,
+        "matched_keywords": [
+          "材料热物性",
+          "热物性"
+        ]
+      },
+      {
+        "knowledge_node_id": 5,
+        "code": "K-MICRO-HEAT",
+        "name_zh": "微纳尺度传热",
+        "required_level": 3.4,
+        "weight": 0.83,
+        "is_critical": true,
+        "matched_keywords": [
+          "微纳"
+        ]
+      },
+      {
+        "knowledge_node_id": 20,
+        "code": "K-CHIP-THERM",
+        "name_zh": "芯片热管理",
+        "required_level": 3.6,
+        "weight": 0.91,
+        "is_critical": false,
+        "matched_keywords": [
+          "芯片热",
+          "芯片热管理"
+        ]
+      }
+    ],
+    "note": "V4.5 Stage 3 使用可解释关键词规则生成需求草案；老师确认后再写入正式项目要求，避免 AI 自动标签直接成为硬性筛选条件。"
+  },
+  "target_fit": {
+    "match_score": 78.4,
+    "raw_fit": 81.1,
+    "capability_fit": 90.4,
+    "knowledge_fit": 43.9,
+    "evidence_confidence": 80.7,
+    "critical_gap_count": 1
+  },
+  "capability_gaps": [
+    {
+      "capability_id": 1,
+      "code": "C-HEAT-THEORY",
+      "name_zh": "传热理论分析",
+      "required_level": 4.0,
+      "weight": 1.2,
+      "is_critical": true,
+      "matched_keywords": [
+        "传热",
+        "热物性",
+        "热输运",
+        "热管理",
+        "芯片热"
+      ],
+      "current_level": 3.42,
+      "current_score": 68.5,
+      "satisfaction": 85.6,
+      "direct_evidence_score": 73.5,
+      "knowledge_readiness_score": 55.7,
+      "gap_type": "capability",
+      "severity": 22.5
+    },
+    {
+      "capability_id": 6,
+      "code": "C-LITERATURE",
+      "name_zh": "文献调研与证据综合",
+      "required_level": 2.5,
+      "weight": 0.45,
+      "is_critical": false,
+      "matched_keywords": [
+        "科研通用"
+      ],
+      "current_level": 1.79,
+      "current_score": 35.9,
+      "satisfaction": 71.8,
+      "direct_evidence_score": 32.8,
+      "knowledge_readiness_score": 43.8,
+      "gap_type": "capability",
+      "severity": 12.7
+    },
+    {
+      "capability_id": 2,
+      "code": "C-NUM-MODEL",
+      "name_zh": "数值建模与求解",
+      "required_level": 3.8,
+      "weight": 1.1,
+      "is_critical": true,
+      "matched_keywords": [
+        "数值",
+        "模拟"
+      ],
+      "current_level": 3.6,
+      "current_score": 71.9,
+      "satisfaction": 94.6,
+      "direct_evidence_score": 80.0,
+      "knowledge_readiness_score": 50.9,
+      "gap_type": "capability",
+      "severity": 7.7
+    }
+  ],
+  "knowledge_gaps": [
+    {
+      "knowledge_node_id": 20,
+      "code": "K-CHIP-THERM",
+      "name_zh": "芯片热管理",
+      "required_level": 3.6,
+      "weight": 0.91,
+      "is_critical": false,
+      "matched_keywords": [
+        "芯片热",
+        "芯片热管理"
+      ],
+      "current_level": 0.0,
+      "current_score": 0.0,
+      "satisfaction": 0.0,
+      "gap_type": "knowledge",
+      "severity": 91.0
+    },
+    {
+      "knowledge_node_id": 4,
+      "code": "K-MAT-THERMO",
+      "name_zh": "材料热物性",
+      "required_level": 3.6,
+      "weight": 0.91,
+      "is_critical": true,
+      "matched_keywords": [
+        "材料热物性",
+        "热物性"
+      ],
+      "current_level": 1.32,
+      "current_score": 26.4,
+      "satisfaction": 36.7,
+      "gap_type": "knowledge",
+      "severity": 74.9
+    }
+  ],
+  "recommendations": [
+    {
+      "resource_id": 12,
+      "code": "R-COURSE-CHIP",
+      "resource_type": "course",
+      "title": "芯片热管理与电子封装热设计",
+      "subtitle": "Chip Thermal Management",
+      "discipline": "电子热科学",
+      "provider": "课程",
+      "description": "覆盖芯片热点、封装热阻、界面热传导和热设计方法。",
+      "priority_score": 100.0,
+      "phase": "基础补齐",
+      "gap_closure": [
+        {
+          "type": "knowledge",
+          "id": 20,
+          "name_zh": "芯片热管理",
+          "current_satisfaction": 0.0,
+          "standard_level": 4.5,
+          "potential_gap_closure": 72.0
+        },
+        {
+          "type": "knowledge",
+          "id": 4,
+          "name_zh": "材料热物性",
+          "current_satisfaction": 36.7,
+          "standard_level": 3.4,
+          "potential_gap_closure": 60.4
+        },
+        {
+          "type": "capability",
+          "id": 1,
+          "name_zh": "传热理论分析",
+          "current_satisfaction": 85.6,
+          "standard_level": 3.5,
+          "potential_gap_closure": 14.4
+        }
+      ],
+      "unmet_prerequisites": [
+        {
+          "knowledge_node_id": 4,
+          "name_zh": "材料热物性",
+          "current_score": 26.4,
+          "relation_weight": 0.7
+        }
+      ],
+      "why": "补齐芯片热管理（当前满足 0.0%）；补齐材料热物性（当前满足 36.7%）；补齐传热理论分析（当前满足 85.6%）"
+    },
+    {
+      "resource_id": 14,
+      "code": "R-TASK-CHIP",
+      "resource_type": "project_task",
+      "title": "芯片热点与封装热阻数值分析任务",
+      "subtitle": "Chip Hotspot and Package Thermal Resistance Simulation",
+      "discipline": "电子热科学",
+      "provider": "科研项目任务",
+      "description": "建立芯片热点与封装多层热阻模型，完成数值求解、参数分析与热设计建议。",
+      "priority_score": 100.0,
+      "phase": "科研实践",
+      "gap_closure": [
+        {
+          "type": "knowledge",
+          "id": 20,
+          "name_zh": "芯片热管理",
+          "current_satisfaction": 0.0,
+          "standard_level": 4.6,
+          "potential_gap_closure": 95.0
+        },
+        {
+          "type": "knowledge",
+          "id": 4,
+          "name_zh": "材料热物性",
+          "current_satisfaction": 36.7,
+          "standard_level": 3.8,
+          "potential_gap_closure": 63.3
+        },
+        {
+          "type": "capability",
+          "id": 1,
+          "name_zh": "传热理论分析",
+          "current_satisfaction": 85.6,
+          "standard_level": 4.2,
+          "potential_gap_closure": 14.4
+        },
+        {
+          "type": "capability",
+          "id": 2,
+          "name_zh": "数值建模与求解",
+          "current_satisfaction": 94.6,
+          "standard_level": 3.8,
+          "potential_gap_closure": 5.4
+        }
+      ],
+      "unmet_prerequisites": [
+        {
+          "knowledge_node_id": 4,
+          "name_zh": "材料热物性",
+          "current_score": 26.4,
+          "relation_weight": 0.7
+        }
+      ],
+      "why": "补齐芯片热管理（当前满足 0.0%）；补齐材料热物性（当前满足 36.7%）；补齐传热理论分析（当前满足 85.6%）"
+    },
+    {
+      "resource_id": 13,
+      "code": "R-TASK-GNN-THERMO",
+      "resource_type": "project_task",
+      "title": "图神经网络材料热导率预测任务",
+      "subtitle": "GNN Thermal Conductivity Prediction",
+      "discipline": "材料与人工智能",
+      "provider": "科研项目任务",
+      "description": "使用材料结构图数据训练 GNN，预测热导率并结合传热机理解释结果。",
+      "priority_score": 32.9,
+      "phase": "科研实践",
+      "gap_closure": [
+        {
+          "type": "knowledge",
+          "id": 4,
+          "name_zh": "材料热物性",
+          "current_satisfaction": 36.7,
+          "standard_level": 3.3,
+          "potential_gap_closure": 63.3
+        },
+        {
+          "type": "capability",
+          "id": 6,
+          "name_zh": "文献调研与证据综合",
+          "current_satisfaction": 71.8,
+          "standard_level": 2.8,
+          "potential_gap_closure": 28.2
+        }
+      ],
+      "unmet_prerequisites": [],
+      "why": "补齐材料热物性（当前满足 36.7%）；补齐文献调研与证据综合（当前满足 71.8%）"
+    },
+    {
+      "resource_id": 7,
+      "code": "R-TASK-ML-THERMO",
+      "resource_type": "project_task",
+      "title": "材料热物性机器学习预测任务",
+      "subtitle": "ML Prediction of Material Thermophysical Properties",
+      "discipline": "材料与人工智能",
+      "provider": "科研项目任务",
+      "description": "构建材料热物性数据集，完成特征处理、机器学习建模、交叉验证与结果解释。",
+      "priority_score": 31.5,
+      "phase": "科研实践",
+      "gap_closure": [
+        {
+          "type": "knowledge",
+          "id": 4,
+          "name_zh": "材料热物性",
+          "current_satisfaction": 36.7,
+          "standard_level": 3.2,
+          "potential_gap_closure": 63.3
+        },
+        {
+          "type": "capability",
+          "id": 6,
+          "name_zh": "文献调研与证据综合",
+          "current_satisfaction": 71.8,
+          "standard_level": 2.8,
+          "potential_gap_closure": 28.2
+        }
+      ],
+      "unmet_prerequisites": [],
+      "why": "补齐材料热物性（当前满足 36.7%）；补齐文献调研与证据综合（当前满足 71.8%）"
+    },
+    {
+      "resource_id": 8,
+      "code": "R-COURSE-STAT",
+      "resource_type": "course",
+      "title": "统计物理与输运基础",
+      "subtitle": "Statistical Physics and Transport",
+      "discipline": "物理基础",
+      "provider": "课程",
+      "description": "为声子输运、分子动力学和非平衡热输运建立统计物理基础。",
+      "priority_score": 13.9,
+      "phase": "基础补齐",
+      "gap_closure": [
+        {
+          "type": "capability",
+          "id": 1,
+          "name_zh": "传热理论分析",
+          "current_satisfaction": 85.6,
+          "standard_level": 2.5,
+          "potential_gap_closure": 14.4
+        }
+      ],
+      "unmet_prerequisites": [],
+      "why": "补齐传热理论分析（当前满足 85.6%）"
+    },
+    {
+      "resource_id": 9,
+      "code": "R-COURSE-MD",
+      "resource_type": "course",
+      "title": "分子动力学模拟方法",
+      "subtitle": "Molecular Dynamics Simulation",
+      "discipline": "计算材料",
+      "provider": "课程",
+      "description": "覆盖原子模型、势函数、积分算法、平衡与输运性质计算。",
+      "priority_score": 7.4,
+      "phase": "基础补齐",
+      "gap_closure": [
+        {
+          "type": "capability",
+          "id": 2,
+          "name_zh": "数值建模与求解",
+          "current_satisfaction": 94.6,
+          "standard_level": 3.1,
+          "potential_gap_closure": 5.4
+        }
+      ],
+      "unmet_prerequisites": [],
+      "why": "补齐数值建模与求解（当前满足 94.6%）"
+    },
+    {
+      "resource_id": 6,
+      "code": "R-TASK-WELD",
+      "resource_type": "project_task",
+      "title": "激光焊接气孔机理分析任务",
+      "subtitle": "Laser-welding Porosity Mechanism Analysis Task",
+      "discipline": "焊接工程",
+      "provider": "科研项目任务",
+      "description": "结合论文证据、工艺参数和数据结果分析气孔形成机制。",
+      "priority_score": 6.6,
+      "phase": "科研实践",
+      "gap_closure": [
+        {
+          "type": "capability",
+          "id": 6,
+          "name_zh": "文献调研与证据综合",
+          "current_satisfaction": 71.8,
+          "standard_level": 3.2,
+          "potential_gap_closure": 28.2
+        }
+      ],
+      "unmet_prerequisites": [],
+      "why": "补齐文献调研与证据综合（当前满足 71.8%）"
+    }
+  ],
+  "course_recommendations": [
+    {
+      "resource_id": 12,
+      "code": "R-COURSE-CHIP",
+      "resource_type": "course",
+      "title": "芯片热管理与电子封装热设计",
+      "subtitle": "Chip Thermal Management",
+      "discipline": "电子热科学",
+      "provider": "课程",
+      "description": "覆盖芯片热点、封装热阻、界面热传导和热设计方法。",
+      "priority_score": 100.0,
+      "phase": "基础补齐",
+      "gap_closure": [
+        {
+          "type": "knowledge",
+          "id": 20,
+          "name_zh": "芯片热管理",
+          "current_satisfaction": 0.0,
+          "standard_level": 4.5,
+          "potential_gap_closure": 72.0
+        },
+        {
+          "type": "knowledge",
+          "id": 4,
+          "name_zh": "材料热物性",
+          "current_satisfaction": 36.7,
+          "standard_level": 3.4,
+          "potential_gap_closure": 60.4
+        },
+        {
+          "type": "capability",
+          "id": 1,
+          "name_zh": "传热理论分析",
+          "current_satisfaction": 85.6,
+          "standard_level": 3.5,
+          "potential_gap_closure": 14.4
+        }
+      ],
+      "unmet_prerequisites": [
+        {
+          "knowledge_node_id": 4,
+          "name_zh": "材料热物性",
+          "current_score": 26.4,
+          "relation_weight": 0.7
+        }
+      ],
+      "why": "补齐芯片热管理（当前满足 0.0%）；补齐材料热物性（当前满足 36.7%）；补齐传热理论分析（当前满足 85.6%）"
+    },
+    {
+      "resource_id": 8,
+      "code": "R-COURSE-STAT",
+      "resource_type": "course",
+      "title": "统计物理与输运基础",
+      "subtitle": "Statistical Physics and Transport",
+      "discipline": "物理基础",
+      "provider": "课程",
+      "description": "为声子输运、分子动力学和非平衡热输运建立统计物理基础。",
+      "priority_score": 13.9,
+      "phase": "基础补齐",
+      "gap_closure": [
+        {
+          "type": "capability",
+          "id": 1,
+          "name_zh": "传热理论分析",
+          "current_satisfaction": 85.6,
+          "standard_level": 2.5,
+          "potential_gap_closure": 14.4
+        }
+      ],
+      "unmet_prerequisites": [],
+      "why": "补齐传热理论分析（当前满足 85.6%）"
+    },
+    {
+      "resource_id": 9,
+      "code": "R-COURSE-MD",
+      "resource_type": "course",
+      "title": "分子动力学模拟方法",
+      "subtitle": "Molecular Dynamics Simulation",
+      "discipline": "计算材料",
+      "provider": "课程",
+      "description": "覆盖原子模型、势函数、积分算法、平衡与输运性质计算。",
+      "priority_score": 7.4,
+      "phase": "基础补齐",
+      "gap_closure": [
+        {
+          "type": "capability",
+          "id": 2,
+          "name_zh": "数值建模与求解",
+          "current_satisfaction": 94.6,
+          "standard_level": 3.1,
+          "potential_gap_closure": 5.4
+        }
+      ],
+      "unmet_prerequisites": [],
+      "why": "补齐数值建模与求解（当前满足 94.6%）"
+    }
+  ],
+  "book_recommendations": [],
+  "practice_recommendations": [
+    {
+      "resource_id": 14,
+      "code": "R-TASK-CHIP",
+      "resource_type": "project_task",
+      "title": "芯片热点与封装热阻数值分析任务",
+      "subtitle": "Chip Hotspot and Package Thermal Resistance Simulation",
+      "discipline": "电子热科学",
+      "provider": "科研项目任务",
+      "description": "建立芯片热点与封装多层热阻模型，完成数值求解、参数分析与热设计建议。",
+      "priority_score": 100.0,
+      "phase": "科研实践",
+      "gap_closure": [
+        {
+          "type": "knowledge",
+          "id": 20,
+          "name_zh": "芯片热管理",
+          "current_satisfaction": 0.0,
+          "standard_level": 4.6,
+          "potential_gap_closure": 95.0
+        },
+        {
+          "type": "knowledge",
+          "id": 4,
+          "name_zh": "材料热物性",
+          "current_satisfaction": 36.7,
+          "standard_level": 3.8,
+          "potential_gap_closure": 63.3
+        },
+        {
+          "type": "capability",
+          "id": 1,
+          "name_zh": "传热理论分析",
+          "current_satisfaction": 85.6,
+          "standard_level": 4.2,
+          "potential_gap_closure": 14.4
+        },
+        {
+          "type": "capability",
+          "id": 2,
+          "name_zh": "数值建模与求解",
+          "current_satisfaction": 94.6,
+          "standard_level": 3.8,
+          "potential_gap_closure": 5.4
+        }
+      ],
+      "unmet_prerequisites": [
+        {
+          "knowledge_node_id": 4,
+          "name_zh": "材料热物性",
+          "current_score": 26.4,
+          "relation_weight": 0.7
+        }
+      ],
+      "why": "补齐芯片热管理（当前满足 0.0%）；补齐材料热物性（当前满足 36.7%）；补齐传热理论分析（当前满足 85.6%）"
+    },
+    {
+      "resource_id": 13,
+      "code": "R-TASK-GNN-THERMO",
+      "resource_type": "project_task",
+      "title": "图神经网络材料热导率预测任务",
+      "subtitle": "GNN Thermal Conductivity Prediction",
+      "discipline": "材料与人工智能",
+      "provider": "科研项目任务",
+      "description": "使用材料结构图数据训练 GNN，预测热导率并结合传热机理解释结果。",
+      "priority_score": 32.9,
+      "phase": "科研实践",
+      "gap_closure": [
+        {
+          "type": "knowledge",
+          "id": 4,
+          "name_zh": "材料热物性",
+          "current_satisfaction": 36.7,
+          "standard_level": 3.3,
+          "potential_gap_closure": 63.3
+        },
+        {
+          "type": "capability",
+          "id": 6,
+          "name_zh": "文献调研与证据综合",
+          "current_satisfaction": 71.8,
+          "standard_level": 2.8,
+          "potential_gap_closure": 28.2
+        }
+      ],
+      "unmet_prerequisites": [],
+      "why": "补齐材料热物性（当前满足 36.7%）；补齐文献调研与证据综合（当前满足 71.8%）"
+    },
+    {
+      "resource_id": 7,
+      "code": "R-TASK-ML-THERMO",
+      "resource_type": "project_task",
+      "title": "材料热物性机器学习预测任务",
+      "subtitle": "ML Prediction of Material Thermophysical Properties",
+      "discipline": "材料与人工智能",
+      "provider": "科研项目任务",
+      "description": "构建材料热物性数据集，完成特征处理、机器学习建模、交叉验证与结果解释。",
+      "priority_score": 31.5,
+      "phase": "科研实践",
+      "gap_closure": [
+        {
+          "type": "knowledge",
+          "id": 4,
+          "name_zh": "材料热物性",
+          "current_satisfaction": 36.7,
+          "standard_level": 3.2,
+          "potential_gap_closure": 63.3
+        },
+        {
+          "type": "capability",
+          "id": 6,
+          "name_zh": "文献调研与证据综合",
+          "current_satisfaction": 71.8,
+          "standard_level": 2.8,
+          "potential_gap_closure": 28.2
+        }
+      ],
+      "unmet_prerequisites": [],
+      "why": "补齐材料热物性（当前满足 36.7%）；补齐文献调研与证据综合（当前满足 71.8%）"
+    },
+    {
+      "resource_id": 6,
+      "code": "R-TASK-WELD",
+      "resource_type": "project_task",
+      "title": "激光焊接气孔机理分析任务",
+      "subtitle": "Laser-welding Porosity Mechanism Analysis Task",
+      "discipline": "焊接工程",
+      "provider": "科研项目任务",
+      "description": "结合论文证据、工艺参数和数据结果分析气孔形成机制。",
+      "priority_score": 6.6,
+      "phase": "科研实践",
+      "gap_closure": [
+        {
+          "type": "capability",
+          "id": 6,
+          "name_zh": "文献调研与证据综合",
+          "current_satisfaction": 71.8,
+          "standard_level": 3.2,
+          "potential_gap_closure": 28.2
+        }
+      ],
+      "unmet_prerequisites": [],
+      "why": "补齐文献调研与证据综合（当前满足 71.8%）"
+    }
+  ],
+  "learning_path": [
+    {
+      "phase": 1,
+      "name": "基础补齐",
+      "goal": "优先补齐关键知识和方法先修",
+      "resources": [
+        {
+          "resource_id": 12,
+          "code": "R-COURSE-CHIP",
+          "resource_type": "course",
+          "title": "芯片热管理与电子封装热设计",
+          "subtitle": "Chip Thermal Management",
+          "discipline": "电子热科学",
+          "provider": "课程",
+          "description": "覆盖芯片热点、封装热阻、界面热传导和热设计方法。",
+          "priority_score": 100.0,
+          "phase": "基础补齐",
+          "gap_closure": [
+            {
+              "type": "knowledge",
+              "id": 20,
+              "name_zh": "芯片热管理",
+              "current_satisfaction": 0.0,
+              "standard_level": 4.5,
+              "potential_gap_closure": 72.0
+            },
+            {
+              "type": "knowledge",
+              "id": 4,
+              "name_zh": "材料热物性",
+              "current_satisfaction": 36.7,
+              "standard_level": 3.4,
+              "potential_gap_closure": 60.4
+            },
+            {
+              "type": "capability",
+              "id": 1,
+              "name_zh": "传热理论分析",
+              "current_satisfaction": 85.6,
+              "standard_level": 3.5,
+              "potential_gap_closure": 14.4
+            }
+          ],
+          "unmet_prerequisites": [
+            {
+              "knowledge_node_id": 4,
+              "name_zh": "材料热物性",
+              "current_score": 26.4,
+              "relation_weight": 0.7
+            }
+          ],
+          "why": "补齐芯片热管理（当前满足 0.0%）；补齐材料热物性（当前满足 36.7%）；补齐传热理论分析（当前满足 85.6%）"
+        },
+        {
+          "resource_id": 8,
+          "code": "R-COURSE-STAT",
+          "resource_type": "course",
+          "title": "统计物理与输运基础",
+          "subtitle": "Statistical Physics and Transport",
+          "discipline": "物理基础",
+          "provider": "课程",
+          "description": "为声子输运、分子动力学和非平衡热输运建立统计物理基础。",
+          "priority_score": 13.9,
+          "phase": "基础补齐",
+          "gap_closure": [
+            {
+              "type": "capability",
+              "id": 1,
+              "name_zh": "传热理论分析",
+              "current_satisfaction": 85.6,
+              "standard_level": 2.5,
+              "potential_gap_closure": 14.4
+            }
+          ],
+          "unmet_prerequisites": [],
+          "why": "补齐传热理论分析（当前满足 85.6%）"
+        },
+        {
+          "resource_id": 9,
+          "code": "R-COURSE-MD",
+          "resource_type": "course",
+          "title": "分子动力学模拟方法",
+          "subtitle": "Molecular Dynamics Simulation",
+          "discipline": "计算材料",
+          "provider": "课程",
+          "description": "覆盖原子模型、势函数、积分算法、平衡与输运性质计算。",
+          "priority_score": 7.4,
+          "phase": "基础补齐",
+          "gap_closure": [
+            {
+              "type": "capability",
+              "id": 2,
+              "name_zh": "数值建模与求解",
+              "current_satisfaction": 94.6,
+              "standard_level": 3.1,
+              "potential_gap_closure": 5.4
+            }
+          ],
+          "unmet_prerequisites": [],
+          "why": "补齐数值建模与求解（当前满足 94.6%）"
+        }
+      ]
+    },
+    {
+      "phase": 3,
+      "name": "科研实践",
+      "goal": "用真实科研任务把知识转成可验证能力",
+      "resources": [
+        {
+          "resource_id": 14,
+          "code": "R-TASK-CHIP",
+          "resource_type": "project_task",
+          "title": "芯片热点与封装热阻数值分析任务",
+          "subtitle": "Chip Hotspot and Package Thermal Resistance Simulation",
+          "discipline": "电子热科学",
+          "provider": "科研项目任务",
+          "description": "建立芯片热点与封装多层热阻模型，完成数值求解、参数分析与热设计建议。",
+          "priority_score": 100.0,
+          "phase": "科研实践",
+          "gap_closure": [
+            {
+              "type": "knowledge",
+              "id": 20,
+              "name_zh": "芯片热管理",
+              "current_satisfaction": 0.0,
+              "standard_level": 4.6,
+              "potential_gap_closure": 95.0
+            },
+            {
+              "type": "knowledge",
+              "id": 4,
+              "name_zh": "材料热物性",
+              "current_satisfaction": 36.7,
+              "standard_level": 3.8,
+              "potential_gap_closure": 63.3
+            },
+            {
+              "type": "capability",
+              "id": 1,
+              "name_zh": "传热理论分析",
+              "current_satisfaction": 85.6,
+              "standard_level": 4.2,
+              "potential_gap_closure": 14.4
+            },
+            {
+              "type": "capability",
+              "id": 2,
+              "name_zh": "数值建模与求解",
+              "current_satisfaction": 94.6,
+              "standard_level": 3.8,
+              "potential_gap_closure": 5.4
+            }
+          ],
+          "unmet_prerequisites": [
+            {
+              "knowledge_node_id": 4,
+              "name_zh": "材料热物性",
+              "current_score": 26.4,
+              "relation_weight": 0.7
+            }
+          ],
+          "why": "补齐芯片热管理（当前满足 0.0%）；补齐材料热物性（当前满足 36.7%）；补齐传热理论分析（当前满足 85.6%）"
+        },
+        {
+          "resource_id": 13,
+          "code": "R-TASK-GNN-THERMO",
+          "resource_type": "project_task",
+          "title": "图神经网络材料热导率预测任务",
+          "subtitle": "GNN Thermal Conductivity Prediction",
+          "discipline": "材料与人工智能",
+          "provider": "科研项目任务",
+          "description": "使用材料结构图数据训练 GNN，预测热导率并结合传热机理解释结果。",
+          "priority_score": 32.9,
+          "phase": "科研实践",
+          "gap_closure": [
+            {
+              "type": "knowledge",
+              "id": 4,
+              "name_zh": "材料热物性",
+              "current_satisfaction": 36.7,
+              "standard_level": 3.3,
+              "potential_gap_closure": 63.3
+            },
+            {
+              "type": "capability",
+              "id": 6,
+              "name_zh": "文献调研与证据综合",
+              "current_satisfaction": 71.8,
+              "standard_level": 2.8,
+              "potential_gap_closure": 28.2
+            }
+          ],
+          "unmet_prerequisites": [],
+          "why": "补齐材料热物性（当前满足 36.7%）；补齐文献调研与证据综合（当前满足 71.8%）"
+        }
+      ]
+    }
+  ],
+  "literature_queries": [
+    {
+      "query": "芯片热管理 材料热物性 综述 review",
+      "purpose": "先用综述建立目标知识框架和常用方法谱系"
+    },
+    {
+      "query": "芯片热管理与微纳热输运成长目标 芯片热管理 材料热物性 最新进展",
+      "purpose": "用于锁定与目标方向最相关的近期研究路线"
+    },
+    {
+      "query": "芯片热管理与微纳热输运成长目标 传热理论分析 文献调研与证据综合 methodology benchmark",
+      "purpose": "重点寻找方法、验证和基准比较论文"
+    },
+    {
+      "query": "芯片热管理与微纳热输运成长目标 research gap review",
+      "purpose": "用于识别研究空白和可形成课题的问题"
+    }
+  ],
+  "scoring_model": {
+    "gap": "目标要求等级与当前证据画像等级比较；关键项缺口按 1.3 倍优先级处理。",
+    "resource_priority": "资源对关键知识/能力缺口的标准覆盖 × 标准证据强度 × 当前缺口严重度，并受先修知识准备度修正。",
+    "sequence": "课程优先补基础，专业书用于系统深化，项目任务用于把知识转化为可核验科研能力；存在薄弱先修时会显式提示。"
+  }
+}

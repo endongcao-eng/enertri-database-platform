@@ -1,0 +1,143 @@
+{
+  "version": "4.1.0",
+  "generated_at": "2026-08-05T15:25:21.074256+00:00",
+  "database_migration": {
+    "current_revision": "v4_1_foundation",
+    "expected_revision": "v4_1_foundation",
+    "status": "succeeded",
+    "records": [
+      {
+        "id": 1,
+        "outcome": "success",
+        "details": {
+          "ok": true,
+          "action": "upgrade",
+          "baseline_stamped": false,
+          "requested_revision": "head",
+          "current_revision": "v4_1_foundation",
+          "interrupted_tasks_recovered": 0,
+          "expired_files_cleaned": 0
+        },
+        "created_at": "2026-08-05T15:24:41"
+      }
+    ]
+  },
+  "acceptance_tasks": [
+    {
+      "id": 1,
+      "type": "paper_analysis",
+      "status": "succeeded",
+      "progress": 100,
+      "progress_history": [
+        0,
+        3,
+        12,
+        35,
+        58,
+        86,
+        100
+      ],
+      "confidentiality": "restricted",
+      "external_ai_requested": true,
+      "external_ai_used": false,
+      "parse_status": "parsed"
+    },
+    {
+      "id": 2,
+      "type": "ppt_generation",
+      "status": "succeeded",
+      "progress": 100,
+      "progress_history": [
+        0,
+        3,
+        15,
+        68,
+        90,
+        100
+      ],
+      "output": "v4_1_acceptance_presentation.pptx",
+      "size_bytes": 32069,
+      "sha256": "54dc776babdb714413e32c0ad7c0cb94ce6da245672fa7fbbb97d3fff23bb460"
+    },
+    {
+      "id": 3,
+      "type": "video_analysis",
+      "status": "succeeded",
+      "progress": 100,
+      "progress_history": [
+        0,
+        3,
+        12,
+        34,
+        58,
+        84,
+        100
+      ],
+      "analysis_mode": "local",
+      "keyframe_or_media_warnings": [],
+      "output": "v4_1_video_analysis_report.md"
+    },
+    {
+      "id": 4,
+      "type": "simulation_package",
+      "status": "succeeded",
+      "progress": 100,
+      "progress_history": [
+        0,
+        3,
+        14,
+        42,
+        76,
+        92,
+        100
+      ],
+      "software": "ansys_mapdl",
+      "output": "v4_1_ansys_mapdl_input_package.zip"
+    },
+    {
+      "id": 5,
+      "type": "ppt_generation",
+      "status": "cancelled",
+      "progress": 15
+    }
+  ],
+  "file_management": {
+    "files_registered": 5,
+    "sha256_length": 64,
+    "duplicate_detection": "passed in automated test",
+    "restricted_external_ai_block": "passed",
+    "access_control": "enabled",
+    "random_storage_name": "enabled",
+    "temporary_cleanup": "passed in automated test"
+  },
+  "permissions": {
+    "roles": [
+      "admin",
+      "learning_user"
+    ],
+    "commercial_simulation_denied_for_learning_user": "passed in automated test"
+  },
+  "audit_actions_observed": [
+    "database.migration.completed",
+    "task.cancelled",
+    "task.created",
+    "task.succeeded"
+  ],
+  "validation": {
+    "v4_0_runtime_checks": "34/34 passed",
+    "v4_1_foundation_test": "passed",
+    "paper_ppt_video_simulation": "passed",
+    "python_compile": "passed",
+    "javascript_syntax": "passed",
+    "migration_upgrade_downgrade_reupgrade": "passed",
+    "docker_compose_runtime": "not run: Docker engine unavailable in build environment"
+  },
+  "preview_files": [
+    "v4_1_task_center.png",
+    "v4_1_file_management.png",
+    "v4_1_audit_migration.png",
+    "v4_1_acceptance_presentation.pptx",
+    "v4_1_video_analysis_report.md",
+    "v4_1_ansys_mapdl_input_package.zip"
+  ]
+}

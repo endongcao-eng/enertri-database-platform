@@ -39,6 +39,7 @@ TABLE_EXTRACTION_STRATEGIES: tuple[tuple[str, dict[str, Any]], ...] = (
     ("pymupdf-mixed", {"vertical_strategy": "lines", "horizontal_strategy": "text", "min_words_horizontal": 1}),
 )
 TABLE_METHOD_PRIORITY = {"pymupdf-lines": 0, "pdfplumber-lines": 1, "pymupdf-mixed": 2, "pdfplumber-text": 3, "pymupdf-text": 4}
+TABLE_TEXT_METHODS = {"pymupdf-text", "pdfplumber-text"}
 
 
 def _table_confidence(quality: float, method: str, bbox: tuple[float, float, float, float] | None) -> float:
@@ -215,6 +216,61 @@ def _caption_positions(pdf_page: Any) -> list[dict[str, Any]]:
     return sorted(found, key=lambda item: item["top"])
 
 
+def _candidate_has_table_signal(candidate: dict[str, Any], page: Any, captions: list[dict[str, Any]]) -> tuple[bool, str]:
+    """Reject paragraph-shaped false tables produced by whitespace detectors.
+
+    Text-based table finders are useful for borderless scientific tables, but
+    on journal PDFs they also interpret multi-line paragraphs as a grid.  A
+    text candidate must therefore have a nearby Table/表 caption, measurable
+    numeric/tabular signal, or a compact multi-column pattern.  Line-based
+    candidates already have geometric evidence and are kept separate.
+    """
+    method = str(candidate.get("method") or "")
+    if method not in TABLE_TEXT_METHODS:
+        return True, "geometric_strategy"
+    rows = candidate.get("rows") or []
+    bbox = candidate.get("bbox")
+    if not bbox or len(rows) < 2:
+        return False, "missing_bbox_or_rows"
+    width = max((len(row) for row in rows), default=0)
+    if width < 2:
+        return False, "single_column"
+    try:
+        page_area = float(page.rect.width) * float(page.rect.height)
+        bbox_area = max(0.0, float(bbox[2]) - float(bbox[0])) * max(0.0, float(bbox[3]) - float(bbox[1]))
+        area_ratio = bbox_area / max(1.0, page_area)
+    except Exception:
+        area_ratio = 1.0
+    caption_near = any(float(caption.get("top") or 0) <= float(bbox[1]) + 80 for caption in captions)
+    cells = [str(cell or "").strip() for row in rows for cell in row]
+    nonempty = [cell for cell in cells if cell]
+    numeric_cells = [cell for cell in nonempty if re.search(r"(?:\d+(?:\.\d+)?|%|±|×|<|>)", cell)]
+    numeric_ratio = len(numeric_cells) / max(1, len(nonempty))
+    populated_per_row = [sum(bool(str(cell or "").strip()) for cell in row) for row in rows]
+    median_populated = sorted(populated_per_row)[len(populated_per_row) // 2]
+    avg_cell_chars = sum(len(cell) for cell in nonempty) / max(1, len(nonempty))
+    short_cell_ratio = sum(len(cell) <= 2 for cell in nonempty) / max(1, len(nonempty))
+    # PyMuPDF's whitespace strategy can split ordinary two-column prose into
+    # dozens of one- or two-character cells.  This is not a real table even
+    # when the page contains citation years and percentages.  Keep the rule
+    # limited to caption-less, wide candidates so compact numeric tables with
+    # an explicit Table/表 caption are not discarded.
+    if not caption_near and width >= 8 and avg_cell_chars < 8 and short_cell_ratio >= 0.30:
+        return False, "fragmented_text_grid"
+    compact_grid = width >= 3 and len(rows) >= 3 and median_populated >= 3 and avg_cell_chars <= 32 and area_ratio < 0.88
+    if caption_near and len(rows) >= 2:
+        # A caption is strong evidence, but a full-page paragraph block with
+        # almost no numeric or compact-cell signal is still suspicious.
+        if area_ratio > 0.78 and numeric_ratio < 0.02 and not compact_grid:
+            return False, "captioned_full_page_prose"
+        return True, "caption"
+    if numeric_ratio >= 0.08 and len(rows) >= 3 and median_populated >= 2 and area_ratio < 0.90:
+        return True, "numeric_signal"
+    if compact_grid:
+        return True, "compact_grid"
+    return False, "paragraph_like_text_grid"
+
+
 def _extract_pdf_tables(pdf: Any, pages: list[dict[str, Any]], source_path: Path | None = None, pdfplumber_module: Any | None = None) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     """Extract tables with several layout strategies, then de-duplicate by location/content.
 
@@ -224,8 +280,12 @@ def _extract_pdf_tables(pdf: Any, pages: list[dict[str, Any]], source_path: Path
     """
     candidates: list[dict[str, Any]] = []
     strategy_counts: Counter[str] = Counter()
+    rejected_strategy_counts: Counter[str] = Counter()
+    rejection_reasons: Counter[str] = Counter()
+    captions_by_page: dict[int, list[dict[str, Any]]] = {}
     for page_number in range(1, pdf.page_count + 1):
         page = pdf.load_page(page_number - 1)
+        captions_by_page[page_number] = _caption_positions(page)
         for method, settings in TABLE_EXTRACTION_STRATEGIES:
             try:
                 finder = page.find_tables(**settings)
@@ -234,7 +294,13 @@ def _extract_pdf_tables(pdf: Any, pages: list[dict[str, Any]], source_path: Path
                     if not rows:
                         continue
                     bbox = tuple(float(value) for value in (getattr(table, "bbox", None) or ()))
-                    candidates.append({"page_number": page_number, "rows": rows, "bbox": bbox if len(bbox) == 4 else None, "method": method, "quality": _table_quality(rows)})
+                    candidate = {"page_number": page_number, "rows": rows, "bbox": bbox if len(bbox) == 4 else None, "method": method, "quality": _table_quality(rows)}
+                    accepted, reason = _candidate_has_table_signal(candidate, page, captions_by_page[page_number])
+                    if not accepted:
+                        rejected_strategy_counts[method] += 1
+                        rejection_reasons[reason] += 1
+                        continue
+                    candidates.append(candidate)
                     strategy_counts[method] += 1
             except Exception:
                 continue
@@ -254,7 +320,14 @@ def _extract_pdf_tables(pdf: Any, pages: list[dict[str, Any]], source_path: Path
                                 if not rows:
                                     continue
                                 bbox = tuple(float(value) for value in (getattr(table, "bbox", None) or ()))
-                                candidates.append({"page_number": page_number, "rows": rows, "bbox": bbox if len(bbox) == 4 else None, "method": method, "quality": _table_quality(rows)})
+                                candidate = {"page_number": page_number, "rows": rows, "bbox": bbox if len(bbox) == 4 else None, "method": method, "quality": _table_quality(rows)}
+                                page_captions = captions_by_page.setdefault(page_number, _caption_positions(pdf.load_page(page_number - 1)))
+                                accepted, reason = _candidate_has_table_signal(candidate, pdf.load_page(page_number - 1), page_captions)
+                                if not accepted:
+                                    rejected_strategy_counts[method] += 1
+                                    rejection_reasons[reason] += 1
+                                    continue
+                                candidates.append(candidate)
                                 strategy_counts[method] += 1
                         except Exception:
                             continue
@@ -277,9 +350,6 @@ def _extract_pdf_tables(pdf: Any, pages: list[dict[str, Any]], source_path: Path
         if not duplicate:
             selected.append(candidate)
 
-    captions_by_page: dict[int, list[dict[str, Any]]] = {}
-    for page_number in {item["page_number"] for item in selected}:
-        captions_by_page[page_number] = _caption_positions(pdf.load_page(page_number - 1))
     output: list[dict[str, Any]] = []
     for page_number in sorted({item["page_number"] for item in selected}):
         page_tables = [item for item in selected if item["page_number"] == page_number]
@@ -305,7 +375,14 @@ def _extract_pdf_tables(pdf: Any, pages: list[dict[str, Any]], source_path: Path
                 "extraction_quality": item["quality"], "confidence": _table_confidence(item["quality"], item["method"], bbox),
                 "bbox": list(bbox) if bbox else None,
             })
-    diagnostics = {"candidate_count": len(candidates), "table_count": len(output), "strategy_counts": dict(strategy_counts), "pages_with_tables": sorted({item["page_number"] for item in output})}
+    diagnostics = {
+        "candidate_count": len(candidates), "table_count": len(output),
+        "strategy_counts": dict(strategy_counts), "pages_with_tables": sorted({item["page_number"] for item in output}),
+        "rejected_candidate_count": sum(rejected_strategy_counts.values()),
+        "rejected_strategy_counts": dict(rejected_strategy_counts),
+        "rejection_reasons": dict(rejection_reasons),
+        "text_strategy_policy": "text-only candidates require a nearby caption, numeric signal, or compact multi-column evidence",
+    }
     return output[:100], diagnostics
 
 

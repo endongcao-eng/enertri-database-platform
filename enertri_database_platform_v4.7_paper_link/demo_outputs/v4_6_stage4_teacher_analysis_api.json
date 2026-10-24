@@ -1,0 +1,1595 @@
+{
+  "stage": "V4.6 Stage 4",
+  "goal": {
+    "id": 2,
+    "user_id": 1,
+    "user_name": "术语管理员",
+    "goal_type": "teacher_research_direction",
+    "title": "图神经网络驱动的微纳材料热输运研究",
+    "description": "计划把 GNN 图神经网络、深度学习与微纳尺度传热、声子输运、材料热物性结合，使用 Python 建立可解释预测模型，并形成新的课题方向。",
+    "target_project_id": null,
+    "requirements": {
+      "title": "图神经网络驱动的微纳材料热输运研究",
+      "capability_requirements": [
+        {
+          "capability_id": 7,
+          "code": "C-ML-RESEARCH",
+          "name_zh": "科研机器学习",
+          "required_level": 4.0,
+          "weight": 1.2,
+          "is_critical": true,
+          "matched_keywords": [
+            "预测",
+            "深度学习",
+            "图神经网络",
+            "gnn"
+          ]
+        },
+        {
+          "capability_id": 1,
+          "code": "C-HEAT-THEORY",
+          "name_zh": "传热理论分析",
+          "required_level": 4.0,
+          "weight": 1.19,
+          "is_critical": true,
+          "matched_keywords": [
+            "传热",
+            "热物性",
+            "热输运"
+          ]
+        },
+        {
+          "capability_id": 2,
+          "code": "C-NUM-MODEL",
+          "name_zh": "数值建模与求解",
+          "required_level": 3.6,
+          "weight": 1.01,
+          "is_critical": true,
+          "matched_keywords": [
+            "模型"
+          ]
+        },
+        {
+          "capability_id": 3,
+          "code": "C-PYTHON",
+          "name_zh": "Python 科研计算",
+          "required_level": 3.6,
+          "weight": 1.01,
+          "is_critical": false,
+          "matched_keywords": [
+            "python"
+          ]
+        },
+        {
+          "capability_id": 6,
+          "code": "C-LITERATURE",
+          "name_zh": "文献调研与证据综合",
+          "required_level": 2.5,
+          "weight": 0.45,
+          "is_critical": false,
+          "matched_keywords": [
+            "科研通用"
+          ]
+        }
+      ],
+      "knowledge_requirements": [
+        {
+          "knowledge_node_id": 4,
+          "code": "K-MAT-THERMO",
+          "name_zh": "材料热物性",
+          "required_level": 3.6,
+          "weight": 0.91,
+          "is_critical": true,
+          "matched_keywords": [
+            "材料热物性",
+            "热物性"
+          ]
+        },
+        {
+          "knowledge_node_id": 13,
+          "code": "K-ML-BASE",
+          "name_zh": "机器学习基础",
+          "required_level": 3.4,
+          "weight": 0.83,
+          "is_critical": true,
+          "matched_keywords": [
+            "预测"
+          ]
+        },
+        {
+          "knowledge_node_id": 5,
+          "code": "K-MICRO-HEAT",
+          "name_zh": "微纳尺度传热",
+          "required_level": 3.4,
+          "weight": 0.83,
+          "is_critical": true,
+          "matched_keywords": [
+            "微纳"
+          ]
+        },
+        {
+          "knowledge_node_id": 18,
+          "code": "K-DL",
+          "name_zh": "深度学习基础",
+          "required_level": 3.6,
+          "weight": 0.91,
+          "is_critical": false,
+          "matched_keywords": [
+            "深度学习",
+            "神经网络"
+          ]
+        },
+        {
+          "knowledge_node_id": 19,
+          "code": "K-GNN",
+          "name_zh": "图神经网络",
+          "required_level": 3.6,
+          "weight": 0.91,
+          "is_critical": false,
+          "matched_keywords": [
+            "图神经网络",
+            "gnn"
+          ]
+        },
+        {
+          "knowledge_node_id": 9,
+          "code": "K-PROG-PY",
+          "name_zh": "Python 科学计算",
+          "required_level": 3.4,
+          "weight": 0.83,
+          "is_critical": false,
+          "matched_keywords": [
+            "python"
+          ]
+        },
+        {
+          "knowledge_node_id": 6,
+          "code": "K-PHONON",
+          "name_zh": "声子输运",
+          "required_level": 3.4,
+          "weight": 0.83,
+          "is_critical": false,
+          "matched_keywords": [
+            "声子"
+          ]
+        }
+      ],
+      "note": "V4.5 Stage 3 使用可解释关键词规则生成需求草案；老师确认后再写入正式项目要求，避免 AI 自动标签直接成为硬性筛选条件。"
+    },
+    "status": "active",
+    "created_by": 1,
+    "created_at": "2026-08-28T13:57:52",
+    "updated_at": "2026-08-28T13:57:52"
+  },
+  "profile_summary": {
+    "evidence_count": 4,
+    "verified_evidence_count": 4,
+    "evidence_confidence": 97.6,
+    "covered_knowledge_nodes": 11,
+    "strong_knowledge_nodes": 6,
+    "total_knowledge_nodes": 20,
+    "knowledge_coverage_percent": 55.0,
+    "top_capability_score": 80.1
+  },
+  "target_requirements": {
+    "source": "saved_goal_requirement_model",
+    "title": "图神经网络驱动的微纳材料热输运研究",
+    "capability_requirements": [
+      {
+        "capability_id": 7,
+        "code": "C-ML-RESEARCH",
+        "name_zh": "科研机器学习",
+        "required_level": 4.0,
+        "weight": 1.2,
+        "is_critical": true,
+        "matched_keywords": [
+          "预测",
+          "深度学习",
+          "图神经网络",
+          "gnn"
+        ]
+      },
+      {
+        "capability_id": 1,
+        "code": "C-HEAT-THEORY",
+        "name_zh": "传热理论分析",
+        "required_level": 4.0,
+        "weight": 1.19,
+        "is_critical": true,
+        "matched_keywords": [
+          "传热",
+          "热物性",
+          "热输运"
+        ]
+      },
+      {
+        "capability_id": 2,
+        "code": "C-NUM-MODEL",
+        "name_zh": "数值建模与求解",
+        "required_level": 3.6,
+        "weight": 1.01,
+        "is_critical": true,
+        "matched_keywords": [
+          "模型"
+        ]
+      },
+      {
+        "capability_id": 3,
+        "code": "C-PYTHON",
+        "name_zh": "Python 科研计算",
+        "required_level": 3.6,
+        "weight": 1.01,
+        "is_critical": false,
+        "matched_keywords": [
+          "python"
+        ]
+      },
+      {
+        "capability_id": 6,
+        "code": "C-LITERATURE",
+        "name_zh": "文献调研与证据综合",
+        "required_level": 2.5,
+        "weight": 0.45,
+        "is_critical": false,
+        "matched_keywords": [
+          "科研通用"
+        ]
+      }
+    ],
+    "knowledge_requirements": [
+      {
+        "knowledge_node_id": 4,
+        "code": "K-MAT-THERMO",
+        "name_zh": "材料热物性",
+        "required_level": 3.6,
+        "weight": 0.91,
+        "is_critical": true,
+        "matched_keywords": [
+          "材料热物性",
+          "热物性"
+        ]
+      },
+      {
+        "knowledge_node_id": 13,
+        "code": "K-ML-BASE",
+        "name_zh": "机器学习基础",
+        "required_level": 3.4,
+        "weight": 0.83,
+        "is_critical": true,
+        "matched_keywords": [
+          "预测"
+        ]
+      },
+      {
+        "knowledge_node_id": 5,
+        "code": "K-MICRO-HEAT",
+        "name_zh": "微纳尺度传热",
+        "required_level": 3.4,
+        "weight": 0.83,
+        "is_critical": true,
+        "matched_keywords": [
+          "微纳"
+        ]
+      },
+      {
+        "knowledge_node_id": 18,
+        "code": "K-DL",
+        "name_zh": "深度学习基础",
+        "required_level": 3.6,
+        "weight": 0.91,
+        "is_critical": false,
+        "matched_keywords": [
+          "深度学习",
+          "神经网络"
+        ]
+      },
+      {
+        "knowledge_node_id": 19,
+        "code": "K-GNN",
+        "name_zh": "图神经网络",
+        "required_level": 3.6,
+        "weight": 0.91,
+        "is_critical": false,
+        "matched_keywords": [
+          "图神经网络",
+          "gnn"
+        ]
+      },
+      {
+        "knowledge_node_id": 9,
+        "code": "K-PROG-PY",
+        "name_zh": "Python 科学计算",
+        "required_level": 3.4,
+        "weight": 0.83,
+        "is_critical": false,
+        "matched_keywords": [
+          "python"
+        ]
+      },
+      {
+        "knowledge_node_id": 6,
+        "code": "K-PHONON",
+        "name_zh": "声子输运",
+        "required_level": 3.4,
+        "weight": 0.83,
+        "is_critical": false,
+        "matched_keywords": [
+          "声子"
+        ]
+      }
+    ],
+    "note": "V4.5 Stage 3 使用可解释关键词规则生成需求草案；老师确认后再写入正式项目要求，避免 AI 自动标签直接成为硬性筛选条件。"
+  },
+  "target_fit": {
+    "match_score": 66.0,
+    "raw_fit": 70.1,
+    "capability_fit": 75.7,
+    "knowledge_fit": 47.7,
+    "evidence_confidence": 97.6,
+    "critical_gap_count": 3
+  },
+  "capability_gaps": [
+    {
+      "capability_id": 7,
+      "code": "C-ML-RESEARCH",
+      "name_zh": "科研机器学习",
+      "required_level": 4.0,
+      "weight": 1.2,
+      "is_critical": true,
+      "matched_keywords": [
+        "预测",
+        "深度学习",
+        "图神经网络",
+        "gnn"
+      ],
+      "current_level": 0.71,
+      "current_score": 14.2,
+      "satisfaction": 17.8,
+      "direct_evidence_score": 0.0,
+      "knowledge_readiness_score": 31.5,
+      "gap_type": "capability",
+      "severity": 128.2
+    },
+    {
+      "capability_id": 1,
+      "code": "C-HEAT-THEORY",
+      "name_zh": "传热理论分析",
+      "required_level": 4.0,
+      "weight": 1.19,
+      "is_critical": true,
+      "matched_keywords": [
+        "传热",
+        "热物性",
+        "热输运"
+      ],
+      "current_level": 3.66,
+      "current_score": 73.2,
+      "satisfaction": 91.5,
+      "direct_evidence_score": 78.7,
+      "knowledge_readiness_score": 59.0,
+      "gap_type": "capability",
+      "severity": 13.1
+    },
+    {
+      "capability_id": 6,
+      "code": "C-LITERATURE",
+      "name_zh": "文献调研与证据综合",
+      "required_level": 2.5,
+      "weight": 0.45,
+      "is_critical": false,
+      "matched_keywords": [
+        "科研通用"
+      ],
+      "current_level": 1.99,
+      "current_score": 39.7,
+      "satisfaction": 79.4,
+      "direct_evidence_score": 36.3,
+      "knowledge_readiness_score": 48.4,
+      "gap_type": "capability",
+      "severity": 9.3
+    }
+  ],
+  "knowledge_gaps": [
+    {
+      "knowledge_node_id": 13,
+      "code": "K-ML-BASE",
+      "name_zh": "机器学习基础",
+      "required_level": 3.4,
+      "weight": 0.83,
+      "is_critical": true,
+      "matched_keywords": [
+        "预测"
+      ],
+      "current_level": 0.0,
+      "current_score": 0.0,
+      "satisfaction": 0.0,
+      "gap_type": "knowledge",
+      "severity": 107.9
+    },
+    {
+      "knowledge_node_id": 18,
+      "code": "K-DL",
+      "name_zh": "深度学习基础",
+      "required_level": 3.6,
+      "weight": 0.91,
+      "is_critical": false,
+      "matched_keywords": [
+        "深度学习",
+        "神经网络"
+      ],
+      "current_level": 0.0,
+      "current_score": 0.0,
+      "satisfaction": 0.0,
+      "gap_type": "knowledge",
+      "severity": 91.0
+    },
+    {
+      "knowledge_node_id": 19,
+      "code": "K-GNN",
+      "name_zh": "图神经网络",
+      "required_level": 3.6,
+      "weight": 0.91,
+      "is_critical": false,
+      "matched_keywords": [
+        "图神经网络",
+        "gnn"
+      ],
+      "current_level": 0.0,
+      "current_score": 0.0,
+      "satisfaction": 0.0,
+      "gap_type": "knowledge",
+      "severity": 91.0
+    },
+    {
+      "knowledge_node_id": 4,
+      "code": "K-MAT-THERMO",
+      "name_zh": "材料热物性",
+      "required_level": 3.6,
+      "weight": 0.91,
+      "is_critical": true,
+      "matched_keywords": [
+        "材料热物性",
+        "热物性"
+      ],
+      "current_level": 1.56,
+      "current_score": 31.1,
+      "satisfaction": 43.2,
+      "gap_type": "knowledge",
+      "severity": 67.2
+    }
+  ],
+  "recommendations": [
+    {
+      "resource_id": 10,
+      "code": "R-COURSE-DL",
+      "resource_type": "course",
+      "title": "深度学习与 PyTorch 科研实践",
+      "subtitle": "Deep Learning with PyTorch for Research",
+      "discipline": "人工智能",
+      "provider": "课程",
+      "description": "从神经网络基础到科研数据建模、训练验证与可复现实验。",
+      "priority_score": 100.0,
+      "phase": "基础补齐",
+      "gap_closure": [
+        {
+          "type": "knowledge",
+          "id": 18,
+          "name_zh": "深度学习基础",
+          "current_satisfaction": 0.0,
+          "standard_level": 4.5,
+          "potential_gap_closure": 74.0
+        },
+        {
+          "type": "knowledge",
+          "id": 13,
+          "name_zh": "机器学习基础",
+          "current_satisfaction": 0.0,
+          "standard_level": 3.7,
+          "potential_gap_closure": 70.0
+        },
+        {
+          "type": "capability",
+          "id": 7,
+          "name_zh": "科研机器学习",
+          "current_satisfaction": 17.8,
+          "standard_level": 3.5,
+          "potential_gap_closure": 61.2
+        }
+      ],
+      "unmet_prerequisites": [
+        {
+          "knowledge_node_id": 13,
+          "name_zh": "机器学习基础",
+          "current_score": 0.0,
+          "relation_weight": 0.9
+        }
+      ],
+      "why": "补齐深度学习基础（当前满足 0.0%）；补齐机器学习基础（当前满足 0.0%）；补齐科研机器学习（当前满足 17.8%）"
+    },
+    {
+      "resource_id": 7,
+      "code": "R-TASK-ML-THERMO",
+      "resource_type": "project_task",
+      "title": "材料热物性机器学习预测任务",
+      "subtitle": "ML Prediction of Material Thermophysical Properties",
+      "discipline": "材料与人工智能",
+      "provider": "科研项目任务",
+      "description": "构建材料热物性数据集，完成特征处理、机器学习建模、交叉验证与结果解释。",
+      "priority_score": 100.0,
+      "phase": "科研实践",
+      "gap_closure": [
+        {
+          "type": "knowledge",
+          "id": 13,
+          "name_zh": "机器学习基础",
+          "current_satisfaction": 0.0,
+          "standard_level": 4.4,
+          "potential_gap_closure": 95.0
+        },
+        {
+          "type": "capability",
+          "id": 7,
+          "name_zh": "科研机器学习",
+          "current_satisfaction": 17.8,
+          "standard_level": 4.5,
+          "potential_gap_closure": 82.2
+        },
+        {
+          "type": "knowledge",
+          "id": 4,
+          "name_zh": "材料热物性",
+          "current_satisfaction": 43.2,
+          "standard_level": 3.2,
+          "potential_gap_closure": 56.8
+        },
+        {
+          "type": "capability",
+          "id": 6,
+          "name_zh": "文献调研与证据综合",
+          "current_satisfaction": 79.4,
+          "standard_level": 2.8,
+          "potential_gap_closure": 20.6
+        }
+      ],
+      "unmet_prerequisites": [],
+      "why": "补齐机器学习基础（当前满足 0.0%）；补齐科研机器学习（当前满足 17.8%）；补齐材料热物性（当前满足 43.2%）"
+    },
+    {
+      "resource_id": 13,
+      "code": "R-TASK-GNN-THERMO",
+      "resource_type": "project_task",
+      "title": "图神经网络材料热导率预测任务",
+      "subtitle": "GNN Thermal Conductivity Prediction",
+      "discipline": "材料与人工智能",
+      "provider": "科研项目任务",
+      "description": "使用材料结构图数据训练 GNN，预测热导率并结合传热机理解释结果。",
+      "priority_score": 100.0,
+      "phase": "科研实践",
+      "gap_closure": [
+        {
+          "type": "knowledge",
+          "id": 19,
+          "name_zh": "图神经网络",
+          "current_satisfaction": 0.0,
+          "standard_level": 4.5,
+          "potential_gap_closure": 96.0
+        },
+        {
+          "type": "knowledge",
+          "id": 18,
+          "name_zh": "深度学习基础",
+          "current_satisfaction": 0.0,
+          "standard_level": 4.1,
+          "potential_gap_closure": 94.0
+        },
+        {
+          "type": "capability",
+          "id": 7,
+          "name_zh": "科研机器学习",
+          "current_satisfaction": 17.8,
+          "standard_level": 4.7,
+          "potential_gap_closure": 82.2
+        },
+        {
+          "type": "knowledge",
+          "id": 4,
+          "name_zh": "材料热物性",
+          "current_satisfaction": 43.2,
+          "standard_level": 3.3,
+          "potential_gap_closure": 56.8
+        },
+        {
+          "type": "capability",
+          "id": 6,
+          "name_zh": "文献调研与证据综合",
+          "current_satisfaction": 79.4,
+          "standard_level": 2.8,
+          "potential_gap_closure": 20.6
+        }
+      ],
+      "unmet_prerequisites": [
+        {
+          "knowledge_node_id": 18,
+          "name_zh": "深度学习基础",
+          "current_score": 0.0,
+          "relation_weight": 0.9
+        },
+        {
+          "knowledge_node_id": 13,
+          "name_zh": "机器学习基础",
+          "current_score": 0.0,
+          "relation_weight": 0.9
+        }
+      ],
+      "why": "补齐图神经网络（当前满足 0.0%）；补齐深度学习基础（当前满足 0.0%）；补齐科研机器学习（当前满足 17.8%）"
+    },
+    {
+      "resource_id": 4,
+      "code": "R-COURSE-ML",
+      "resource_type": "course",
+      "title": "机器学习基础",
+      "subtitle": "Machine Learning Fundamentals",
+      "discipline": "人工智能",
+      "provider": "课程",
+      "description": "科研机器学习所需的监督学习、验证与数据处理基础。",
+      "priority_score": 86.1,
+      "phase": "基础补齐",
+      "gap_closure": [
+        {
+          "type": "knowledge",
+          "id": 13,
+          "name_zh": "机器学习基础",
+          "current_satisfaction": 0.0,
+          "standard_level": 4.2,
+          "potential_gap_closure": 70.0
+        },
+        {
+          "type": "capability",
+          "id": 7,
+          "name_zh": "科研机器学习",
+          "current_satisfaction": 17.8,
+          "standard_level": 3.0,
+          "potential_gap_closure": 49.5
+        }
+      ],
+      "unmet_prerequisites": [],
+      "why": "补齐机器学习基础（当前满足 0.0%）；补齐科研机器学习（当前满足 17.8%）"
+    },
+    {
+      "resource_id": 11,
+      "code": "R-BOOK-GNN",
+      "resource_type": "book",
+      "title": "Graph Representation Learning",
+      "subtitle": "图表示学习专业书",
+      "discipline": "人工智能",
+      "provider": "专业书",
+      "description": "系统学习图表示、消息传递神经网络与图结构数据建模。",
+      "priority_score": 61.3,
+      "phase": "系统深化",
+      "gap_closure": [
+        {
+          "type": "knowledge",
+          "id": 19,
+          "name_zh": "图神经网络",
+          "current_satisfaction": 0.0,
+          "standard_level": 4.2,
+          "potential_gap_closure": 48.0
+        },
+        {
+          "type": "knowledge",
+          "id": 18,
+          "name_zh": "深度学习基础",
+          "current_satisfaction": 0.0,
+          "standard_level": 3.2,
+          "potential_gap_closure": 39.1
+        },
+        {
+          "type": "capability",
+          "id": 7,
+          "name_zh": "科研机器学习",
+          "current_satisfaction": 17.8,
+          "standard_level": 3.0,
+          "potential_gap_closure": 33.0
+        }
+      ],
+      "unmet_prerequisites": [
+        {
+          "knowledge_node_id": 18,
+          "name_zh": "深度学习基础",
+          "current_score": 0.0,
+          "relation_weight": 0.9
+        },
+        {
+          "knowledge_node_id": 13,
+          "name_zh": "机器学习基础",
+          "current_score": 0.0,
+          "relation_weight": 0.9
+        }
+      ],
+      "why": "补齐图神经网络（当前满足 0.0%）；补齐深度学习基础（当前满足 0.0%）；补齐科研机器学习（当前满足 17.8%）"
+    },
+    {
+      "resource_id": 14,
+      "code": "R-TASK-CHIP",
+      "resource_type": "project_task",
+      "title": "芯片热点与封装热阻数值分析任务",
+      "subtitle": "Chip Hotspot and Package Thermal Resistance Simulation",
+      "discipline": "电子热科学",
+      "provider": "科研项目任务",
+      "description": "建立芯片热点与封装多层热阻模型，完成数值求解、参数分析与热设计建议。",
+      "priority_score": 41.4,
+      "phase": "科研实践",
+      "gap_closure": [
+        {
+          "type": "knowledge",
+          "id": 4,
+          "name_zh": "材料热物性",
+          "current_satisfaction": 43.2,
+          "standard_level": 3.8,
+          "potential_gap_closure": 56.8
+        },
+        {
+          "type": "capability",
+          "id": 1,
+          "name_zh": "传热理论分析",
+          "current_satisfaction": 91.5,
+          "standard_level": 4.2,
+          "potential_gap_closure": 8.5
+        }
+      ],
+      "unmet_prerequisites": [],
+      "why": "补齐材料热物性（当前满足 43.2%）；补齐传热理论分析（当前满足 91.5%）"
+    },
+    {
+      "resource_id": 12,
+      "code": "R-COURSE-CHIP",
+      "resource_type": "course",
+      "title": "芯片热管理与电子封装热设计",
+      "subtitle": "Chip Thermal Management",
+      "discipline": "电子热科学",
+      "provider": "课程",
+      "description": "覆盖芯片热点、封装热阻、界面热传导和热设计方法。",
+      "priority_score": 27.4,
+      "phase": "基础补齐",
+      "gap_closure": [
+        {
+          "type": "knowledge",
+          "id": 4,
+          "name_zh": "材料热物性",
+          "current_satisfaction": 43.2,
+          "standard_level": 3.4,
+          "potential_gap_closure": 56.8
+        },
+        {
+          "type": "capability",
+          "id": 1,
+          "name_zh": "传热理论分析",
+          "current_satisfaction": 91.5,
+          "standard_level": 3.5,
+          "potential_gap_closure": 8.5
+        }
+      ],
+      "unmet_prerequisites": [],
+      "why": "补齐材料热物性（当前满足 43.2%）；补齐传热理论分析（当前满足 91.5%）"
+    },
+    {
+      "resource_id": 8,
+      "code": "R-COURSE-STAT",
+      "resource_type": "course",
+      "title": "统计物理与输运基础",
+      "subtitle": "Statistical Physics and Transport",
+      "discipline": "物理基础",
+      "provider": "课程",
+      "description": "为声子输运、分子动力学和非平衡热输运建立统计物理基础。",
+      "priority_score": 3.2,
+      "phase": "基础补齐",
+      "gap_closure": [
+        {
+          "type": "capability",
+          "id": 1,
+          "name_zh": "传热理论分析",
+          "current_satisfaction": 91.5,
+          "standard_level": 2.5,
+          "potential_gap_closure": 8.5
+        }
+      ],
+      "unmet_prerequisites": [],
+      "why": "补齐传热理论分析（当前满足 91.5%）"
+    },
+    {
+      "resource_id": 6,
+      "code": "R-TASK-WELD",
+      "resource_type": "project_task",
+      "title": "激光焊接气孔机理分析任务",
+      "subtitle": "Laser-welding Porosity Mechanism Analysis Task",
+      "discipline": "焊接工程",
+      "provider": "科研项目任务",
+      "description": "结合论文证据、工艺参数和数据结果分析气孔形成机制。",
+      "priority_score": 1.9,
+      "phase": "科研实践",
+      "gap_closure": [
+        {
+          "type": "capability",
+          "id": 6,
+          "name_zh": "文献调研与证据综合",
+          "current_satisfaction": 79.4,
+          "standard_level": 3.2,
+          "potential_gap_closure": 20.6
+        }
+      ],
+      "unmet_prerequisites": [],
+      "why": "补齐文献调研与证据综合（当前满足 79.4%）"
+    }
+  ],
+  "course_recommendations": [
+    {
+      "resource_id": 10,
+      "code": "R-COURSE-DL",
+      "resource_type": "course",
+      "title": "深度学习与 PyTorch 科研实践",
+      "subtitle": "Deep Learning with PyTorch for Research",
+      "discipline": "人工智能",
+      "provider": "课程",
+      "description": "从神经网络基础到科研数据建模、训练验证与可复现实验。",
+      "priority_score": 100.0,
+      "phase": "基础补齐",
+      "gap_closure": [
+        {
+          "type": "knowledge",
+          "id": 18,
+          "name_zh": "深度学习基础",
+          "current_satisfaction": 0.0,
+          "standard_level": 4.5,
+          "potential_gap_closure": 74.0
+        },
+        {
+          "type": "knowledge",
+          "id": 13,
+          "name_zh": "机器学习基础",
+          "current_satisfaction": 0.0,
+          "standard_level": 3.7,
+          "potential_gap_closure": 70.0
+        },
+        {
+          "type": "capability",
+          "id": 7,
+          "name_zh": "科研机器学习",
+          "current_satisfaction": 17.8,
+          "standard_level": 3.5,
+          "potential_gap_closure": 61.2
+        }
+      ],
+      "unmet_prerequisites": [
+        {
+          "knowledge_node_id": 13,
+          "name_zh": "机器学习基础",
+          "current_score": 0.0,
+          "relation_weight": 0.9
+        }
+      ],
+      "why": "补齐深度学习基础（当前满足 0.0%）；补齐机器学习基础（当前满足 0.0%）；补齐科研机器学习（当前满足 17.8%）"
+    },
+    {
+      "resource_id": 4,
+      "code": "R-COURSE-ML",
+      "resource_type": "course",
+      "title": "机器学习基础",
+      "subtitle": "Machine Learning Fundamentals",
+      "discipline": "人工智能",
+      "provider": "课程",
+      "description": "科研机器学习所需的监督学习、验证与数据处理基础。",
+      "priority_score": 86.1,
+      "phase": "基础补齐",
+      "gap_closure": [
+        {
+          "type": "knowledge",
+          "id": 13,
+          "name_zh": "机器学习基础",
+          "current_satisfaction": 0.0,
+          "standard_level": 4.2,
+          "potential_gap_closure": 70.0
+        },
+        {
+          "type": "capability",
+          "id": 7,
+          "name_zh": "科研机器学习",
+          "current_satisfaction": 17.8,
+          "standard_level": 3.0,
+          "potential_gap_closure": 49.5
+        }
+      ],
+      "unmet_prerequisites": [],
+      "why": "补齐机器学习基础（当前满足 0.0%）；补齐科研机器学习（当前满足 17.8%）"
+    },
+    {
+      "resource_id": 12,
+      "code": "R-COURSE-CHIP",
+      "resource_type": "course",
+      "title": "芯片热管理与电子封装热设计",
+      "subtitle": "Chip Thermal Management",
+      "discipline": "电子热科学",
+      "provider": "课程",
+      "description": "覆盖芯片热点、封装热阻、界面热传导和热设计方法。",
+      "priority_score": 27.4,
+      "phase": "基础补齐",
+      "gap_closure": [
+        {
+          "type": "knowledge",
+          "id": 4,
+          "name_zh": "材料热物性",
+          "current_satisfaction": 43.2,
+          "standard_level": 3.4,
+          "potential_gap_closure": 56.8
+        },
+        {
+          "type": "capability",
+          "id": 1,
+          "name_zh": "传热理论分析",
+          "current_satisfaction": 91.5,
+          "standard_level": 3.5,
+          "potential_gap_closure": 8.5
+        }
+      ],
+      "unmet_prerequisites": [],
+      "why": "补齐材料热物性（当前满足 43.2%）；补齐传热理论分析（当前满足 91.5%）"
+    },
+    {
+      "resource_id": 8,
+      "code": "R-COURSE-STAT",
+      "resource_type": "course",
+      "title": "统计物理与输运基础",
+      "subtitle": "Statistical Physics and Transport",
+      "discipline": "物理基础",
+      "provider": "课程",
+      "description": "为声子输运、分子动力学和非平衡热输运建立统计物理基础。",
+      "priority_score": 3.2,
+      "phase": "基础补齐",
+      "gap_closure": [
+        {
+          "type": "capability",
+          "id": 1,
+          "name_zh": "传热理论分析",
+          "current_satisfaction": 91.5,
+          "standard_level": 2.5,
+          "potential_gap_closure": 8.5
+        }
+      ],
+      "unmet_prerequisites": [],
+      "why": "补齐传热理论分析（当前满足 91.5%）"
+    }
+  ],
+  "book_recommendations": [
+    {
+      "resource_id": 11,
+      "code": "R-BOOK-GNN",
+      "resource_type": "book",
+      "title": "Graph Representation Learning",
+      "subtitle": "图表示学习专业书",
+      "discipline": "人工智能",
+      "provider": "专业书",
+      "description": "系统学习图表示、消息传递神经网络与图结构数据建模。",
+      "priority_score": 61.3,
+      "phase": "系统深化",
+      "gap_closure": [
+        {
+          "type": "knowledge",
+          "id": 19,
+          "name_zh": "图神经网络",
+          "current_satisfaction": 0.0,
+          "standard_level": 4.2,
+          "potential_gap_closure": 48.0
+        },
+        {
+          "type": "knowledge",
+          "id": 18,
+          "name_zh": "深度学习基础",
+          "current_satisfaction": 0.0,
+          "standard_level": 3.2,
+          "potential_gap_closure": 39.1
+        },
+        {
+          "type": "capability",
+          "id": 7,
+          "name_zh": "科研机器学习",
+          "current_satisfaction": 17.8,
+          "standard_level": 3.0,
+          "potential_gap_closure": 33.0
+        }
+      ],
+      "unmet_prerequisites": [
+        {
+          "knowledge_node_id": 18,
+          "name_zh": "深度学习基础",
+          "current_score": 0.0,
+          "relation_weight": 0.9
+        },
+        {
+          "knowledge_node_id": 13,
+          "name_zh": "机器学习基础",
+          "current_score": 0.0,
+          "relation_weight": 0.9
+        }
+      ],
+      "why": "补齐图神经网络（当前满足 0.0%）；补齐深度学习基础（当前满足 0.0%）；补齐科研机器学习（当前满足 17.8%）"
+    }
+  ],
+  "practice_recommendations": [
+    {
+      "resource_id": 7,
+      "code": "R-TASK-ML-THERMO",
+      "resource_type": "project_task",
+      "title": "材料热物性机器学习预测任务",
+      "subtitle": "ML Prediction of Material Thermophysical Properties",
+      "discipline": "材料与人工智能",
+      "provider": "科研项目任务",
+      "description": "构建材料热物性数据集，完成特征处理、机器学习建模、交叉验证与结果解释。",
+      "priority_score": 100.0,
+      "phase": "科研实践",
+      "gap_closure": [
+        {
+          "type": "knowledge",
+          "id": 13,
+          "name_zh": "机器学习基础",
+          "current_satisfaction": 0.0,
+          "standard_level": 4.4,
+          "potential_gap_closure": 95.0
+        },
+        {
+          "type": "capability",
+          "id": 7,
+          "name_zh": "科研机器学习",
+          "current_satisfaction": 17.8,
+          "standard_level": 4.5,
+          "potential_gap_closure": 82.2
+        },
+        {
+          "type": "knowledge",
+          "id": 4,
+          "name_zh": "材料热物性",
+          "current_satisfaction": 43.2,
+          "standard_level": 3.2,
+          "potential_gap_closure": 56.8
+        },
+        {
+          "type": "capability",
+          "id": 6,
+          "name_zh": "文献调研与证据综合",
+          "current_satisfaction": 79.4,
+          "standard_level": 2.8,
+          "potential_gap_closure": 20.6
+        }
+      ],
+      "unmet_prerequisites": [],
+      "why": "补齐机器学习基础（当前满足 0.0%）；补齐科研机器学习（当前满足 17.8%）；补齐材料热物性（当前满足 43.2%）"
+    },
+    {
+      "resource_id": 13,
+      "code": "R-TASK-GNN-THERMO",
+      "resource_type": "project_task",
+      "title": "图神经网络材料热导率预测任务",
+      "subtitle": "GNN Thermal Conductivity Prediction",
+      "discipline": "材料与人工智能",
+      "provider": "科研项目任务",
+      "description": "使用材料结构图数据训练 GNN，预测热导率并结合传热机理解释结果。",
+      "priority_score": 100.0,
+      "phase": "科研实践",
+      "gap_closure": [
+        {
+          "type": "knowledge",
+          "id": 19,
+          "name_zh": "图神经网络",
+          "current_satisfaction": 0.0,
+          "standard_level": 4.5,
+          "potential_gap_closure": 96.0
+        },
+        {
+          "type": "knowledge",
+          "id": 18,
+          "name_zh": "深度学习基础",
+          "current_satisfaction": 0.0,
+          "standard_level": 4.1,
+          "potential_gap_closure": 94.0
+        },
+        {
+          "type": "capability",
+          "id": 7,
+          "name_zh": "科研机器学习",
+          "current_satisfaction": 17.8,
+          "standard_level": 4.7,
+          "potential_gap_closure": 82.2
+        },
+        {
+          "type": "knowledge",
+          "id": 4,
+          "name_zh": "材料热物性",
+          "current_satisfaction": 43.2,
+          "standard_level": 3.3,
+          "potential_gap_closure": 56.8
+        },
+        {
+          "type": "capability",
+          "id": 6,
+          "name_zh": "文献调研与证据综合",
+          "current_satisfaction": 79.4,
+          "standard_level": 2.8,
+          "potential_gap_closure": 20.6
+        }
+      ],
+      "unmet_prerequisites": [
+        {
+          "knowledge_node_id": 18,
+          "name_zh": "深度学习基础",
+          "current_score": 0.0,
+          "relation_weight": 0.9
+        },
+        {
+          "knowledge_node_id": 13,
+          "name_zh": "机器学习基础",
+          "current_score": 0.0,
+          "relation_weight": 0.9
+        }
+      ],
+      "why": "补齐图神经网络（当前满足 0.0%）；补齐深度学习基础（当前满足 0.0%）；补齐科研机器学习（当前满足 17.8%）"
+    },
+    {
+      "resource_id": 14,
+      "code": "R-TASK-CHIP",
+      "resource_type": "project_task",
+      "title": "芯片热点与封装热阻数值分析任务",
+      "subtitle": "Chip Hotspot and Package Thermal Resistance Simulation",
+      "discipline": "电子热科学",
+      "provider": "科研项目任务",
+      "description": "建立芯片热点与封装多层热阻模型，完成数值求解、参数分析与热设计建议。",
+      "priority_score": 41.4,
+      "phase": "科研实践",
+      "gap_closure": [
+        {
+          "type": "knowledge",
+          "id": 4,
+          "name_zh": "材料热物性",
+          "current_satisfaction": 43.2,
+          "standard_level": 3.8,
+          "potential_gap_closure": 56.8
+        },
+        {
+          "type": "capability",
+          "id": 1,
+          "name_zh": "传热理论分析",
+          "current_satisfaction": 91.5,
+          "standard_level": 4.2,
+          "potential_gap_closure": 8.5
+        }
+      ],
+      "unmet_prerequisites": [],
+      "why": "补齐材料热物性（当前满足 43.2%）；补齐传热理论分析（当前满足 91.5%）"
+    },
+    {
+      "resource_id": 6,
+      "code": "R-TASK-WELD",
+      "resource_type": "project_task",
+      "title": "激光焊接气孔机理分析任务",
+      "subtitle": "Laser-welding Porosity Mechanism Analysis Task",
+      "discipline": "焊接工程",
+      "provider": "科研项目任务",
+      "description": "结合论文证据、工艺参数和数据结果分析气孔形成机制。",
+      "priority_score": 1.9,
+      "phase": "科研实践",
+      "gap_closure": [
+        {
+          "type": "capability",
+          "id": 6,
+          "name_zh": "文献调研与证据综合",
+          "current_satisfaction": 79.4,
+          "standard_level": 3.2,
+          "potential_gap_closure": 20.6
+        }
+      ],
+      "unmet_prerequisites": [],
+      "why": "补齐文献调研与证据综合（当前满足 79.4%）"
+    }
+  ],
+  "learning_path": [
+    {
+      "phase": 1,
+      "name": "基础补齐",
+      "goal": "优先补齐关键知识和方法先修",
+      "resources": [
+        {
+          "resource_id": 10,
+          "code": "R-COURSE-DL",
+          "resource_type": "course",
+          "title": "深度学习与 PyTorch 科研实践",
+          "subtitle": "Deep Learning with PyTorch for Research",
+          "discipline": "人工智能",
+          "provider": "课程",
+          "description": "从神经网络基础到科研数据建模、训练验证与可复现实验。",
+          "priority_score": 100.0,
+          "phase": "基础补齐",
+          "gap_closure": [
+            {
+              "type": "knowledge",
+              "id": 18,
+              "name_zh": "深度学习基础",
+              "current_satisfaction": 0.0,
+              "standard_level": 4.5,
+              "potential_gap_closure": 74.0
+            },
+            {
+              "type": "knowledge",
+              "id": 13,
+              "name_zh": "机器学习基础",
+              "current_satisfaction": 0.0,
+              "standard_level": 3.7,
+              "potential_gap_closure": 70.0
+            },
+            {
+              "type": "capability",
+              "id": 7,
+              "name_zh": "科研机器学习",
+              "current_satisfaction": 17.8,
+              "standard_level": 3.5,
+              "potential_gap_closure": 61.2
+            }
+          ],
+          "unmet_prerequisites": [
+            {
+              "knowledge_node_id": 13,
+              "name_zh": "机器学习基础",
+              "current_score": 0.0,
+              "relation_weight": 0.9
+            }
+          ],
+          "why": "补齐深度学习基础（当前满足 0.0%）；补齐机器学习基础（当前满足 0.0%）；补齐科研机器学习（当前满足 17.8%）"
+        },
+        {
+          "resource_id": 4,
+          "code": "R-COURSE-ML",
+          "resource_type": "course",
+          "title": "机器学习基础",
+          "subtitle": "Machine Learning Fundamentals",
+          "discipline": "人工智能",
+          "provider": "课程",
+          "description": "科研机器学习所需的监督学习、验证与数据处理基础。",
+          "priority_score": 86.1,
+          "phase": "基础补齐",
+          "gap_closure": [
+            {
+              "type": "knowledge",
+              "id": 13,
+              "name_zh": "机器学习基础",
+              "current_satisfaction": 0.0,
+              "standard_level": 4.2,
+              "potential_gap_closure": 70.0
+            },
+            {
+              "type": "capability",
+              "id": 7,
+              "name_zh": "科研机器学习",
+              "current_satisfaction": 17.8,
+              "standard_level": 3.0,
+              "potential_gap_closure": 49.5
+            }
+          ],
+          "unmet_prerequisites": [],
+          "why": "补齐机器学习基础（当前满足 0.0%）；补齐科研机器学习（当前满足 17.8%）"
+        },
+        {
+          "resource_id": 12,
+          "code": "R-COURSE-CHIP",
+          "resource_type": "course",
+          "title": "芯片热管理与电子封装热设计",
+          "subtitle": "Chip Thermal Management",
+          "discipline": "电子热科学",
+          "provider": "课程",
+          "description": "覆盖芯片热点、封装热阻、界面热传导和热设计方法。",
+          "priority_score": 27.4,
+          "phase": "基础补齐",
+          "gap_closure": [
+            {
+              "type": "knowledge",
+              "id": 4,
+              "name_zh": "材料热物性",
+              "current_satisfaction": 43.2,
+              "standard_level": 3.4,
+              "potential_gap_closure": 56.8
+            },
+            {
+              "type": "capability",
+              "id": 1,
+              "name_zh": "传热理论分析",
+              "current_satisfaction": 91.5,
+              "standard_level": 3.5,
+              "potential_gap_closure": 8.5
+            }
+          ],
+          "unmet_prerequisites": [],
+          "why": "补齐材料热物性（当前满足 43.2%）；补齐传热理论分析（当前满足 91.5%）"
+        }
+      ]
+    },
+    {
+      "phase": 2,
+      "name": "系统深化",
+      "goal": "建立更系统的专业知识网络",
+      "resources": [
+        {
+          "resource_id": 11,
+          "code": "R-BOOK-GNN",
+          "resource_type": "book",
+          "title": "Graph Representation Learning",
+          "subtitle": "图表示学习专业书",
+          "discipline": "人工智能",
+          "provider": "专业书",
+          "description": "系统学习图表示、消息传递神经网络与图结构数据建模。",
+          "priority_score": 61.3,
+          "phase": "系统深化",
+          "gap_closure": [
+            {
+              "type": "knowledge",
+              "id": 19,
+              "name_zh": "图神经网络",
+              "current_satisfaction": 0.0,
+              "standard_level": 4.2,
+              "potential_gap_closure": 48.0
+            },
+            {
+              "type": "knowledge",
+              "id": 18,
+              "name_zh": "深度学习基础",
+              "current_satisfaction": 0.0,
+              "standard_level": 3.2,
+              "potential_gap_closure": 39.1
+            },
+            {
+              "type": "capability",
+              "id": 7,
+              "name_zh": "科研机器学习",
+              "current_satisfaction": 17.8,
+              "standard_level": 3.0,
+              "potential_gap_closure": 33.0
+            }
+          ],
+          "unmet_prerequisites": [
+            {
+              "knowledge_node_id": 18,
+              "name_zh": "深度学习基础",
+              "current_score": 0.0,
+              "relation_weight": 0.9
+            },
+            {
+              "knowledge_node_id": 13,
+              "name_zh": "机器学习基础",
+              "current_score": 0.0,
+              "relation_weight": 0.9
+            }
+          ],
+          "why": "补齐图神经网络（当前满足 0.0%）；补齐深度学习基础（当前满足 0.0%）；补齐科研机器学习（当前满足 17.8%）"
+        }
+      ]
+    },
+    {
+      "phase": 3,
+      "name": "科研实践",
+      "goal": "用真实科研任务把知识转成可验证能力",
+      "resources": [
+        {
+          "resource_id": 7,
+          "code": "R-TASK-ML-THERMO",
+          "resource_type": "project_task",
+          "title": "材料热物性机器学习预测任务",
+          "subtitle": "ML Prediction of Material Thermophysical Properties",
+          "discipline": "材料与人工智能",
+          "provider": "科研项目任务",
+          "description": "构建材料热物性数据集，完成特征处理、机器学习建模、交叉验证与结果解释。",
+          "priority_score": 100.0,
+          "phase": "科研实践",
+          "gap_closure": [
+            {
+              "type": "knowledge",
+              "id": 13,
+              "name_zh": "机器学习基础",
+              "current_satisfaction": 0.0,
+              "standard_level": 4.4,
+              "potential_gap_closure": 95.0
+            },
+            {
+              "type": "capability",
+              "id": 7,
+              "name_zh": "科研机器学习",
+              "current_satisfaction": 17.8,
+              "standard_level": 4.5,
+              "potential_gap_closure": 82.2
+            },
+            {
+              "type": "knowledge",
+              "id": 4,
+              "name_zh": "材料热物性",
+              "current_satisfaction": 43.2,
+              "standard_level": 3.2,
+              "potential_gap_closure": 56.8
+            },
+            {
+              "type": "capability",
+              "id": 6,
+              "name_zh": "文献调研与证据综合",
+              "current_satisfaction": 79.4,
+              "standard_level": 2.8,
+              "potential_gap_closure": 20.6
+            }
+          ],
+          "unmet_prerequisites": [],
+          "why": "补齐机器学习基础（当前满足 0.0%）；补齐科研机器学习（当前满足 17.8%）；补齐材料热物性（当前满足 43.2%）"
+        },
+        {
+          "resource_id": 13,
+          "code": "R-TASK-GNN-THERMO",
+          "resource_type": "project_task",
+          "title": "图神经网络材料热导率预测任务",
+          "subtitle": "GNN Thermal Conductivity Prediction",
+          "discipline": "材料与人工智能",
+          "provider": "科研项目任务",
+          "description": "使用材料结构图数据训练 GNN，预测热导率并结合传热机理解释结果。",
+          "priority_score": 100.0,
+          "phase": "科研实践",
+          "gap_closure": [
+            {
+              "type": "knowledge",
+              "id": 19,
+              "name_zh": "图神经网络",
+              "current_satisfaction": 0.0,
+              "standard_level": 4.5,
+              "potential_gap_closure": 96.0
+            },
+            {
+              "type": "knowledge",
+              "id": 18,
+              "name_zh": "深度学习基础",
+              "current_satisfaction": 0.0,
+              "standard_level": 4.1,
+              "potential_gap_closure": 94.0
+            },
+            {
+              "type": "capability",
+              "id": 7,
+              "name_zh": "科研机器学习",
+              "current_satisfaction": 17.8,
+              "standard_level": 4.7,
+              "potential_gap_closure": 82.2
+            },
+            {
+              "type": "knowledge",
+              "id": 4,
+              "name_zh": "材料热物性",
+              "current_satisfaction": 43.2,
+              "standard_level": 3.3,
+              "potential_gap_closure": 56.8
+            },
+            {
+              "type": "capability",
+              "id": 6,
+              "name_zh": "文献调研与证据综合",
+              "current_satisfaction": 79.4,
+              "standard_level": 2.8,
+              "potential_gap_closure": 20.6
+            }
+          ],
+          "unmet_prerequisites": [
+            {
+              "knowledge_node_id": 18,
+              "name_zh": "深度学习基础",
+              "current_score": 0.0,
+              "relation_weight": 0.9
+            },
+            {
+              "knowledge_node_id": 13,
+              "name_zh": "机器学习基础",
+              "current_score": 0.0,
+              "relation_weight": 0.9
+            }
+          ],
+          "why": "补齐图神经网络（当前满足 0.0%）；补齐深度学习基础（当前满足 0.0%）；补齐科研机器学习（当前满足 17.8%）"
+        }
+      ]
+    }
+  ],
+  "literature_queries": [
+    {
+      "query": "机器学习基础 深度学习基础 综述 review",
+      "purpose": "先用综述建立目标知识框架和常用方法谱系"
+    },
+    {
+      "query": "图神经网络驱动的微纳材料热输运研究 机器学习基础 深度学习基础 图神经网络 最新进展",
+      "purpose": "用于锁定与目标方向最相关的近期研究路线"
+    },
+    {
+      "query": "图神经网络驱动的微纳材料热输运研究 科研机器学习 传热理论分析 methodology benchmark",
+      "purpose": "重点寻找方法、验证和基准比较论文"
+    },
+    {
+      "query": "图神经网络驱动的微纳材料热输运研究 research gap review",
+      "purpose": "用于识别研究空白和可形成课题的问题"
+    }
+  ],
+  "scoring_model": {
+    "gap": "目标要求等级与当前证据画像等级比较；关键项缺口按 1.3 倍优先级处理。",
+    "resource_priority": "资源对关键知识/能力缺口的标准覆盖 × 标准证据强度 × 当前缺口严重度，并受先修知识准备度修正。",
+    "sequence": "课程优先补基础，专业书用于系统深化，项目任务用于把知识转化为可核验科研能力；存在薄弱先修时会显式提示。"
+  },
+  "collaborator_recommendations": [
+    {
+      "user_id": 3,
+      "display_name": "林同学",
+      "research_direction": "材料机器学习与科研数据建模",
+      "target_match_score": 51.8,
+      "complementarity_score": 57.7,
+      "evidence_confidence": 93.8,
+      "covers_my_gaps": [
+        {
+          "name_zh": "科研机器学习",
+          "satisfaction": 100.0,
+          "type": "capability"
+        },
+        {
+          "name_zh": "机器学习基础",
+          "satisfaction": 100.0,
+          "type": "knowledge"
+        }
+      ]
+    },
+    {
+      "user_id": 5,
+      "display_name": "王同学",
+      "research_direction": "实验数据分析与焊接缺陷机理",
+      "target_match_score": 11.5,
+      "complementarity_score": 30.1,
+      "evidence_confidence": 91.5,
+      "covers_my_gaps": [
+        {
+          "name_zh": "文献调研与证据综合",
+          "satisfaction": 85.0,
+          "type": "capability"
+        },
+        {
+          "name_zh": "机器学习基础",
+          "satisfaction": 78.5,
+          "type": "knowledge"
+        }
+      ]
+    },
+    {
+      "user_id": 2,
+      "display_name": "演示学生",
+      "research_direction": null,
+      "target_match_score": 69.3,
+      "complementarity_score": 29.9,
+      "evidence_confidence": 80.7,
+      "covers_my_gaps": [
+        {
+          "name_zh": "传热理论分析",
+          "satisfaction": 85.6,
+          "type": "capability"
+        }
+      ]
+    },
+    {
+      "user_id": 4,
+      "display_name": "周同学",
+      "research_direction": "微纳热输运与数值模拟",
+      "target_match_score": 65.3,
+      "complementarity_score": 14.9,
+      "evidence_confidence": 95.3,
+      "covers_my_gaps": [
+        {
+          "name_zh": "传热理论分析",
+          "satisfaction": 90.1,
+          "type": "capability"
+        },
+        {
+          "name_zh": "文献调研与证据综合",
+          "satisfaction": 77.2,
+          "type": "capability"
+        }
+      ]
+    }
+  ]
+}

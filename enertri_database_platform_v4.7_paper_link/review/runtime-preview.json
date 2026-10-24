@@ -1,0 +1,2531 @@
+{
+  "environment": "Isolated SQLite TestClient; built-in demo data; not a deployed website",
+  "external_services": "not called",
+  "health": {
+    "ok": true,
+    "version": "4.7.0",
+    "task_execution_mode": "inline"
+  },
+  "readiness": {
+    "ok": true
+  },
+  "goal_count": 1,
+  "goal_title": "芯片热管理与微纳热输运成长目标",
+  "roadmap": {
+    "stage": "V4.7 Stage 5",
+    "goal": {
+      "id": 1,
+      "user_id": 2,
+      "goal_type": "student_growth",
+      "title": "芯片热管理与微纳热输运成长目标",
+      "description": "希望后续参与芯片热管理、微纳尺度传热与数值模拟方向项目，强化材料热物性、芯片热设计和科研计算能力。"
+    },
+    "current_fit": {
+      "match_score": 76.5,
+      "raw_fit": 81.1,
+      "capability_fit": 90.4,
+      "knowledge_fit": 43.9,
+      "evidence_confidence": 80.7,
+      "critical_gap_count": 2
+    },
+    "items": [
+      {
+        "id": 1,
+        "goal_id": 1,
+        "user_id": 2,
+        "item_type": "course",
+        "source_resource_id": 12,
+        "source_publication_id": null,
+        "source_project_id": null,
+        "title": "芯片热管理与电子封装热设计",
+        "phase": "基础补齐",
+        "priority_score": 100.0,
+        "status": "planned",
+        "progress_percent": 0,
+        "rationale": "补齐芯片热管理（当前满足 0.0%）；补齐材料热物性（当前满足 36.7%）；补齐传热理论分析（当前满足 85.6%）",
+        "gap_targets": [
+          {
+            "type": "knowledge",
+            "id": 20,
+            "name_zh": "芯片热管理",
+            "current_satisfaction": 0.0,
+            "standard_level": 4.5,
+            "potential_gap_closure": 72.0
+          },
+          {
+            "type": "knowledge",
+            "id": 4,
+            "name_zh": "材料热物性",
+            "current_satisfaction": 36.7,
+            "standard_level": 3.4,
+            "potential_gap_closure": 60.4
+          },
+          {
+            "type": "capability",
+            "id": 1,
+            "name_zh": "传热理论分析",
+            "current_satisfaction": 85.6,
+            "standard_level": 3.5,
+            "potential_gap_closure": 14.4
+          }
+        ],
+        "completion_note": null,
+        "created_at": "2026-09-10T11:35:00",
+        "updated_at": "2026-09-10T11:35:00"
+      },
+      {
+        "id": 2,
+        "goal_id": 1,
+        "user_id": 2,
+        "item_type": "book",
+        "source_resource_id": 15,
+        "source_publication_id": null,
+        "source_project_id": null,
+        "title": "电子设备热管理基础与工程方法",
+        "phase": "系统深化",
+        "priority_score": 100.0,
+        "status": "planned",
+        "progress_percent": 0,
+        "rationale": "补齐芯片热管理（当前满足 0.0%）；补齐材料热物性（当前满足 36.7%）；补齐传热理论分析（当前满足 85.6%）",
+        "gap_targets": [
+          {
+            "type": "knowledge",
+            "id": 20,
+            "name_zh": "芯片热管理",
+            "current_satisfaction": 0.0,
+            "standard_level": 4.2,
+            "potential_gap_closure": 52.0
+          },
+          {
+            "type": "knowledge",
+            "id": 4,
+            "name_zh": "材料热物性",
+            "current_satisfaction": 36.7,
+            "standard_level": 3.2,
+            "potential_gap_closure": 40.9
+          },
+          {
+            "type": "capability",
+            "id": 1,
+            "name_zh": "传热理论分析",
+            "current_satisfaction": 85.6,
+            "standard_level": 3.2,
+            "potential_gap_closure": 14.4
+          }
+        ],
+        "completion_note": null,
+        "created_at": "2026-09-10T11:35:00",
+        "updated_at": "2026-09-10T11:35:00"
+      },
+      {
+        "id": 3,
+        "goal_id": 1,
+        "user_id": 2,
+        "item_type": "project_task",
+        "source_resource_id": 14,
+        "source_publication_id": null,
+        "source_project_id": null,
+        "title": "芯片热点与封装热阻数值分析任务",
+        "phase": "科研实践",
+        "priority_score": 100.0,
+        "status": "planned",
+        "progress_percent": 0,
+        "rationale": "补齐芯片热管理（当前满足 0.0%）；补齐材料热物性（当前满足 36.7%）；补齐传热理论分析（当前满足 85.6%）",
+        "gap_targets": [
+          {
+            "type": "knowledge",
+            "id": 20,
+            "name_zh": "芯片热管理",
+            "current_satisfaction": 0.0,
+            "standard_level": 4.6,
+            "potential_gap_closure": 95.0
+          },
+          {
+            "type": "knowledge",
+            "id": 4,
+            "name_zh": "材料热物性",
+            "current_satisfaction": 36.7,
+            "standard_level": 3.8,
+            "potential_gap_closure": 63.3
+          },
+          {
+            "type": "capability",
+            "id": 1,
+            "name_zh": "传热理论分析",
+            "current_satisfaction": 85.6,
+            "standard_level": 4.2,
+            "potential_gap_closure": 14.4
+          },
+          {
+            "type": "capability",
+            "id": 2,
+            "name_zh": "数值建模与求解",
+            "current_satisfaction": 94.6,
+            "standard_level": 3.8,
+            "potential_gap_closure": 5.4
+          }
+        ],
+        "completion_note": null,
+        "created_at": "2026-09-10T11:35:00",
+        "updated_at": "2026-09-10T11:35:00"
+      },
+      {
+        "id": 4,
+        "goal_id": 1,
+        "user_id": 2,
+        "item_type": "research_project",
+        "source_resource_id": null,
+        "source_publication_id": null,
+        "source_project_id": 2,
+        "title": "芯片热管理多物理场建模实践",
+        "phase": "科研转化",
+        "priority_score": 63.0,
+        "status": "planned",
+        "progress_percent": 0,
+        "rationale": "项目方向与当前成长目标和关键缺口重合，可作为把知识转成科研证据的真实载体。",
+        "gap_targets": [
+          {
+            "type": "project",
+            "name_zh": "芯片热管理",
+            "potential_gap_closure": 20.0
+          }
+        ],
+        "completion_note": null,
+        "created_at": "2026-09-10T11:35:00",
+        "updated_at": "2026-09-10T11:35:00"
+      },
+      {
+        "id": 5,
+        "goal_id": 1,
+        "user_id": 2,
+        "item_type": "research_project",
+        "source_resource_id": null,
+        "source_publication_id": null,
+        "source_project_id": 1,
+        "title": "基于机器学习的材料热物性预测",
+        "phase": "科研转化",
+        "priority_score": 59.0,
+        "status": "planned",
+        "progress_percent": 0,
+        "rationale": "项目方向与当前成长目标和关键缺口重合，可作为把知识转成科研证据的真实载体。",
+        "gap_targets": [
+          {
+            "type": "project",
+            "name_zh": "材料热物性 × 人工智能",
+            "potential_gap_closure": 10.0
+          }
+        ],
+        "completion_note": null,
+        "created_at": "2026-09-10T11:35:00",
+        "updated_at": "2026-09-10T11:35:00"
+      },
+      {
+        "id": 6,
+        "goal_id": 1,
+        "user_id": 2,
+        "item_type": "publication",
+        "source_resource_id": null,
+        "source_publication_id": 3,
+        "source_project_id": null,
+        "title": "内部演示文献：芯片热管理多物理场建模知识框架",
+        "phase": "文献桥接",
+        "priority_score": 57.0,
+        "status": "planned",
+        "progress_percent": 0,
+        "rationale": "命中当前目标方向与知识缺口关键词；用于在进入课程/项目之前建立研究路线与方法认知。（内部演示文献记录）",
+        "gap_targets": [
+          {
+            "type": "literature",
+            "name_zh": "目标方向文献认知",
+            "potential_gap_closure": 20.0
+          }
+        ],
+        "completion_note": null,
+        "created_at": "2026-09-10T11:35:00",
+        "updated_at": "2026-09-10T11:35:00"
+      },
+      {
+        "id": 7,
+        "goal_id": 1,
+        "user_id": 2,
+        "item_type": "publication",
+        "source_resource_id": null,
+        "source_publication_id": 1,
+        "source_project_id": null,
+        "title": "内部演示文献：图神经网络与材料性质预测方法综述",
+        "phase": "文献桥接",
+        "priority_score": 52.5,
+        "status": "planned",
+        "progress_percent": 0,
+        "rationale": "命中当前目标方向与知识缺口关键词；用于在进入课程/项目之前建立研究路线与方法认知。（内部演示文献记录）",
+        "gap_targets": [
+          {
+            "type": "literature",
+            "name_zh": "目标方向文献认知",
+            "potential_gap_closure": 10.0
+          }
+        ],
+        "completion_note": null,
+        "created_at": "2026-09-10T11:35:00",
+        "updated_at": "2026-09-10T11:35:00"
+      },
+      {
+        "id": 8,
+        "goal_id": 1,
+        "user_id": 2,
+        "item_type": "project_task",
+        "source_resource_id": 13,
+        "source_publication_id": null,
+        "source_project_id": null,
+        "title": "图神经网络材料热导率预测任务",
+        "phase": "科研实践",
+        "priority_score": 29.3,
+        "status": "planned",
+        "progress_percent": 0,
+        "rationale": "补齐材料热物性（当前满足 36.7%）；补齐文献调研与证据综合（当前满足 71.8%）",
+        "gap_targets": [
+          {
+            "type": "knowledge",
+            "id": 4,
+            "name_zh": "材料热物性",
+            "current_satisfaction": 36.7,
+            "standard_level": 3.3,
+            "potential_gap_closure": 63.3
+          },
+          {
+            "type": "capability",
+            "id": 6,
+            "name_zh": "文献调研与证据综合",
+            "current_satisfaction": 71.8,
+            "standard_level": 2.8,
+            "potential_gap_closure": 28.2
+          }
+        ],
+        "completion_note": null,
+        "created_at": "2026-09-10T11:35:00",
+        "updated_at": "2026-09-10T11:35:00"
+      },
+      {
+        "id": 9,
+        "goal_id": 1,
+        "user_id": 2,
+        "item_type": "course",
+        "source_resource_id": 8,
+        "source_publication_id": null,
+        "source_project_id": null,
+        "title": "统计物理与输运基础",
+        "phase": "基础补齐",
+        "priority_score": 12.4,
+        "status": "planned",
+        "progress_percent": 0,
+        "rationale": "补齐传热理论分析（当前满足 85.6%）",
+        "gap_targets": [
+          {
+            "type": "capability",
+            "id": 1,
+            "name_zh": "传热理论分析",
+            "current_satisfaction": 85.6,
+            "standard_level": 2.5,
+            "potential_gap_closure": 14.4
+          }
+        ],
+        "completion_note": null,
+        "created_at": "2026-09-10T11:35:00",
+        "updated_at": "2026-09-10T11:35:00"
+      },
+      {
+        "id": 10,
+        "goal_id": 1,
+        "user_id": 2,
+        "item_type": "course",
+        "source_resource_id": 9,
+        "source_publication_id": null,
+        "source_project_id": null,
+        "title": "分子动力学模拟方法",
+        "phase": "基础补齐",
+        "priority_score": 6.6,
+        "status": "planned",
+        "progress_percent": 0,
+        "rationale": "补齐数值建模与求解（当前满足 94.6%）",
+        "gap_targets": [
+          {
+            "type": "capability",
+            "id": 2,
+            "name_zh": "数值建模与求解",
+            "current_satisfaction": 94.6,
+            "standard_level": 3.1,
+            "potential_gap_closure": 5.4
+          }
+        ],
+        "completion_note": null,
+        "created_at": "2026-09-10T11:35:00",
+        "updated_at": "2026-09-10T11:35:00"
+      }
+    ],
+    "summary": {
+      "total": 10,
+      "completed": 0,
+      "in_progress": 0,
+      "progress_percent": 0.0,
+      "baseline_match_score": 76.5,
+      "latest_snapshot_score": 76.5,
+      "pending_evidence_count": 1
+    },
+    "snapshots": [
+      {
+        "id": 1,
+        "goal_id": 1,
+        "snapshot_type": "baseline",
+        "match_score": 76.5,
+        "capability_fit": 90.4,
+        "knowledge_fit": 43.9,
+        "evidence_confidence": 80.7,
+        "critical_gap_count": 2,
+        "created_at": "2026-09-10T11:35:00"
+      }
+    ],
+    "closed_loop": "路线图完成项不会直接写能力分；完成后生成低可信的待核验证据，可形成临时画像变化；教师核验后才升级为高可信证据，并重新计算目标匹配。"
+  },
+  "profile": {
+    "stage": "V4.4 Stage 2",
+    "profile": {
+      "user_id": 2,
+      "username": "student",
+      "display_name": "演示学生",
+      "role": "learning_user",
+      "research_direction": null
+    },
+    "summary": {
+      "evidence_count": 5,
+      "verified_evidence_count": 3,
+      "evidence_confidence": 80.7,
+      "covered_knowledge_nodes": 12,
+      "strong_knowledge_nodes": 7,
+      "total_knowledge_nodes": 20,
+      "knowledge_coverage_percent": 60.0,
+      "top_capability_score": 74.0
+    },
+    "top_strengths": [
+      {
+        "id": 3,
+        "code": "C-PYTHON",
+        "name_zh": "Python 科研计算",
+        "name_en": "Python for Research Computing",
+        "category": "computation",
+        "description": "独立编写科研计算、数据处理与可复现脚本。",
+        "score": 74.0,
+        "estimated_level": 3.7,
+        "maturity": "独立科研任务",
+        "direct_evidence_score": 68.5,
+        "knowledge_readiness_score": 88.2,
+        "evidence_count": 1,
+        "trace": [
+          {
+            "evidence_id": 4,
+            "evidence_type": "project_participation",
+            "verification_status": "verified",
+            "resource_id": 5,
+            "resource_type": "project_task",
+            "resource_title": "微纳热输运数值模拟任务",
+            "standard_level": 4.1,
+            "personal_evidence_strength": 0.889,
+            "contribution": 68.5
+          }
+        ],
+        "requirements": [
+          {
+            "knowledge_node_id": 9,
+            "name_zh": "Python 科学计算",
+            "relation_type": "requires",
+            "required_level": 4.0,
+            "current_level": 3.5,
+            "readiness": 88.2,
+            "weight": 1.0
+          }
+        ]
+      },
+      {
+        "id": 2,
+        "code": "C-NUM-MODEL",
+        "name_zh": "数值建模与求解",
+        "name_en": "Numerical Modeling and Solving",
+        "category": "methodology",
+        "description": "把科研问题转化为可计算模型并选择数值方法。",
+        "score": 71.9,
+        "estimated_level": 3.6,
+        "maturity": "独立科研任务",
+        "direct_evidence_score": 80.0,
+        "knowledge_readiness_score": 50.9,
+        "evidence_count": 2,
+        "trace": [
+          {
+            "evidence_id": 4,
+            "evidence_type": "project_participation",
+            "verification_status": "verified",
+            "resource_id": 5,
+            "resource_type": "project_task",
+            "resource_title": "微纳热输运数值模拟任务",
+            "standard_level": 4.0,
+            "personal_evidence_strength": 0.889,
+            "contribution": 65.4
+          },
+          {
+            "evidence_id": 2,
+            "evidence_type": "course_grade",
+            "verification_status": "verified",
+            "resource_id": 2,
+            "resource_type": "course",
+            "resource_title": "数值分析与工程计算",
+            "standard_level": 3.4,
+            "personal_evidence_strength": 0.942,
+            "contribution": 42.3
+          }
+        ],
+        "requirements": [
+          {
+            "knowledge_node_id": 1,
+            "name_zh": "偏微分方程",
+            "relation_type": "requires",
+            "required_level": 3.0,
+            "current_level": 1.6,
+            "readiness": 52.2,
+            "weight": 0.8
+          },
+          {
+            "knowledge_node_id": 7,
+            "name_zh": "有限差分法",
+            "relation_type": "supports",
+            "required_level": 3.0,
+            "current_level": 3.6,
+            "readiness": 100.0,
+            "weight": 0.8
+          },
+          {
+            "knowledge_node_id": 8,
+            "name_zh": "有限元法",
+            "relation_type": "supports",
+            "required_level": 3.0,
+            "current_level": 1.4,
+            "readiness": 45.2,
+            "weight": 0.8
+          },
+          {
+            "knowledge_node_id": 17,
+            "name_zh": "分子动力学",
+            "relation_type": "supports",
+            "required_level": 3.0,
+            "current_level": 0.0,
+            "readiness": 0.0,
+            "weight": 0.7
+          }
+        ]
+      },
+      {
+        "id": 1,
+        "code": "C-HEAT-THEORY",
+        "name_zh": "传热理论分析",
+        "name_en": "Heat-transfer Theoretical Analysis",
+        "category": "theory",
+        "description": "建立热过程物理假设并进行理论分析。",
+        "score": 68.5,
+        "estimated_level": 3.4,
+        "maturity": "常规任务 / 少量指导",
+        "direct_evidence_score": 73.5,
+        "knowledge_readiness_score": 55.7,
+        "evidence_count": 3,
+        "trace": [
+          {
+            "evidence_id": 4,
+            "evidence_type": "project_participation",
+            "verification_status": "verified",
+            "resource_id": 5,
+            "resource_type": "project_task",
+            "resource_title": "微纳热输运数值模拟任务",
+            "standard_level": 3.7,
+            "personal_evidence_strength": 0.889,
+            "contribution": 47.3
+          },
+          {
+            "evidence_id": 1,
+            "evidence_type": "course_grade",
+            "verification_status": "verified",
+            "resource_id": 1,
+            "resource_type": "course",
+            "resource_title": "传热学",
+            "standard_level": 3.5,
+            "personal_evidence_strength": 0.922,
+            "contribution": 42.0
+          },
+          {
+            "evidence_id": 3,
+            "evidence_type": "book_reading",
+            "verification_status": "pending",
+            "resource_id": 3,
+            "resource_type": "book",
+            "resource_title": "Micro/Nanoscale Heat Transfer",
+            "standard_level": 3.0,
+            "personal_evidence_strength": 0.664,
+            "contribution": 13.4
+          }
+        ],
+        "requirements": [
+          {
+            "knowledge_node_id": 2,
+            "name_zh": "热传导",
+            "relation_type": "requires",
+            "required_level": 4.0,
+            "current_level": 2.9,
+            "readiness": 71.8,
+            "weight": 1.0
+          },
+          {
+            "knowledge_node_id": 3,
+            "name_zh": "对流换热",
+            "relation_type": "requires",
+            "required_level": 3.0,
+            "current_level": 2.5,
+            "readiness": 83.7,
+            "weight": 0.8
+          },
+          {
+            "knowledge_node_id": 4,
+            "name_zh": "材料热物性",
+            "relation_type": "supports",
+            "required_level": 3.0,
+            "current_level": 1.3,
+            "readiness": 44.0,
+            "weight": 0.6
+          },
+          {
+            "knowledge_node_id": 5,
+            "name_zh": "微纳尺度传热",
+            "relation_type": "supports",
+            "required_level": 3.0,
+            "current_level": 3.9,
+            "readiness": 100.0,
+            "weight": 0.8
+          },
+          {
+            "knowledge_node_id": 16,
+            "name_zh": "统计物理",
+            "relation_type": "supports",
+            "required_level": 2.5,
+            "current_level": 0.0,
+            "readiness": 0.0,
+            "weight": 0.5
+          },
+          {
+            "knowledge_node_id": 20,
+            "name_zh": "芯片热管理",
+            "relation_type": "supports",
+            "required_level": 3.0,
+            "current_level": 0.0,
+            "readiness": 0.0,
+            "weight": 0.7
+          }
+        ]
+      },
+      {
+        "id": 5,
+        "code": "C-DATA",
+        "name_zh": "科研数据分析",
+        "name_en": "Research Data Analysis",
+        "category": "research",
+        "description": "对实验或仿真数据进行清洗、拟合、误差分析和解释。",
+        "score": 57.6,
+        "estimated_level": 2.9,
+        "maturity": "常规任务 / 少量指导",
+        "direct_evidence_score": 50.0,
+        "knowledge_readiness_score": 77.3,
+        "evidence_count": 2,
+        "trace": [
+          {
+            "evidence_id": 4,
+            "evidence_type": "project_participation",
+            "verification_status": "verified",
+            "resource_id": 5,
+            "resource_type": "project_task",
+            "resource_title": "微纳热输运数值模拟任务",
+            "standard_level": 3.4,
+            "personal_evidence_strength": 0.889,
+            "contribution": 43.5
+          },
+          {
+            "evidence_id": 5,
+            "evidence_type": "course_grade",
+            "verification_status": "self_reported",
+            "resource_id": 4,
+            "resource_type": "course",
+            "resource_title": "机器学习基础",
+            "standard_level": 2.6,
+            "personal_evidence_strength": 0.617,
+            "contribution": 11.6
+          }
+        ],
+        "requirements": [
+          {
+            "knowledge_node_id": 11,
+            "name_zh": "科研数据分析",
+            "relation_type": "requires",
+            "required_level": 4.0,
+            "current_level": 2.7,
+            "readiness": 68.2,
+            "weight": 1.0
+          },
+          {
+            "knowledge_node_id": 9,
+            "name_zh": "Python 科学计算",
+            "relation_type": "supports",
+            "required_level": 2.0,
+            "current_level": 3.5,
+            "readiness": 100.0,
+            "weight": 0.4
+          }
+        ]
+      },
+      {
+        "id": 6,
+        "code": "C-LITERATURE",
+        "name_zh": "文献调研与证据综合",
+        "name_en": "Literature Review and Evidence Synthesis",
+        "category": "research",
+        "description": "完成系统检索、证据提取、观点比较和研究空白识别。",
+        "score": 35.9,
+        "estimated_level": 1.8,
+        "maturity": "基础掌握 / 需要指导",
+        "direct_evidence_score": 32.8,
+        "knowledge_readiness_score": 43.8,
+        "evidence_count": 1,
+        "trace": [
+          {
+            "evidence_id": 4,
+            "evidence_type": "project_participation",
+            "verification_status": "verified",
+            "resource_id": 5,
+            "resource_type": "project_task",
+            "resource_title": "微纳热输运数值模拟任务",
+            "standard_level": 3.0,
+            "personal_evidence_strength": 0.889,
+            "contribution": 32.8
+          }
+        ],
+        "requirements": [
+          {
+            "knowledge_node_id": 12,
+            "name_zh": "科研文献方法",
+            "relation_type": "requires",
+            "required_level": 4.0,
+            "current_level": 1.8,
+            "readiness": 43.8,
+            "weight": 1.0
+          }
+        ]
+      }
+    ],
+    "knowledge": [
+      {
+        "id": 5,
+        "code": "K-MICRO-HEAT",
+        "name_zh": "微纳尺度传热",
+        "name_en": "Micro/Nanoscale Heat Transfer",
+        "domain": "微纳热科学",
+        "node_type": "theory",
+        "score": 77.7,
+        "estimated_level": 3.9,
+        "maturity": "独立科研任务",
+        "evidence_count": 2,
+        "trace": [
+          {
+            "evidence_id": 4,
+            "evidence_type": "project_participation",
+            "verification_status": "verified",
+            "resource_id": 5,
+            "resource_type": "project_task",
+            "resource_title": "微纳热输运数值模拟任务",
+            "standard_level": 4.2,
+            "personal_evidence_strength": 0.889,
+            "contribution": 68.7
+          },
+          {
+            "evidence_id": 3,
+            "evidence_type": "book_reading",
+            "verification_status": "pending",
+            "resource_id": 3,
+            "resource_type": "book",
+            "resource_title": "Micro/Nanoscale Heat Transfer",
+            "standard_level": 4.5,
+            "personal_evidence_strength": 0.664,
+            "contribution": 28.7
+          }
+        ]
+      },
+      {
+        "id": 7,
+        "code": "K-NUM-FDM",
+        "name_zh": "有限差分法",
+        "name_en": "Finite Difference Method",
+        "domain": "数值方法",
+        "node_type": "method",
+        "score": 72.2,
+        "estimated_level": 3.6,
+        "maturity": "独立科研任务",
+        "evidence_count": 2,
+        "trace": [
+          {
+            "evidence_id": 2,
+            "evidence_type": "course_grade",
+            "verification_status": "verified",
+            "resource_id": 2,
+            "resource_type": "course",
+            "resource_title": "数值分析与工程计算",
+            "standard_level": 4.1,
+            "personal_evidence_strength": 0.942,
+            "contribution": 52.5
+          },
+          {
+            "evidence_id": 4,
+            "evidence_type": "project_participation",
+            "verification_status": "verified",
+            "resource_id": 5,
+            "resource_type": "project_task",
+            "resource_title": "微纳热输运数值模拟任务",
+            "standard_level": 3.4,
+            "personal_evidence_strength": 0.889,
+            "contribution": 41.6
+          }
+        ]
+      },
+      {
+        "id": 9,
+        "code": "K-PROG-PY",
+        "name_zh": "Python 科学计算",
+        "name_en": "Scientific Computing with Python",
+        "domain": "科研计算",
+        "node_type": "tool",
+        "score": 70.6,
+        "estimated_level": 3.5,
+        "maturity": "独立科研任务",
+        "evidence_count": 2,
+        "trace": [
+          {
+            "evidence_id": 4,
+            "evidence_type": "project_participation",
+            "verification_status": "verified",
+            "resource_id": 5,
+            "resource_type": "project_task",
+            "resource_title": "微纳热输运数值模拟任务",
+            "standard_level": 4.0,
+            "personal_evidence_strength": 0.889,
+            "contribution": 66.1
+          },
+          {
+            "evidence_id": 5,
+            "evidence_type": "course_grade",
+            "verification_status": "self_reported",
+            "resource_id": 4,
+            "resource_type": "course",
+            "resource_title": "机器学习基础",
+            "standard_level": 3.0,
+            "personal_evidence_strength": 0.617,
+            "contribution": 13.3
+          }
+        ]
+      },
+      {
+        "id": 6,
+        "code": "K-PHONON",
+        "name_zh": "声子输运",
+        "name_en": "Phonon Transport",
+        "domain": "微纳热科学",
+        "node_type": "theory",
+        "score": 61.5,
+        "estimated_level": 3.1,
+        "maturity": "常规任务 / 少量指导",
+        "evidence_count": 2,
+        "trace": [
+          {
+            "evidence_id": 4,
+            "evidence_type": "project_participation",
+            "verification_status": "verified",
+            "resource_id": 5,
+            "resource_type": "project_task",
+            "resource_title": "微纳热输运数值模拟任务",
+            "standard_level": 3.6,
+            "personal_evidence_strength": 0.889,
+            "contribution": 50.7
+          },
+          {
+            "evidence_id": 3,
+            "evidence_type": "book_reading",
+            "verification_status": "pending",
+            "resource_id": 3,
+            "resource_type": "book",
+            "resource_title": "Micro/Nanoscale Heat Transfer",
+            "standard_level": 4.0,
+            "personal_evidence_strength": 0.664,
+            "contribution": 22.0
+          }
+        ]
+      },
+      {
+        "id": 2,
+        "code": "K-HEAT-CONDUCTION",
+        "name_zh": "热传导",
+        "name_en": "Heat Conduction",
+        "domain": "传热学",
+        "node_type": "theory",
+        "score": 57.4,
+        "estimated_level": 2.9,
+        "maturity": "常规任务 / 少量指导",
+        "evidence_count": 2,
+        "trace": [
+          {
+            "evidence_id": 1,
+            "evidence_type": "course_grade",
+            "verification_status": "verified",
+            "resource_id": 1,
+            "resource_type": "course",
+            "resource_title": "传热学",
+            "standard_level": 4.2,
+            "personal_evidence_strength": 0.922,
+            "contribution": 52.7
+          },
+          {
+            "evidence_id": 3,
+            "evidence_type": "book_reading",
+            "verification_status": "pending",
+            "resource_id": 3,
+            "resource_type": "book",
+            "resource_title": "Micro/Nanoscale Heat Transfer",
+            "standard_level": 3.0,
+            "personal_evidence_strength": 0.664,
+            "contribution": 10.0
+          }
+        ]
+      },
+      {
+        "id": 11,
+        "code": "K-DATA-ANALYSIS",
+        "name_zh": "科研数据分析",
+        "name_en": "Research Data Analysis",
+        "domain": "科研方法",
+        "node_type": "method",
+        "score": 54.6,
+        "estimated_level": 2.7,
+        "maturity": "常规任务 / 少量指导",
+        "evidence_count": 2,
+        "trace": [
+          {
+            "evidence_id": 4,
+            "evidence_type": "project_participation",
+            "verification_status": "verified",
+            "resource_id": 5,
+            "resource_type": "project_task",
+            "resource_title": "微纳热输运数值模拟任务",
+            "standard_level": 3.4,
+            "personal_evidence_strength": 0.889,
+            "contribution": 43.5
+          },
+          {
+            "evidence_id": 5,
+            "evidence_type": "course_grade",
+            "verification_status": "self_reported",
+            "resource_id": 4,
+            "resource_type": "course",
+            "resource_title": "机器学习基础",
+            "standard_level": 3.1,
+            "personal_evidence_strength": 0.617,
+            "contribution": 19.6
+          }
+        ]
+      },
+      {
+        "id": 3,
+        "code": "K-HEAT-CONVECTION",
+        "name_zh": "对流换热",
+        "name_en": "Convective Heat Transfer",
+        "domain": "传热学",
+        "node_type": "theory",
+        "score": 50.2,
+        "estimated_level": 2.5,
+        "maturity": "常规任务 / 少量指导",
+        "evidence_count": 1,
+        "trace": [
+          {
+            "evidence_id": 1,
+            "evidence_type": "course_grade",
+            "verification_status": "verified",
+            "resource_id": 1,
+            "resource_type": "course",
+            "resource_title": "传热学",
+            "standard_level": 4.0,
+            "personal_evidence_strength": 0.922,
+            "contribution": 50.2
+          }
+        ]
+      },
+      {
+        "id": 13,
+        "code": "K-ML-BASE",
+        "name_zh": "机器学习基础",
+        "name_en": "Machine Learning Fundamentals",
+        "domain": "人工智能",
+        "node_type": "method",
+        "score": 36.3,
+        "estimated_level": 1.8,
+        "maturity": "基础掌握 / 需要指导",
+        "evidence_count": 1,
+        "trace": [
+          {
+            "evidence_id": 5,
+            "evidence_type": "course_grade",
+            "verification_status": "self_reported",
+            "resource_id": 4,
+            "resource_type": "course",
+            "resource_title": "机器学习基础",
+            "standard_level": 4.2,
+            "personal_evidence_strength": 0.617,
+            "contribution": 36.3
+          }
+        ]
+      },
+      {
+        "id": 12,
+        "code": "K-RESEARCH-LIT",
+        "name_zh": "科研文献方法",
+        "name_en": "Research Literature Methods",
+        "domain": "科研方法",
+        "node_type": "practice",
+        "score": 35.0,
+        "estimated_level": 1.8,
+        "maturity": "基础掌握 / 需要指导",
+        "evidence_count": 1,
+        "trace": [
+          {
+            "evidence_id": 4,
+            "evidence_type": "project_participation",
+            "verification_status": "verified",
+            "resource_id": 5,
+            "resource_type": "project_task",
+            "resource_title": "微纳热输运数值模拟任务",
+            "standard_level": 3.2,
+            "personal_evidence_strength": 0.889,
+            "contribution": 35.0
+          }
+        ]
+      },
+      {
+        "id": 1,
+        "code": "K-MATH-PDE",
+        "name_zh": "偏微分方程",
+        "name_en": "Partial Differential Equations",
+        "domain": "数学基础",
+        "node_type": "theory",
+        "score": 31.3,
+        "estimated_level": 1.6,
+        "maturity": "基础掌握 / 需要指导",
+        "evidence_count": 1,
+        "trace": [
+          {
+            "evidence_id": 2,
+            "evidence_type": "course_grade",
+            "verification_status": "verified",
+            "resource_id": 2,
+            "resource_type": "course",
+            "resource_title": "数值分析与工程计算",
+            "standard_level": 3.2,
+            "personal_evidence_strength": 0.942,
+            "contribution": 31.3
+          }
+        ]
+      },
+      {
+        "id": 8,
+        "code": "K-NUM-FEM",
+        "name_zh": "有限元法",
+        "name_en": "Finite Element Method",
+        "domain": "数值方法",
+        "node_type": "method",
+        "score": 27.1,
+        "estimated_level": 1.4,
+        "maturity": "接触或待补齐",
+        "evidence_count": 1,
+        "trace": [
+          {
+            "evidence_id": 2,
+            "evidence_type": "course_grade",
+            "verification_status": "verified",
+            "resource_id": 2,
+            "resource_type": "course",
+            "resource_title": "数值分析与工程计算",
+            "standard_level": 3.0,
+            "personal_evidence_strength": 0.942,
+            "contribution": 27.1
+          }
+        ]
+      },
+      {
+        "id": 4,
+        "code": "K-MAT-THERMO",
+        "name_zh": "材料热物性",
+        "name_en": "Thermophysical Properties of Materials",
+        "domain": "材料与能源",
+        "node_type": "concept",
+        "score": 26.4,
+        "estimated_level": 1.3,
+        "maturity": "接触或待补齐",
+        "evidence_count": 2,
+        "trace": [
+          {
+            "evidence_id": 1,
+            "evidence_type": "course_grade",
+            "verification_status": "verified",
+            "resource_id": 1,
+            "resource_type": "course",
+            "resource_title": "传热学",
+            "standard_level": 2.4,
+            "personal_evidence_strength": 0.922,
+            "contribution": 18.6
+          },
+          {
+            "evidence_id": 3,
+            "evidence_type": "book_reading",
+            "verification_status": "pending",
+            "resource_id": 3,
+            "resource_type": "book",
+            "resource_title": "Micro/Nanoscale Heat Transfer",
+            "standard_level": 3.0,
+            "personal_evidence_strength": 0.664,
+            "contribution": 9.6
+          }
+        ]
+      },
+      {
+        "id": 18,
+        "code": "K-DL",
+        "name_zh": "深度学习基础",
+        "name_en": "Deep Learning Fundamentals",
+        "domain": "人工智能",
+        "node_type": "method",
+        "score": 0.0,
+        "estimated_level": 0.0,
+        "maturity": "接触或待补齐",
+        "evidence_count": 0,
+        "trace": []
+      },
+      {
+        "id": 19,
+        "code": "K-GNN",
+        "name_zh": "图神经网络",
+        "name_en": "Graph Neural Networks",
+        "domain": "人工智能",
+        "node_type": "method",
+        "score": 0.0,
+        "estimated_level": 0.0,
+        "maturity": "接触或待补齐",
+        "evidence_count": 0,
+        "trace": []
+      },
+      {
+        "id": 14,
+        "code": "K-WELD-LASER",
+        "name_zh": "激光焊接",
+        "name_en": "Laser Welding",
+        "domain": "焊接工程",
+        "node_type": "theory",
+        "score": 0.0,
+        "estimated_level": 0.0,
+        "maturity": "接触或待补齐",
+        "evidence_count": 0,
+        "trace": []
+      },
+      {
+        "id": 15,
+        "code": "K-WELD-DEFECT",
+        "name_zh": "焊接缺陷与气孔",
+        "name_en": "Welding Defects and Porosity",
+        "domain": "焊接工程",
+        "node_type": "concept",
+        "score": 0.0,
+        "estimated_level": 0.0,
+        "maturity": "接触或待补齐",
+        "evidence_count": 0,
+        "trace": []
+      },
+      {
+        "id": 16,
+        "code": "K-STAT-PHYS",
+        "name_zh": "统计物理",
+        "name_en": "Statistical Physics",
+        "domain": "物理基础",
+        "node_type": "theory",
+        "score": 0.0,
+        "estimated_level": 0.0,
+        "maturity": "接触或待补齐",
+        "evidence_count": 0,
+        "trace": []
+      },
+      {
+        "id": 20,
+        "code": "K-CHIP-THERM",
+        "name_zh": "芯片热管理",
+        "name_en": "Chip Thermal Management",
+        "domain": "电子热科学",
+        "node_type": "practice",
+        "score": 0.0,
+        "estimated_level": 0.0,
+        "maturity": "接触或待补齐",
+        "evidence_count": 0,
+        "trace": []
+      },
+      {
+        "id": 10,
+        "code": "K-SIM-COMSOL",
+        "name_zh": "COMSOL 多物理场",
+        "name_en": "COMSOL Multiphysics",
+        "domain": "科研计算",
+        "node_type": "tool",
+        "score": 0.0,
+        "estimated_level": 0.0,
+        "maturity": "接触或待补齐",
+        "evidence_count": 0,
+        "trace": []
+      },
+      {
+        "id": 17,
+        "code": "K-MD",
+        "name_zh": "分子动力学",
+        "name_en": "Molecular Dynamics",
+        "domain": "计算材料",
+        "node_type": "method",
+        "score": 0.0,
+        "estimated_level": 0.0,
+        "maturity": "接触或待补齐",
+        "evidence_count": 0,
+        "trace": []
+      }
+    ],
+    "knowledge_domains": [
+      {
+        "domain": "科研计算",
+        "node_count": 2,
+        "evidenced_nodes": 1,
+        "average_score": 70.6,
+        "nodes": [
+          {
+            "id": 9,
+            "code": "K-PROG-PY",
+            "name_zh": "Python 科学计算",
+            "name_en": "Scientific Computing with Python",
+            "domain": "科研计算",
+            "node_type": "tool",
+            "score": 70.6,
+            "estimated_level": 3.5,
+            "maturity": "独立科研任务",
+            "evidence_count": 2,
+            "trace": [
+              {
+                "evidence_id": 4,
+                "evidence_type": "project_participation",
+                "verification_status": "verified",
+                "resource_id": 5,
+                "resource_type": "project_task",
+                "resource_title": "微纳热输运数值模拟任务",
+                "standard_level": 4.0,
+                "personal_evidence_strength": 0.889,
+                "contribution": 66.1
+              },
+              {
+                "evidence_id": 5,
+                "evidence_type": "course_grade",
+                "verification_status": "self_reported",
+                "resource_id": 4,
+                "resource_type": "course",
+                "resource_title": "机器学习基础",
+                "standard_level": 3.0,
+                "personal_evidence_strength": 0.617,
+                "contribution": 13.3
+              }
+            ]
+          },
+          {
+            "id": 10,
+            "code": "K-SIM-COMSOL",
+            "name_zh": "COMSOL 多物理场",
+            "name_en": "COMSOL Multiphysics",
+            "domain": "科研计算",
+            "node_type": "tool",
+            "score": 0.0,
+            "estimated_level": 0.0,
+            "maturity": "接触或待补齐",
+            "evidence_count": 0,
+            "trace": []
+          }
+        ]
+      },
+      {
+        "domain": "微纳热科学",
+        "node_count": 2,
+        "evidenced_nodes": 2,
+        "average_score": 69.6,
+        "nodes": [
+          {
+            "id": 5,
+            "code": "K-MICRO-HEAT",
+            "name_zh": "微纳尺度传热",
+            "name_en": "Micro/Nanoscale Heat Transfer",
+            "domain": "微纳热科学",
+            "node_type": "theory",
+            "score": 77.7,
+            "estimated_level": 3.9,
+            "maturity": "独立科研任务",
+            "evidence_count": 2,
+            "trace": [
+              {
+                "evidence_id": 4,
+                "evidence_type": "project_participation",
+                "verification_status": "verified",
+                "resource_id": 5,
+                "resource_type": "project_task",
+                "resource_title": "微纳热输运数值模拟任务",
+                "standard_level": 4.2,
+                "personal_evidence_strength": 0.889,
+                "contribution": 68.7
+              },
+              {
+                "evidence_id": 3,
+                "evidence_type": "book_reading",
+                "verification_status": "pending",
+                "resource_id": 3,
+                "resource_type": "book",
+                "resource_title": "Micro/Nanoscale Heat Transfer",
+                "standard_level": 4.5,
+                "personal_evidence_strength": 0.664,
+                "contribution": 28.7
+              }
+            ]
+          },
+          {
+            "id": 6,
+            "code": "K-PHONON",
+            "name_zh": "声子输运",
+            "name_en": "Phonon Transport",
+            "domain": "微纳热科学",
+            "node_type": "theory",
+            "score": 61.5,
+            "estimated_level": 3.1,
+            "maturity": "常规任务 / 少量指导",
+            "evidence_count": 2,
+            "trace": [
+              {
+                "evidence_id": 4,
+                "evidence_type": "project_participation",
+                "verification_status": "verified",
+                "resource_id": 5,
+                "resource_type": "project_task",
+                "resource_title": "微纳热输运数值模拟任务",
+                "standard_level": 3.6,
+                "personal_evidence_strength": 0.889,
+                "contribution": 50.7
+              },
+              {
+                "evidence_id": 3,
+                "evidence_type": "book_reading",
+                "verification_status": "pending",
+                "resource_id": 3,
+                "resource_type": "book",
+                "resource_title": "Micro/Nanoscale Heat Transfer",
+                "standard_level": 4.0,
+                "personal_evidence_strength": 0.664,
+                "contribution": 22.0
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "domain": "传热学",
+        "node_count": 2,
+        "evidenced_nodes": 2,
+        "average_score": 53.8,
+        "nodes": [
+          {
+            "id": 2,
+            "code": "K-HEAT-CONDUCTION",
+            "name_zh": "热传导",
+            "name_en": "Heat Conduction",
+            "domain": "传热学",
+            "node_type": "theory",
+            "score": 57.4,
+            "estimated_level": 2.9,
+            "maturity": "常规任务 / 少量指导",
+            "evidence_count": 2,
+            "trace": [
+              {
+                "evidence_id": 1,
+                "evidence_type": "course_grade",
+                "verification_status": "verified",
+                "resource_id": 1,
+                "resource_type": "course",
+                "resource_title": "传热学",
+                "standard_level": 4.2,
+                "personal_evidence_strength": 0.922,
+                "contribution": 52.7
+              },
+              {
+                "evidence_id": 3,
+                "evidence_type": "book_reading",
+                "verification_status": "pending",
+                "resource_id": 3,
+                "resource_type": "book",
+                "resource_title": "Micro/Nanoscale Heat Transfer",
+                "standard_level": 3.0,
+                "personal_evidence_strength": 0.664,
+                "contribution": 10.0
+              }
+            ]
+          },
+          {
+            "id": 3,
+            "code": "K-HEAT-CONVECTION",
+            "name_zh": "对流换热",
+            "name_en": "Convective Heat Transfer",
+            "domain": "传热学",
+            "node_type": "theory",
+            "score": 50.2,
+            "estimated_level": 2.5,
+            "maturity": "常规任务 / 少量指导",
+            "evidence_count": 1,
+            "trace": [
+              {
+                "evidence_id": 1,
+                "evidence_type": "course_grade",
+                "verification_status": "verified",
+                "resource_id": 1,
+                "resource_type": "course",
+                "resource_title": "传热学",
+                "standard_level": 4.0,
+                "personal_evidence_strength": 0.922,
+                "contribution": 50.2
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "domain": "数值方法",
+        "node_count": 2,
+        "evidenced_nodes": 2,
+        "average_score": 49.7,
+        "nodes": [
+          {
+            "id": 7,
+            "code": "K-NUM-FDM",
+            "name_zh": "有限差分法",
+            "name_en": "Finite Difference Method",
+            "domain": "数值方法",
+            "node_type": "method",
+            "score": 72.2,
+            "estimated_level": 3.6,
+            "maturity": "独立科研任务",
+            "evidence_count": 2,
+            "trace": [
+              {
+                "evidence_id": 2,
+                "evidence_type": "course_grade",
+                "verification_status": "verified",
+                "resource_id": 2,
+                "resource_type": "course",
+                "resource_title": "数值分析与工程计算",
+                "standard_level": 4.1,
+                "personal_evidence_strength": 0.942,
+                "contribution": 52.5
+              },
+              {
+                "evidence_id": 4,
+                "evidence_type": "project_participation",
+                "verification_status": "verified",
+                "resource_id": 5,
+                "resource_type": "project_task",
+                "resource_title": "微纳热输运数值模拟任务",
+                "standard_level": 3.4,
+                "personal_evidence_strength": 0.889,
+                "contribution": 41.6
+              }
+            ]
+          },
+          {
+            "id": 8,
+            "code": "K-NUM-FEM",
+            "name_zh": "有限元法",
+            "name_en": "Finite Element Method",
+            "domain": "数值方法",
+            "node_type": "method",
+            "score": 27.1,
+            "estimated_level": 1.4,
+            "maturity": "接触或待补齐",
+            "evidence_count": 1,
+            "trace": [
+              {
+                "evidence_id": 2,
+                "evidence_type": "course_grade",
+                "verification_status": "verified",
+                "resource_id": 2,
+                "resource_type": "course",
+                "resource_title": "数值分析与工程计算",
+                "standard_level": 3.0,
+                "personal_evidence_strength": 0.942,
+                "contribution": 27.1
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "domain": "科研方法",
+        "node_count": 2,
+        "evidenced_nodes": 2,
+        "average_score": 44.8,
+        "nodes": [
+          {
+            "id": 11,
+            "code": "K-DATA-ANALYSIS",
+            "name_zh": "科研数据分析",
+            "name_en": "Research Data Analysis",
+            "domain": "科研方法",
+            "node_type": "method",
+            "score": 54.6,
+            "estimated_level": 2.7,
+            "maturity": "常规任务 / 少量指导",
+            "evidence_count": 2,
+            "trace": [
+              {
+                "evidence_id": 4,
+                "evidence_type": "project_participation",
+                "verification_status": "verified",
+                "resource_id": 5,
+                "resource_type": "project_task",
+                "resource_title": "微纳热输运数值模拟任务",
+                "standard_level": 3.4,
+                "personal_evidence_strength": 0.889,
+                "contribution": 43.5
+              },
+              {
+                "evidence_id": 5,
+                "evidence_type": "course_grade",
+                "verification_status": "self_reported",
+                "resource_id": 4,
+                "resource_type": "course",
+                "resource_title": "机器学习基础",
+                "standard_level": 3.1,
+                "personal_evidence_strength": 0.617,
+                "contribution": 19.6
+              }
+            ]
+          },
+          {
+            "id": 12,
+            "code": "K-RESEARCH-LIT",
+            "name_zh": "科研文献方法",
+            "name_en": "Research Literature Methods",
+            "domain": "科研方法",
+            "node_type": "practice",
+            "score": 35.0,
+            "estimated_level": 1.8,
+            "maturity": "基础掌握 / 需要指导",
+            "evidence_count": 1,
+            "trace": [
+              {
+                "evidence_id": 4,
+                "evidence_type": "project_participation",
+                "verification_status": "verified",
+                "resource_id": 5,
+                "resource_type": "project_task",
+                "resource_title": "微纳热输运数值模拟任务",
+                "standard_level": 3.2,
+                "personal_evidence_strength": 0.889,
+                "contribution": 35.0
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "domain": "人工智能",
+        "node_count": 3,
+        "evidenced_nodes": 1,
+        "average_score": 36.3,
+        "nodes": [
+          {
+            "id": 13,
+            "code": "K-ML-BASE",
+            "name_zh": "机器学习基础",
+            "name_en": "Machine Learning Fundamentals",
+            "domain": "人工智能",
+            "node_type": "method",
+            "score": 36.3,
+            "estimated_level": 1.8,
+            "maturity": "基础掌握 / 需要指导",
+            "evidence_count": 1,
+            "trace": [
+              {
+                "evidence_id": 5,
+                "evidence_type": "course_grade",
+                "verification_status": "self_reported",
+                "resource_id": 4,
+                "resource_type": "course",
+                "resource_title": "机器学习基础",
+                "standard_level": 4.2,
+                "personal_evidence_strength": 0.617,
+                "contribution": 36.3
+              }
+            ]
+          },
+          {
+            "id": 18,
+            "code": "K-DL",
+            "name_zh": "深度学习基础",
+            "name_en": "Deep Learning Fundamentals",
+            "domain": "人工智能",
+            "node_type": "method",
+            "score": 0.0,
+            "estimated_level": 0.0,
+            "maturity": "接触或待补齐",
+            "evidence_count": 0,
+            "trace": []
+          },
+          {
+            "id": 19,
+            "code": "K-GNN",
+            "name_zh": "图神经网络",
+            "name_en": "Graph Neural Networks",
+            "domain": "人工智能",
+            "node_type": "method",
+            "score": 0.0,
+            "estimated_level": 0.0,
+            "maturity": "接触或待补齐",
+            "evidence_count": 0,
+            "trace": []
+          }
+        ]
+      },
+      {
+        "domain": "数学基础",
+        "node_count": 1,
+        "evidenced_nodes": 1,
+        "average_score": 31.3,
+        "nodes": [
+          {
+            "id": 1,
+            "code": "K-MATH-PDE",
+            "name_zh": "偏微分方程",
+            "name_en": "Partial Differential Equations",
+            "domain": "数学基础",
+            "node_type": "theory",
+            "score": 31.3,
+            "estimated_level": 1.6,
+            "maturity": "基础掌握 / 需要指导",
+            "evidence_count": 1,
+            "trace": [
+              {
+                "evidence_id": 2,
+                "evidence_type": "course_grade",
+                "verification_status": "verified",
+                "resource_id": 2,
+                "resource_type": "course",
+                "resource_title": "数值分析与工程计算",
+                "standard_level": 3.2,
+                "personal_evidence_strength": 0.942,
+                "contribution": 31.3
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "domain": "材料与能源",
+        "node_count": 1,
+        "evidenced_nodes": 1,
+        "average_score": 26.4,
+        "nodes": [
+          {
+            "id": 4,
+            "code": "K-MAT-THERMO",
+            "name_zh": "材料热物性",
+            "name_en": "Thermophysical Properties of Materials",
+            "domain": "材料与能源",
+            "node_type": "concept",
+            "score": 26.4,
+            "estimated_level": 1.3,
+            "maturity": "接触或待补齐",
+            "evidence_count": 2,
+            "trace": [
+              {
+                "evidence_id": 1,
+                "evidence_type": "course_grade",
+                "verification_status": "verified",
+                "resource_id": 1,
+                "resource_type": "course",
+                "resource_title": "传热学",
+                "standard_level": 2.4,
+                "personal_evidence_strength": 0.922,
+                "contribution": 18.6
+              },
+              {
+                "evidence_id": 3,
+                "evidence_type": "book_reading",
+                "verification_status": "pending",
+                "resource_id": 3,
+                "resource_type": "book",
+                "resource_title": "Micro/Nanoscale Heat Transfer",
+                "standard_level": 3.0,
+                "personal_evidence_strength": 0.664,
+                "contribution": 9.6
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "domain": "焊接工程",
+        "node_count": 2,
+        "evidenced_nodes": 0,
+        "average_score": 0.0,
+        "nodes": [
+          {
+            "id": 14,
+            "code": "K-WELD-LASER",
+            "name_zh": "激光焊接",
+            "name_en": "Laser Welding",
+            "domain": "焊接工程",
+            "node_type": "theory",
+            "score": 0.0,
+            "estimated_level": 0.0,
+            "maturity": "接触或待补齐",
+            "evidence_count": 0,
+            "trace": []
+          },
+          {
+            "id": 15,
+            "code": "K-WELD-DEFECT",
+            "name_zh": "焊接缺陷与气孔",
+            "name_en": "Welding Defects and Porosity",
+            "domain": "焊接工程",
+            "node_type": "concept",
+            "score": 0.0,
+            "estimated_level": 0.0,
+            "maturity": "接触或待补齐",
+            "evidence_count": 0,
+            "trace": []
+          }
+        ]
+      },
+      {
+        "domain": "物理基础",
+        "node_count": 1,
+        "evidenced_nodes": 0,
+        "average_score": 0.0,
+        "nodes": [
+          {
+            "id": 16,
+            "code": "K-STAT-PHYS",
+            "name_zh": "统计物理",
+            "name_en": "Statistical Physics",
+            "domain": "物理基础",
+            "node_type": "theory",
+            "score": 0.0,
+            "estimated_level": 0.0,
+            "maturity": "接触或待补齐",
+            "evidence_count": 0,
+            "trace": []
+          }
+        ]
+      },
+      {
+        "domain": "电子热科学",
+        "node_count": 1,
+        "evidenced_nodes": 0,
+        "average_score": 0.0,
+        "nodes": [
+          {
+            "id": 20,
+            "code": "K-CHIP-THERM",
+            "name_zh": "芯片热管理",
+            "name_en": "Chip Thermal Management",
+            "domain": "电子热科学",
+            "node_type": "practice",
+            "score": 0.0,
+            "estimated_level": 0.0,
+            "maturity": "接触或待补齐",
+            "evidence_count": 0,
+            "trace": []
+          }
+        ]
+      },
+      {
+        "domain": "计算材料",
+        "node_count": 1,
+        "evidenced_nodes": 0,
+        "average_score": 0.0,
+        "nodes": [
+          {
+            "id": 17,
+            "code": "K-MD",
+            "name_zh": "分子动力学",
+            "name_en": "Molecular Dynamics",
+            "domain": "计算材料",
+            "node_type": "method",
+            "score": 0.0,
+            "estimated_level": 0.0,
+            "maturity": "接触或待补齐",
+            "evidence_count": 0,
+            "trace": []
+          }
+        ]
+      }
+    ],
+    "capabilities": [
+      {
+        "id": 3,
+        "code": "C-PYTHON",
+        "name_zh": "Python 科研计算",
+        "name_en": "Python for Research Computing",
+        "category": "computation",
+        "description": "独立编写科研计算、数据处理与可复现脚本。",
+        "score": 74.0,
+        "estimated_level": 3.7,
+        "maturity": "独立科研任务",
+        "direct_evidence_score": 68.5,
+        "knowledge_readiness_score": 88.2,
+        "evidence_count": 1,
+        "trace": [
+          {
+            "evidence_id": 4,
+            "evidence_type": "project_participation",
+            "verification_status": "verified",
+            "resource_id": 5,
+            "resource_type": "project_task",
+            "resource_title": "微纳热输运数值模拟任务",
+            "standard_level": 4.1,
+            "personal_evidence_strength": 0.889,
+            "contribution": 68.5
+          }
+        ],
+        "requirements": [
+          {
+            "knowledge_node_id": 9,
+            "name_zh": "Python 科学计算",
+            "relation_type": "requires",
+            "required_level": 4.0,
+            "current_level": 3.5,
+            "readiness": 88.2,
+            "weight": 1.0
+          }
+        ]
+      },
+      {
+        "id": 2,
+        "code": "C-NUM-MODEL",
+        "name_zh": "数值建模与求解",
+        "name_en": "Numerical Modeling and Solving",
+        "category": "methodology",
+        "description": "把科研问题转化为可计算模型并选择数值方法。",
+        "score": 71.9,
+        "estimated_level": 3.6,
+        "maturity": "独立科研任务",
+        "direct_evidence_score": 80.0,
+        "knowledge_readiness_score": 50.9,
+        "evidence_count": 2,
+        "trace": [
+          {
+            "evidence_id": 4,
+            "evidence_type": "project_participation",
+            "verification_status": "verified",
+            "resource_id": 5,
+            "resource_type": "project_task",
+            "resource_title": "微纳热输运数值模拟任务",
+            "standard_level": 4.0,
+            "personal_evidence_strength": 0.889,
+            "contribution": 65.4
+          },
+          {
+            "evidence_id": 2,
+            "evidence_type": "course_grade",
+            "verification_status": "verified",
+            "resource_id": 2,
+            "resource_type": "course",
+            "resource_title": "数值分析与工程计算",
+            "standard_level": 3.4,
+            "personal_evidence_strength": 0.942,
+            "contribution": 42.3
+          }
+        ],
+        "requirements": [
+          {
+            "knowledge_node_id": 1,
+            "name_zh": "偏微分方程",
+            "relation_type": "requires",
+            "required_level": 3.0,
+            "current_level": 1.6,
+            "readiness": 52.2,
+            "weight": 0.8
+          },
+          {
+            "knowledge_node_id": 7,
+            "name_zh": "有限差分法",
+            "relation_type": "supports",
+            "required_level": 3.0,
+            "current_level": 3.6,
+            "readiness": 100.0,
+            "weight": 0.8
+          },
+          {
+            "knowledge_node_id": 8,
+            "name_zh": "有限元法",
+            "relation_type": "supports",
+            "required_level": 3.0,
+            "current_level": 1.4,
+            "readiness": 45.2,
+            "weight": 0.8
+          },
+          {
+            "knowledge_node_id": 17,
+            "name_zh": "分子动力学",
+            "relation_type": "supports",
+            "required_level": 3.0,
+            "current_level": 0.0,
+            "readiness": 0.0,
+            "weight": 0.7
+          }
+        ]
+      },
+      {
+        "id": 1,
+        "code": "C-HEAT-THEORY",
+        "name_zh": "传热理论分析",
+        "name_en": "Heat-transfer Theoretical Analysis",
+        "category": "theory",
+        "description": "建立热过程物理假设并进行理论分析。",
+        "score": 68.5,
+        "estimated_level": 3.4,
+        "maturity": "常规任务 / 少量指导",
+        "direct_evidence_score": 73.5,
+        "knowledge_readiness_score": 55.7,
+        "evidence_count": 3,
+        "trace": [
+          {
+            "evidence_id": 4,
+            "evidence_type": "project_participation",
+            "verification_status": "verified",
+            "resource_id": 5,
+            "resource_type": "project_task",
+            "resource_title": "微纳热输运数值模拟任务",
+            "standard_level": 3.7,
+            "personal_evidence_strength": 0.889,
+            "contribution": 47.3
+          },
+          {
+            "evidence_id": 1,
+            "evidence_type": "course_grade",
+            "verification_status": "verified",
+            "resource_id": 1,
+            "resource_type": "course",
+            "resource_title": "传热学",
+            "standard_level": 3.5,
+            "personal_evidence_strength": 0.922,
+            "contribution": 42.0
+          },
+          {
+            "evidence_id": 3,
+            "evidence_type": "book_reading",
+            "verification_status": "pending",
+            "resource_id": 3,
+            "resource_type": "book",
+            "resource_title": "Micro/Nanoscale Heat Transfer",
+            "standard_level": 3.0,
+            "personal_evidence_strength": 0.664,
+            "contribution": 13.4
+          }
+        ],
+        "requirements": [
+          {
+            "knowledge_node_id": 2,
+            "name_zh": "热传导",
+            "relation_type": "requires",
+            "required_level": 4.0,
+            "current_level": 2.9,
+            "readiness": 71.8,
+            "weight": 1.0
+          },
+          {
+            "knowledge_node_id": 3,
+            "name_zh": "对流换热",
+            "relation_type": "requires",
+            "required_level": 3.0,
+            "current_level": 2.5,
+            "readiness": 83.7,
+            "weight": 0.8
+          },
+          {
+            "knowledge_node_id": 4,
+            "name_zh": "材料热物性",
+            "relation_type": "supports",
+            "required_level": 3.0,
+            "current_level": 1.3,
+            "readiness": 44.0,
+            "weight": 0.6
+          },
+          {
+            "knowledge_node_id": 5,
+            "name_zh": "微纳尺度传热",
+            "relation_type": "supports",
+            "required_level": 3.0,
+            "current_level": 3.9,
+            "readiness": 100.0,
+            "weight": 0.8
+          },
+          {
+            "knowledge_node_id": 16,
+            "name_zh": "统计物理",
+            "relation_type": "supports",
+            "required_level": 2.5,
+            "current_level": 0.0,
+            "readiness": 0.0,
+            "weight": 0.5
+          },
+          {
+            "knowledge_node_id": 20,
+            "name_zh": "芯片热管理",
+            "relation_type": "supports",
+            "required_level": 3.0,
+            "current_level": 0.0,
+            "readiness": 0.0,
+            "weight": 0.7
+          }
+        ]
+      },
+      {
+        "id": 5,
+        "code": "C-DATA",
+        "name_zh": "科研数据分析",
+        "name_en": "Research Data Analysis",
+        "category": "research",
+        "description": "对实验或仿真数据进行清洗、拟合、误差分析和解释。",
+        "score": 57.6,
+        "estimated_level": 2.9,
+        "maturity": "常规任务 / 少量指导",
+        "direct_evidence_score": 50.0,
+        "knowledge_readiness_score": 77.3,
+        "evidence_count": 2,
+        "trace": [
+          {
+            "evidence_id": 4,
+            "evidence_type": "project_participation",
+            "verification_status": "verified",
+            "resource_id": 5,
+            "resource_type": "project_task",
+            "resource_title": "微纳热输运数值模拟任务",
+            "standard_level": 3.4,
+            "personal_evidence_strength": 0.889,
+            "contribution": 43.5
+          },
+          {
+            "evidence_id": 5,
+            "evidence_type": "course_grade",
+            "verification_status": "self_reported",
+            "resource_id": 4,
+            "resource_type": "course",
+            "resource_title": "机器学习基础",
+            "standard_level": 2.6,
+            "personal_evidence_strength": 0.617,
+            "contribution": 11.6
+          }
+        ],
+        "requirements": [
+          {
+            "knowledge_node_id": 11,
+            "name_zh": "科研数据分析",
+            "relation_type": "requires",
+            "required_level": 4.0,
+            "current_level": 2.7,
+            "readiness": 68.2,
+            "weight": 1.0
+          },
+          {
+            "knowledge_node_id": 9,
+            "name_zh": "Python 科学计算",
+            "relation_type": "supports",
+            "required_level": 2.0,
+            "current_level": 3.5,
+            "readiness": 100.0,
+            "weight": 0.4
+          }
+        ]
+      },
+      {
+        "id": 6,
+        "code": "C-LITERATURE",
+        "name_zh": "文献调研与证据综合",
+        "name_en": "Literature Review and Evidence Synthesis",
+        "category": "research",
+        "description": "完成系统检索、证据提取、观点比较和研究空白识别。",
+        "score": 35.9,
+        "estimated_level": 1.8,
+        "maturity": "基础掌握 / 需要指导",
+        "direct_evidence_score": 32.8,
+        "knowledge_readiness_score": 43.8,
+        "evidence_count": 1,
+        "trace": [
+          {
+            "evidence_id": 4,
+            "evidence_type": "project_participation",
+            "verification_status": "verified",
+            "resource_id": 5,
+            "resource_type": "project_task",
+            "resource_title": "微纳热输运数值模拟任务",
+            "standard_level": 3.0,
+            "personal_evidence_strength": 0.889,
+            "contribution": 32.8
+          }
+        ],
+        "requirements": [
+          {
+            "knowledge_node_id": 12,
+            "name_zh": "科研文献方法",
+            "relation_type": "requires",
+            "required_level": 4.0,
+            "current_level": 1.8,
+            "readiness": 43.8,
+            "weight": 1.0
+          }
+        ]
+      },
+      {
+        "id": 7,
+        "code": "C-ML-RESEARCH",
+        "name_zh": "科研机器学习",
+        "name_en": "Machine Learning for Research",
+        "category": "computation",
+        "description": "将机器学习用于科研数据建模并正确评估泛化性能。",
+        "score": 28.4,
+        "estimated_level": 1.4,
+        "maturity": "接触或待补齐",
+        "direct_evidence_score": 22.0,
+        "knowledge_readiness_score": 44.8,
+        "evidence_count": 1,
+        "trace": [
+          {
+            "evidence_id": 5,
+            "evidence_type": "course_grade",
+            "verification_status": "self_reported",
+            "resource_id": 4,
+            "resource_type": "course",
+            "resource_title": "机器学习基础",
+            "standard_level": 3.0,
+            "personal_evidence_strength": 0.617,
+            "contribution": 22.0
+          }
+        ],
+        "requirements": [
+          {
+            "knowledge_node_id": 13,
+            "name_zh": "机器学习基础",
+            "relation_type": "requires",
+            "required_level": 4.0,
+            "current_level": 1.8,
+            "readiness": 45.4,
+            "weight": 1.0
+          },
+          {
+            "knowledge_node_id": 11,
+            "name_zh": "科研数据分析",
+            "relation_type": "requires",
+            "required_level": 3.0,
+            "current_level": 2.7,
+            "readiness": 91.0,
+            "weight": 0.7
+          },
+          {
+            "knowledge_node_id": 9,
+            "name_zh": "Python 科学计算",
+            "relation_type": "supports",
+            "required_level": 3.0,
+            "current_level": 3.5,
+            "readiness": 100.0,
+            "weight": 0.7
+          },
+          {
+            "knowledge_node_id": 18,
+            "name_zh": "深度学习基础",
+            "relation_type": "supports",
+            "required_level": 3.5,
+            "current_level": 0.0,
+            "readiness": 0.0,
+            "weight": 0.8
+          },
+          {
+            "knowledge_node_id": 19,
+            "name_zh": "图神经网络",
+            "relation_type": "supports",
+            "required_level": 3.5,
+            "current_level": 0.0,
+            "readiness": 0.0,
+            "weight": 0.8
+          }
+        ]
+      },
+      {
+        "id": 4,
+        "code": "C-COMSOL",
+        "name_zh": "多物理场仿真",
+        "name_en": "Multiphysics Simulation",
+        "category": "computation",
+        "description": "使用多物理场软件完成模型、网格、求解与结果验证。",
+        "score": 8.4,
+        "estimated_level": 0.4,
+        "maturity": "接触或待补齐",
+        "direct_evidence_score": 0.0,
+        "knowledge_readiness_score": 18.6,
+        "evidence_count": 0,
+        "trace": [],
+        "requirements": [
+          {
+            "knowledge_node_id": 10,
+            "name_zh": "COMSOL 多物理场",
+            "relation_type": "requires",
+            "required_level": 4.0,
+            "current_level": 0.0,
+            "readiness": 0.0,
+            "weight": 1.0
+          },
+          {
+            "knowledge_node_id": 8,
+            "name_zh": "有限元法",
+            "relation_type": "supports",
+            "required_level": 3.0,
+            "current_level": 1.4,
+            "readiness": 45.2,
+            "weight": 0.7
+          }
+        ]
+      },
+      {
+        "id": 8,
+        "code": "C-WELD-PROCESS",
+        "name_zh": "焊接工艺与缺陷分析",
+        "name_en": "Welding Process and Defect Analysis",
+        "category": "experiment",
+        "description": "结合工艺参数、组织和缺陷证据分析焊接问题。",
+        "score": 8.2,
+        "estimated_level": 0.4,
+        "maturity": "接触或待补齐",
+        "direct_evidence_score": 0.0,
+        "knowledge_readiness_score": 18.2,
+        "evidence_count": 0,
+        "trace": [],
+        "requirements": [
+          {
+            "knowledge_node_id": 14,
+            "name_zh": "激光焊接",
+            "relation_type": "requires",
+            "required_level": 3.0,
+            "current_level": 0.0,
+            "readiness": 0.0,
+            "weight": 0.8
+          },
+          {
+            "knowledge_node_id": 15,
+            "name_zh": "焊接缺陷与气孔",
+            "relation_type": "requires",
+            "required_level": 4.0,
+            "current_level": 0.0,
+            "readiness": 0.0,
+            "weight": 1.0
+          },
+          {
+            "knowledge_node_id": 11,
+            "name_zh": "科研数据分析",
+            "relation_type": "supports",
+            "required_level": 2.0,
+            "current_level": 2.7,
+            "readiness": 100.0,
+            "weight": 0.4
+          }
+        ]
+      }
+    ],
+    "gaps": [
+      {
+        "knowledge_node_id": 12,
+        "name_zh": "科研文献方法",
+        "domain": "科研方法",
+        "current_score": 35.0,
+        "severity": 56.2,
+        "blocking_capabilities": [
+          "文献调研与证据综合"
+        ],
+        "recommended_resources": [
+          {
+            "resource_id": 6,
+            "resource_type": "project_task",
+            "title": "激光焊接气孔机理分析任务",
+            "coverage_level": 3.4
+          },
+          {
+            "resource_id": 7,
+            "resource_type": "project_task",
+            "title": "材料热物性机器学习预测任务",
+            "coverage_level": 2.8
+          }
+        ]
+      },
+      {
+        "knowledge_node_id": 13,
+        "name_zh": "机器学习基础",
+        "domain": "人工智能",
+        "current_score": 36.3,
+        "severity": 54.6,
+        "blocking_capabilities": [
+          "科研机器学习"
+        ],
+        "recommended_resources": [
+          {
+            "resource_id": 7,
+            "resource_type": "project_task",
+            "title": "材料热物性机器学习预测任务",
+            "coverage_level": 4.4
+          },
+          {
+            "resource_id": 10,
+            "resource_type": "course",
+            "title": "深度学习与 PyTorch 科研实践",
+            "coverage_level": 3.7
+          }
+        ]
+      },
+      {
+        "knowledge_node_id": 1,
+        "name_zh": "偏微分方程",
+        "domain": "数学基础",
+        "current_score": 31.3,
+        "severity": 38.2,
+        "blocking_capabilities": [
+          "数值建模与求解"
+        ],
+        "recommended_resources": []
+      },
+      {
+        "knowledge_node_id": 11,
+        "name_zh": "科研数据分析",
+        "domain": "科研方法",
+        "current_score": 54.6,
+        "severity": 31.8,
+        "blocking_capabilities": [
+          "科研数据分析"
+        ],
+        "recommended_resources": [
+          {
+            "resource_id": 7,
+            "resource_type": "project_task",
+            "title": "材料热物性机器学习预测任务",
+            "coverage_level": 4.3
+          },
+          {
+            "resource_id": 13,
+            "resource_type": "project_task",
+            "title": "图神经网络材料热导率预测任务",
+            "coverage_level": 3.8
+          },
+          {
+            "resource_id": 6,
+            "resource_type": "project_task",
+            "title": "激光焊接气孔机理分析任务",
+            "coverage_level": 3.2
+          }
+        ]
+      },
+      {
+        "knowledge_node_id": 2,
+        "name_zh": "热传导",
+        "domain": "传热学",
+        "current_score": 57.4,
+        "severity": 28.2,
+        "blocking_capabilities": [
+          "传热理论分析"
+        ],
+        "recommended_resources": [
+          {
+            "resource_id": 14,
+            "resource_type": "project_task",
+            "title": "芯片热点与封装热阻数值分析任务",
+            "coverage_level": 4.0
+          },
+          {
+            "resource_id": 15,
+            "resource_type": "book",
+            "title": "电子设备热管理基础与工程方法",
+            "coverage_level": 3.5
+          },
+          {
+            "resource_id": 12,
+            "resource_type": "course",
+            "title": "芯片热管理与电子封装热设计",
+            "coverage_level": 3.2
+          }
+        ]
+      }
+    ],
+    "evidence": [
+      {
+        "id": 5,
+        "user_id": 2,
+        "resource_id": 4,
+        "resource_code": "R-COURSE-ML",
+        "resource_title": "机器学习基础",
+        "resource_type": "course",
+        "evidence_type": "course_grade",
+        "evidence_type_label": "课程成绩",
+        "title": "《机器学习基础》课程学习记录",
+        "grade_percent": 78.0,
+        "completion_ratio": 1.0,
+        "independence_ratio": null,
+        "quality_rating": 3.6,
+        "mentor_rating": null,
+        "verification_status": "self_reported",
+        "verification_factor": 0.72,
+        "effectiveness": 0.857,
+        "personal_evidence_strength": 0.617,
+        "verified_by": null,
+        "verifier_name": null,
+        "verification_note": null,
+        "occurred_on": "2026-07-12",
+        "notes": "已完成监督学习、训练验证和基础数据处理内容，成绩待教务核验。",
+        "metadata": {},
+        "created_at": "2026-09-10T11:34:59"
+      },
+      {
+        "id": 4,
+        "user_id": 2,
+        "resource_id": 5,
+        "resource_code": "R-TASK-MICRO",
+        "resource_title": "微纳热输运数值模拟任务",
+        "resource_type": "project_task",
+        "evidence_type": "project_participation",
+        "evidence_type_label": "科研项目参与",
+        "title": "微纳热输运数值模拟项目任务",
+        "grade_percent": null,
+        "completion_ratio": 1.0,
+        "independence_ratio": 0.82,
+        "quality_rating": 4.5,
+        "mentor_rating": 4.6,
+        "verification_status": "verified",
+        "verification_factor": 1.0,
+        "effectiveness": 0.889,
+        "personal_evidence_strength": 0.889,
+        "verified_by": 1,
+        "verifier_name": "术语管理员",
+        "verification_note": "导师确认学生独立完成主要模型、Python 求解与数据分析。",
+        "occurred_on": "2026-06-30",
+        "notes": "承担文献调研、模型建立、Python 求解程序、结果可视化与阶段报告。",
+        "metadata": {},
+        "created_at": "2026-09-10T11:34:59"
+      },
+      {
+        "id": 3,
+        "user_id": 2,
+        "resource_id": 3,
+        "resource_code": "R-BOOK-MICRO",
+        "resource_title": "Micro/Nanoscale Heat Transfer",
+        "resource_type": "book",
+        "evidence_type": "book_reading",
+        "evidence_type_label": "专业书阅读",
+        "title": "Micro/Nanoscale Heat Transfer 专业书阅读记录",
+        "grade_percent": null,
+        "completion_ratio": 0.78,
+        "independence_ratio": null,
+        "quality_rating": 4.0,
+        "mentor_rating": null,
+        "verification_status": "pending",
+        "verification_factor": 0.8,
+        "effectiveness": 0.83,
+        "personal_evidence_strength": 0.664,
+        "verified_by": null,
+        "verifier_name": null,
+        "verification_note": null,
+        "occurred_on": "2026-03-12",
+        "notes": "已完成微纳尺度传热与声子输运核心章节，并保留读书笔记。",
+        "metadata": {
+          "notes": true,
+          "exercise_completion": 0.55
+        },
+        "created_at": "2026-09-10T11:34:59"
+      },
+      {
+        "id": 2,
+        "user_id": 2,
+        "resource_id": 2,
+        "resource_code": "R-COURSE-NUM",
+        "resource_title": "数值分析与工程计算",
+        "resource_type": "course",
+        "evidence_type": "course_grade",
+        "evidence_type_label": "课程成绩",
+        "title": "《数值分析与工程计算》课程成绩",
+        "grade_percent": 91.0,
+        "completion_ratio": 1.0,
+        "independence_ratio": null,
+        "quality_rating": 4.4,
+        "mentor_rating": null,
+        "verification_status": "verified",
+        "verification_factor": 1.0,
+        "effectiveness": 0.942,
+        "personal_evidence_strength": 0.942,
+        "verified_by": 1,
+        "verifier_name": "术语管理员",
+        "verification_note": "课程成绩单已核验。",
+        "occurred_on": "2025-06-22",
+        "notes": "完成差分离散与工程数值求解作业。",
+        "metadata": {},
+        "created_at": "2026-09-10T11:34:59"
+      },
+      {
+        "id": 1,
+        "user_id": 2,
+        "resource_id": 1,
+        "resource_code": "R-COURSE-HEAT",
+        "resource_title": "传热学",
+        "resource_type": "course",
+        "evidence_type": "course_grade",
+        "evidence_type_label": "课程成绩",
+        "title": "《传热学》课程成绩与课程考核",
+        "grade_percent": 88.0,
+        "completion_ratio": 1.0,
+        "independence_ratio": null,
+        "quality_rating": 4.2,
+        "mentor_rating": null,
+        "verification_status": "verified",
+        "verification_factor": 1.0,
+        "effectiveness": 0.922,
+        "personal_evidence_strength": 0.922,
+        "verified_by": 1,
+        "verifier_name": "术语管理员",
+        "verification_note": "课程成绩单已核验。",
+        "occurred_on": "2025-01-18",
+        "notes": "完成导热、对流与综合换热课程考核。",
+        "metadata": {},
+        "created_at": "2026-09-10T11:34:59"
+      }
+    ],
+    "scoring_model": {
+      "principle": "不允许学生自报能力分；个人能力由标准映射与证据强度共同推断，并保留证据链。",
+      "knowledge": "资源标准覆盖 × 标准证据强度 × 个人证据有效度 × 核验可信度；多条独立证据采用非线性合并。",
+      "capability": "72% 直接任务/课程能力证据 + 28% 知识准备度；若缺少直接能力证据，知识准备度最多按 45% 折算。",
+      "verification_factors": {
+        "self_reported": 0.72,
+        "pending": 0.8,
+        "verified": 1.0,
+        "rejected": 0.12
+      }
+    }
+  },
+  "anonymous_private_file_status": 401
+}
