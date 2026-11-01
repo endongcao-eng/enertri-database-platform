@@ -6,7 +6,6 @@ import secrets
 import shutil
 import time
 import uuid
-import hashlib
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -14,15 +13,15 @@ from fastapi import Depends, FastAPI, File, Form, HTTPException, Query, Request,
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from sqlalchemy import func, or_, select, text
+from sqlalchemy import or_, select, text
 from sqlalchemy.orm import Session, selectinload
 
 from .database import MEDIA_DIR, SessionLocal, get_db
 from .file_service import FILE_STORE_DIR, cleanup_expired_files
 from .models import Article, Category, Term, User, UserTermProgress, WorkerHeartbeat
-from .schemas import ArticleCreate, ArticleOut, ArticleUpdate, CategoryCreate, CategoryOut, ImportResult, LoginRequest, ProgressOut, ProgressUpdate, QuizOut, QuizSubmitRequest, QuizSubmitResult, ReviewRequest, TermCreate, TermOut, TermUpdate, TokenOut, UserOut
+from .schemas import ArticleCreate, ArticleOut, ArticleUpdate, CategoryCreate, CategoryOut, CategoryResolveRequest, ImportResult, LoginRequest, ProgressOut, ProgressUpdate, QuizOut, QuizSubmitRequest, QuizSubmitResult, ReviewRequest, TermBulkRequest, TermCreate, TermOut, TermUpdate, TokenOut, UserOut
 from .security import admin_user, create_access_token, current_user, hash_password, optional_current_user, verify_password, require_permission
-from .utils import apply_related_term_names, article_to_out, apply_term_payload, bool_video, build_term_name_lookup, join_keywords, progress_to_out, seed_defaults, split_list, split_refs, term_to_out
+from .utils import apply_related_term_names, article_to_out, apply_term_payload, bool_video, build_term_name_lookup, get_or_create_category_hierarchy, join_keywords, progress_to_out, seed_defaults, split_list, split_refs, term_to_out
 from .workspace_router import router as workspace_router
 from .foundation_router import router as foundation_router
 from .knowledge_router import router as knowledge_router
@@ -199,6 +198,14 @@ def create_category(payload: CategoryCreate, db: Session = Depends(get_db), _: U
     db.commit()
     db.refresh(item)
     return item
+
+
+@app.post("/api/categories/resolve", response_model=CategoryOut)
+def resolve_category(payload: CategoryResolveRequest, db: Session = Depends(get_db), _: User = Depends(admin_user)):
+    parent, target = get_or_create_category_hierarchy(db, payload.parent_name, payload.child_name)
+    db.commit()
+    db.refresh(target)
+    return target
 
 
 @app.get("/api/articles", response_model=list[ArticleOut])
@@ -552,6 +559,33 @@ def submit_term(term_id: int, db: Session = Depends(get_db), user: User = Depend
     return term_to_out(term)
 
 
+@app.post("/api/terms/bulk/review")
+def bulk_review_terms(payload: TermBulkRequest, db: Session = Depends(get_db), _: User = Depends(require_permission("process.approve"))):
+    term_ids = sorted(set(payload.term_ids))
+    terms_to_update = db.scalars(select(Term).where(Term.id.in_(term_ids))).all()
+    if not terms_to_update:
+        raise HTTPException(status_code=404, detail="未找到可审核的术语")
+    for term in terms_to_update:
+        term.review_status = "approved"
+        term.review_comment = "审核通过"
+    db.commit()
+    updated_ids = sorted(term.id for term in terms_to_update)
+    return {"updated": len(updated_ids), "term_ids": updated_ids}
+
+
+@app.post("/api/terms/bulk/delete")
+def bulk_delete_terms(payload: TermBulkRequest, db: Session = Depends(get_db), _: User = Depends(admin_user)):
+    term_ids = sorted(set(payload.term_ids))
+    terms_to_delete = db.scalars(select(Term).where(Term.id.in_(term_ids))).all()
+    if not terms_to_delete:
+        raise HTTPException(status_code=404, detail="未找到可删除的术语")
+    deleted_ids = sorted(term.id for term in terms_to_delete)
+    for term in terms_to_delete:
+        db.delete(term)
+    db.commit()
+    return {"deleted": len(deleted_ids), "term_ids": deleted_ids}
+
+
 @app.post("/api/terms/{term_id}/review", response_model=TermOut)
 def review_term(term_id: int, payload: ReviewRequest, db: Session = Depends(get_db), _: User = Depends(require_permission("process.approve"))):
     term = db.scalar(base_term_query().where(Term.id == term_id))
@@ -605,6 +639,8 @@ def upload_video(
 def import_excel(
     file: UploadFile = File(...),
     category: str | None = Form(default=None, max_length=120),
+    category_parent: str | None = Form(default=None, max_length=120),
+    category_child: str | None = Form(default=None, max_length=120),
     db: Session = Depends(get_db),
     user: User = Depends(admin_user),
 ):
@@ -670,27 +706,14 @@ def import_excel(
                 detail="未找到可导入工作表：第一行必须包含“中文术语”和“英文术语”两列表头",
             )
 
-        category_name = " ".join(str(category or "").split()) or "未分类"
-        # Reuse an existing visible category name. Otherwise create a stable
-        # internal code so the new category can be selected in later edits.
-        import_category = db.scalar(
-            select(Category).where(func.lower(Category.name_zh) == category_name.casefold())
+        parent_name = category_parent or category or "未分类"
+        child_name = category_child or None
+        parent_category, import_category = get_or_create_category_hierarchy(
+            db,
+            parent_name,
+            child_name,
+            description_prefix="Excel 导入分类",
         )
-        if not import_category:
-            digest = hashlib.sha1(category_name.casefold().encode("utf-8")).hexdigest().upper()
-            category_code = f"IMPORT_{digest[:16]}"
-            suffix = 2
-            while db.scalar(select(Category.id).where(Category.code == category_code)):
-                category_code = f"IMPORT_{digest[:12]}_{suffix}"
-                suffix += 1
-            import_category = Category(
-                code=category_code,
-                name_zh=category_name,
-                description_zh=f"Excel 导入分类：{category_name}",
-                sort_order=999,
-            )
-            db.add(import_category)
-            db.flush()
 
         imported = skipped = categorized = 0
         errors: list[str] = []
@@ -770,6 +793,7 @@ def import_excel(
             skipped=skipped,
             categorized=categorized,
             category=import_category.name_zh,
+            parent_category=parent_category.name_zh if import_category.parent_id else None,
             errors=errors,
         )
 

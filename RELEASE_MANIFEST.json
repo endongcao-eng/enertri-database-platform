@@ -1,12 +1,12 @@
 {
   "name": "EnerTri 网页试用部署准备版",
-  "version": "4.7.0-webprep.25",
+  "version": "4.7.0-webprep.27",
   "api_business_version": "4.7.0",
   "date": "2026-10-24",
   "status": "preparation_candidate_not_public_ready",
-  "database_head": "v4_7_literature_research_value",
+  "database_head": "v4_7_nested_term_categories",
   "validation": {
-    "isolated_sqlite_tests": 56,
+    "isolated_sqlite_tests": 58,
     "test_modules": 15,
     "python_compile": "passed",
     "javascript_syntax": "passed",
@@ -64,6 +64,8 @@
     "收紧视频分析与术语视频上传、项目匹配和直接仿真创建/执行接口的权限",
     "删除论文时同步删除 paper_ingest 任务、任务文件和任务事件"
     ,"表格文本策略增加正文网格、双栏字符碎片网格和整页正文候选拦截；对带表题的无边框表格使用文本块和列锚点提取；旧版本无坐标表格在详情页隐藏并提示重新解析",
-    "Excel 导入支持提交前填写分类，自动创建或复用分类，并将重复词条重新归类；兼容关联词汇列"
+    "Excel 导入支持提交前填写分类，自动创建或复用分类，并将重复词条重新归类；兼容关联词汇列",
+    "术语分类支持大分类与小分类层级，Excel 和直接录入均可自动创建或复用层级；前台分类导航按大分类分页折叠，管理员术语表按20条分页并支持关键词、状态和主题筛选",
+    "管理员术语表支持当前筛选页全选、批量审核通过和批量删除；批量接口去重术语 ID 并保留单条操作权限"
   ]
 }

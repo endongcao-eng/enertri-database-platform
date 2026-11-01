@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+import hashlib
 from typing import Iterable
 
 from sqlalchemy import select
@@ -24,6 +25,72 @@ def normalize_video_path(value: object) -> str | None:
 
 def normalize_term_name(value: object) -> str:
     return re.sub(r"\s+", " ", str(value or "").strip()).casefold()
+
+
+def normalize_category_name(value: object) -> str:
+    return re.sub(r"\s+", " ", str(value or "").strip())
+
+
+def _category_code(db: Session, label: str, parent_id: int | None = None) -> str:
+    scope = f"{parent_id or 0}:{normalize_category_name(label).casefold()}"
+    digest = hashlib.sha1(scope.encode("utf-8")).hexdigest().upper()
+    code = f"CAT_{digest[:16]}"
+    suffix = 2
+    while db.scalar(select(Category.id).where(Category.code == code)):
+        code = f"CAT_{digest[:12]}_{suffix}"
+        suffix += 1
+    return code
+
+
+def get_or_create_category_hierarchy(
+    db: Session,
+    parent_name: object,
+    child_name: object = None,
+    *,
+    description_prefix: str = "分类",
+) -> tuple[Category, Category]:
+    """Return (top-level category, target category), creating missing nodes."""
+    parent_label = normalize_category_name(parent_name)
+    child_label = normalize_category_name(child_name)
+    if not parent_label and child_label:
+        parent_label, child_label = child_label, ""
+    if not parent_label:
+        parent_label = "未分类"
+
+    parent_candidates = db.scalars(select(Category).where(Category.parent_id.is_(None))).all()
+    parent = next(
+        (item for item in parent_candidates if normalize_category_name(item.name_zh).casefold() == parent_label.casefold()),
+        None,
+    )
+    if not parent:
+        parent = Category(
+            code=_category_code(db, parent_label),
+            name_zh=parent_label,
+            description_zh=f"{description_prefix}：{parent_label}",
+            sort_order=999,
+        )
+        db.add(parent)
+        db.flush()
+
+    if not child_label:
+        return parent, parent
+
+    children = db.scalars(select(Category).where(Category.parent_id == parent.id)).all()
+    child = next(
+        (item for item in children if normalize_category_name(item.name_zh).casefold() == child_label.casefold()),
+        None,
+    )
+    if not child:
+        child = Category(
+            code=_category_code(db, child_label, parent.id),
+            name_zh=child_label,
+            description_zh=f"{description_prefix}：{parent_label} / {child_label}",
+            sort_order=999,
+            parent_id=parent.id,
+        )
+        db.add(child)
+        db.flush()
+    return parent, child
 
 
 def build_term_name_lookup(terms: Iterable[Term]) -> dict[str, list[Term]]:

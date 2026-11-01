@@ -59,7 +59,7 @@ async function loadDbFromApi(status = 'all') {
   const articleStatus = status === 'all' ? 'all' : 'approved';
   const [categories, terms, articles] = await Promise.all([
     api('/categories'),
-    api(`/terms?status=${encodeURIComponent(status)}`),
+    api(`/terms?status=${encodeURIComponent(status)}&limit=1000`),
     api(`/articles?status=${articleStatus}`),
   ]);
   let progress = [];
@@ -77,11 +77,18 @@ async function loadTermQuiz(termId) {
 async function submitTermQuiz(termId, quizToken, answers) {
   return api(`/terms/${termId}/quiz/submit`, { method: 'POST', body: JSON.stringify({ quiz_token: quizToken, answers }) });
 }
-async function importExcelApi(file, categoryName = '') {
+async function importExcelApi(file, parentCategoryName = '', childCategoryName = '') {
   const formData = new FormData();
   formData.append('file', file);
-  if (String(categoryName || '').trim()) formData.append('category', String(categoryName).trim());
+  if (String(parentCategoryName || '').trim()) formData.append('category_parent', String(parentCategoryName).trim());
+  if (String(childCategoryName || '').trim()) formData.append('category_child', String(childCategoryName).trim());
   return api('/import/excel', { method: 'POST', body: formData });
+}
+async function resolveCategoryApi(parentName = '', childName = '') {
+  return api('/categories/resolve', {
+    method: 'POST',
+    body: JSON.stringify({ parent_name: String(parentName || '').trim() || null, child_name: String(childName || '').trim() || null }),
+  });
 }
 function termToDemo(t) {
   return {

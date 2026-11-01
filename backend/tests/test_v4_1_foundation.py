@@ -319,6 +319,37 @@ class V41FoundationTest(unittest.TestCase):
         self.assertEqual(again.status_code, 200, again.text)
         self.assertTrue(again.json()["already_saved"])
 
+    def test_term_bulk_review_and_delete(self):
+        payloads = [
+            {"zh": "批量审核测试甲", "en": "Bulk review test A", "definition_zh_academic": "批量管理回归测试术语。", "review_status": "submitted"},
+            {"zh": "批量审核测试乙", "en": "Bulk review test B", "definition_zh_academic": "批量管理回归测试术语。", "review_status": "submitted"},
+        ]
+        created = []
+        for payload in payloads:
+            response = self.client.post("/api/terms", headers=self.admin_headers, json=payload)
+            self.assertEqual(response.status_code, 200, response.text)
+            created.append(response.json()["id"])
+
+        reviewed = self.client.post(
+            "/api/terms/bulk/review",
+            headers=self.admin_headers,
+            json={"term_ids": created + [created[0]]},
+        )
+        self.assertEqual(reviewed.status_code, 200, reviewed.text)
+        self.assertEqual(reviewed.json()["updated"], 2)
+        with SessionLocal() as db:
+            self.assertEqual(db.query(Term).filter(Term.id.in_(created), Term.review_status == "approved").count(), 2)
+
+        deleted = self.client.post(
+            "/api/terms/bulk/delete",
+            headers=self.admin_headers,
+            json={"term_ids": created},
+        )
+        self.assertEqual(deleted.status_code, 200, deleted.text)
+        self.assertEqual(deleted.json()["deleted"], 2)
+        with SessionLocal() as db:
+            self.assertEqual(db.query(Term).filter(Term.id.in_(created)).count(), 0)
+
     def test_excel_import_creates_or_reuses_category_and_reclassifies_duplicates(self):
         excel = _demo_excel_bytes([("流场反演", "Flow-field inversion")])
         response = self.client.post(
@@ -352,6 +383,34 @@ class V41FoundationTest(unittest.TestCase):
         with SessionLocal() as db:
             self.assertEqual(db.query(Category).filter(Category.name_zh == "航空热防护").count(), 1)
             self.assertEqual(db.query(Term).filter(Term.zh == "流场反演").one().category_id, category_id)
+
+    def test_excel_import_creates_nested_category_hierarchy(self):
+        excel = _demo_excel_bytes([("焓", "Enthalpy")])
+        response = self.client.post(
+            "/api/import/excel",
+            headers=self.admin_headers,
+            files={"file": ("thermodynamics.xlsx", excel, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")},
+            data={"category_parent": "热力学与传热", "category_child": "热力学状态量与物性参数"},
+        )
+        self.assertEqual(response.status_code, 200, response.text)
+        self.assertEqual(response.json()["parent_category"], "热力学与传热")
+        self.assertEqual(response.json()["category"], "热力学状态量与物性参数")
+        with SessionLocal() as db:
+            parent = db.query(Category).filter(Category.name_zh == "热力学与传热", Category.parent_id.is_(None)).one()
+            child = db.query(Category).filter(Category.name_zh == "热力学状态量与物性参数", Category.parent_id == parent.id).one()
+            term = db.query(Term).filter(Term.zh == "焓").one()
+            self.assertEqual(term.category_id, child.id)
+
+        resolved = self.client.post(
+            "/api/categories/resolve",
+            headers=self.admin_headers,
+            json={"parent_name": "热力学与传热", "child_name": "热力学状态量与物性参数"},
+        )
+        self.assertEqual(resolved.status_code, 200, resolved.text)
+        self.assertEqual(resolved.json()["parent_id"], parent.id)
+        with SessionLocal() as db:
+            self.assertEqual(db.query(Category).filter(Category.name_zh == "热力学与传热", Category.parent_id.is_(None)).count(), 1)
+            self.assertEqual(db.query(Category).filter(Category.name_zh == "热力学状态量与物性参数", Category.parent_id == parent.id).count(), 1)
 
     def test_chinese_scanned_pdf_uses_bilingual_ocr(self):
         with patch.dict(os.environ, {"OCR_LANG": "chi_sim+eng"}), patch("pytesseract.image_to_string", return_value="摘要 这是中文扫描论文的能源动力研究结果与结论。") as ocr:
@@ -643,7 +702,7 @@ class V41FoundationTest(unittest.TestCase):
 
         migration = self.client.get("/api/admin/migrations", headers=self.admin_headers)
         self.assertEqual(migration.status_code, 200)
-        self.assertEqual(migration.json()["current_revision"], "v4_7_literature_research_value")
+        self.assertEqual(migration.json()["current_revision"], "v4_7_nested_term_categories")
         self.assertEqual(migration.json()["status"], "succeeded")
 
         users = self.client.get("/api/admin/users", headers=self.admin_headers)

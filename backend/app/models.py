@@ -58,12 +58,15 @@ class User(Base):
 class Category(Base):
     __tablename__ = "categories"
     id = Column(Integer, primary_key=True)
+    parent_id = Column(Integer, ForeignKey("categories.id", ondelete="CASCADE"), index=True)
     code = Column(String(50), nullable=False, unique=True)
     name_zh = Column(String(120), nullable=False)
     name_en = Column(String(120))
     name_ru = Column(String(120))
     description_zh = Column(Text)
     sort_order = Column(Integer, default=0, nullable=False)
+    parent = relationship("Category", remote_side=[id], back_populates="children", foreign_keys=[parent_id])
+    children = relationship("Category", back_populates="parent", foreign_keys=[parent_id], cascade="all, delete-orphan", order_by="Category.sort_order, Category.id")
     terms = relationship("Term", back_populates="category")
 
 

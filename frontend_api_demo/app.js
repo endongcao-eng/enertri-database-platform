@@ -20,11 +20,18 @@ const State = {
   selectedCategoryId: null,
   selectedTermId: null,
   selectedArticleId: null,
+  categoryPage: 1,
+  categorySearch: '',
+  expandedCategoryIds: {},
   searchText: '',
   adminFilter: '',
   adminStatus: 'all',
+  adminCategoryFilter: '',
+  adminPage: 1,
+  adminSelectedIds: {},
   importBusy: false,
-  importCategory: '',
+  importParentCategory: '',
+  importChildCategory: '',
   importResult: null,
   importError: '',
   editingId: null,
@@ -124,6 +131,12 @@ function categories() { return State.categories; }
 function terms() { return State.terms; }
 function articles() { return State.articles; }
 function getCategory(id) { return categories().find(c => c.id === String(id)); }
+function topCategories() { return categories().filter(c => !c.parent_id); }
+function childCategories(parentId) { return categories().filter(c => String(c.parent_id || '') === String(parentId)); }
+function categoryLabel(category) {
+  const parent = category?.parent_id ? getCategory(category.parent_id) : null;
+  return parent ? `${parent.name_zh} / ${category.name_zh}` : (category?.name_zh || '未分类');
+}
 function getTerm(id) { return terms().find(t => t.id === Number(id)); }
 function getArticle(id) { return articles().find(a => a.id === Number(id)); }
 function currentTerm() { return getTerm(State.selectedTermId) || terms()[0]; }
@@ -157,7 +170,10 @@ function importResultHtml() {
   if (State.importError) return `<div class="notice import-result error">导入失败：${escapeHtml(State.importError)}</div>`;
   if (!State.importResult) return '';
   const errors = State.importResult.errors || [];
-  return `<div class="notice import-result success"><strong>导入完成：</strong>新增 ${State.importResult.imported || 0} 条，已归类 ${State.importResult.categorized || 0} 条，跳过 ${State.importResult.skipped || 0} 条。${State.importResult.category ? `分类：${escapeHtml(State.importResult.category)}。` : ''}${errors.length ? `<details><summary>查看 ${errors.length} 条错误/警告</summary><ul>${errors.map(err => `<li>${escapeHtml(err)}</li>`).join('')}</ul></details>` : ''}</div>`;
+  const categoryText = State.importResult.parent_category && State.importResult.category
+    ? `${State.importResult.parent_category} / ${State.importResult.category}`
+    : State.importResult.category;
+  return `<div class="notice import-result success"><strong>导入完成：</strong>新增 ${State.importResult.imported || 0} 条，已归类 ${State.importResult.categorized || 0} 条，跳过 ${State.importResult.skipped || 0} 条。${categoryText ? `分类：${escapeHtml(categoryText)}。` : ''}${errors.length ? `<details><summary>查看 ${errors.length} 条错误/警告</summary><ul>${errors.map(err => `<li>${escapeHtml(err)}</li>`).join('')}</ul></details>` : ''}</div>`;
 }
 function render() {
   if (State.loading) { app.innerHTML = '<div class="page-shell"><div class="card panel">正在连接数据库 API...</div></div>'; return; }
@@ -195,7 +211,7 @@ function termCardHtml(term) {
   const learnedText = p.learned_at ? '✓ 已学' : '标记已学';
   const quizScore = p.quiz_best_score ? `<span class="badge success">测验最高 ${p.quiz_best_score} 分</span>` : '';
   const related = relatedTerms(term);
-  return `<article class="card term-card"><div class="term-head"><div><span class="badge primary">${escapeHtml(getCategory(term.categoryId)?.name_zh || '未分类')}</span><span class="badge ${term.reviewStatus === 'approved' ? 'success' : 'warning'}">${statusBadge(term.reviewStatus)}</span>${quizScore}<h2>${escapeHtml(term.term.zh)}</h2><p class="muted">${escapeHtml(term.term.en)} ${term.term.ru ? ' · ' + escapeHtml(term.term.ru) : ''}</p></div><div class="inline-actions">${State.user ? `<button class="btn small secondary js-favorite" data-id="${term.id}">${favText}</button><button class="btn small secondary js-learned" data-id="${term.id}">${learnedText}</button>` : '<span class="muted">登录后可收藏、记录进度</span>'}</div></div><div class="definition-grid"><div><h3>学术解释</h3><p>${escapeHtml(term.meaning.zh)}</p></div><div><h3>通俗解释</h3><p>${escapeHtml(term.meaning.popular || '暂无')}</p></div><div><h3>English</h3><p>${escapeHtml(term.meaning.en || 'N/A')}</p></div></div><div class="info-box"><h4>应用场景</h4><p>${escapeHtml(term.examples.zh || '暂无')}</p></div>${term.formulaModel ? `<div class="info-box formula-box"><h4>公式 / 模型</h4><p>${escapeHtml(term.formulaModel)}</p><small class="muted">已预留公式模块，可后续接入 KaTeX/MathJax 渲染。</small></div>` : ''}<div class="support-tags">${(term.keywords || []).map(k => `<span class="chip">${escapeHtml(k)}</span>`).join('')}</div>${related.length ? `<div class="info-box"><h4>相关术语</h4><div class="support-tags">${related.map(t => `<button class="quick-tag" data-term="${t.id}">${escapeHtml(t.term.zh)}</button>`).join('')}</div></div>` : ''}${term.references?.length ? `<div class="info-box"><h4>参考文献</h4><ol>${term.references.map(r => `<li>${escapeHtml(r)}</li>`).join('')}</ol></div>` : ''}</article>`;
+  return `<article class="card term-card"><div class="term-head"><div><span class="badge primary">${escapeHtml(categoryLabel(getCategory(term.categoryId)) || '未分类')}</span><span class="badge ${term.reviewStatus === 'approved' ? 'success' : 'warning'}">${statusBadge(term.reviewStatus)}</span>${quizScore}<h2>${escapeHtml(term.term.zh)}</h2><p class="muted">${escapeHtml(term.term.en)} ${term.term.ru ? ' · ' + escapeHtml(term.term.ru) : ''}</p></div><div class="inline-actions">${State.user ? `<button class="btn small secondary js-favorite" data-id="${term.id}">${favText}</button><button class="btn small secondary js-learned" data-id="${term.id}">${learnedText}</button>` : '<span class="muted">登录后可收藏、记录进度</span>'}</div></div><div class="definition-grid"><div><h3>学术解释</h3><p>${escapeHtml(term.meaning.zh)}</p></div><div><h3>通俗解释</h3><p>${escapeHtml(term.meaning.popular || '暂无')}</p></div><div><h3>English</h3><p>${escapeHtml(term.meaning.en || 'N/A')}</p></div></div><div class="info-box"><h4>应用场景</h4><p>${escapeHtml(term.examples.zh || '暂无')}</p></div>${term.formulaModel ? `<div class="info-box formula-box"><h4>公式 / 模型</h4><p>${escapeHtml(term.formulaModel)}</p><small class="muted">已预留公式模块，可后续接入 KaTeX/MathJax 渲染。</small></div>` : ''}<div class="support-tags">${(term.keywords || []).map(k => `<span class="chip">${escapeHtml(k)}</span>`).join('')}</div>${related.length ? `<div class="info-box"><h4>相关术语</h4><div class="support-tags">${related.map(t => `<button class="quick-tag" data-term="${t.id}">${escapeHtml(t.term.zh)}</button>`).join('')}</div></div>` : ''}${term.references?.length ? `<div class="info-box"><h4>参考文献</h4><ol>${term.references.map(r => `<li>${escapeHtml(r)}</li>`).join('')}</ol></div>` : ''}</article>`;
 }
 function videoPanelHtml(term) {
   if (!hasVideo(term)) {
@@ -231,6 +247,55 @@ function renderHome() {
   const results = State.searchText ? searchTerms(State.searchText) : [];
   app.innerHTML = `<div class="page-shell">${topbar()}<section class="hero"><div class="card hero-panel"><h2>能源术语、科研与焊接智能平台</h2><p></p><div class="hero-grid"><div class="stat-card"><strong>${terms().length}</strong><span>术语</span></div><div class="stat-card"><strong>${articles().length}</strong><span>专题文章</span></div><div class="stat-card"><strong>${learnedTerms().length}</strong><span>已学记录</span></div><div class="stat-card"><strong>${terms().filter(hasVideo).length}</strong><span>视频</span></div></div></div><div class="card hero-side"><h3>推荐学习路径</h3><ul class="feature-list"><li>先读专题文章，建立背景知识</li><li>再查三语术语，理解专业表达</li><li>收藏重点词条，标记学习进度</li><li>最后用随堂测验自查掌握程度</li></ul></div></section><div class="layout"><aside class="card panel"><div class="section-head"><h3>分类导航</h3></div><div class="category-list">${categories().map(c => `<button class="category-item ${c.id === State.selectedCategoryId ? 'active' : ''}" data-category="${c.id}"><strong>${escapeHtml(c.name_zh)}</strong><br><span class="muted">${escapeHtml(c.name_en || '')}</span></button>`).join('')}</div><div class="section-head"><h3>当前分类术语</h3></div><div class="term-list">${termsByCategory(State.selectedCategoryId).map(t => `<button class="term-item ${t.id === term?.id ? 'active' : ''}" data-term="${t.id}">${progressFor(t.id).learned_at ? '✓ ' : ''}${escapeHtml(t.term.zh)}</button>`).join('') || '<span class="muted">暂无术语</span>'}</div></aside><section class="main-stack"><div class="card search-box"><div class="section-head"><h2>术语检索</h2><span class="muted">${State.searchText ? `检索到 ${results.length} 条` : '输入术语开始检索'}</span></div><div class="search-row"><input class="input" id="searchInput" value="${escapeHtml(State.searchText)}" placeholder="逆变器 / inverter / инвертор"><button class="btn primary" id="searchBtn">查询术语</button></div>${State.searchText ? `<div class="info-box"><h4>检索结果</h4>${results.map(t => `<button class="quick-tag" data-term="${t.id}">${escapeHtml(t.term.zh)} · ${escapeHtml(t.term.en)}</button>`).join('') || '<span class="muted">无结果</span>'}</div>` : ''}</div>${term ? termCardHtml(term) : '<div class="card panel">暂无术语数据</div>'}${quizPanelHtml(term)}</section><aside class="side-stack"><div class="card panel"><div class="section-head"><h3>视频学习</h3></div>${term ? videoPanelHtml(term) : ''}</div>${learningPanelHtml(term)}${articlesPanelHtml(term)}</aside></div></div>`;
   bindCommon();
+  enhanceCategoryNavigation();
+}
+function enhanceCategoryNavigation() {
+  const aside = document.querySelector('.layout > aside');
+  const list = aside?.querySelector('.category-list');
+  const head = list?.previousElementSibling;
+  if (!aside || !list || !head) return;
+
+  const query = normalize(State.categorySearch);
+  const roots = topCategories().filter(parent => {
+    if (!query) return true;
+    if (normalize(parent.name_zh).includes(query)) return true;
+    return childCategories(parent.id).some(child => normalize(child.name_zh).includes(query));
+  });
+  const pageCount = Math.max(1, Math.ceil(roots.length / 10));
+  State.categoryPage = Math.min(Math.max(State.categoryPage, 1), pageCount);
+  const pageRoots = roots.slice((State.categoryPage - 1) * 10, State.categoryPage * 10);
+
+  head.innerHTML = `<div class="category-nav-head"><h3>分类导航</h3><div class="category-nav-actions"><button class="btn ghost small" id="categoryPrevBtn" ${State.categoryPage <= 1 ? 'disabled' : ''} aria-label="上一页">&lt;</button><span class="category-page-count">${State.categoryPage}/${pageCount}</span><button class="btn ghost small" id="categoryNextBtn" ${State.categoryPage >= pageCount ? 'disabled' : ''} aria-label="下一页">&gt;</button></div></div><input class="input category-search-input" id="categorySearchInput" value="${escapeHtml(State.categorySearch)}" placeholder="搜索大分类">`;
+  list.innerHTML = pageRoots.map(parent => {
+    const children = childCategories(parent.id);
+    const expanded = !!State.expandedCategoryIds[parent.id] || (!!query && children.some(child => normalize(child.name_zh).includes(query)));
+    const parentActive = String(State.selectedCategoryId) === String(parent.id);
+    const parentButton = `<button class="category-item category-parent ${parentActive ? 'active' : ''}" data-category-toggle="${parent.id}"><span><strong>${escapeHtml(parent.name_zh)}</strong><br><span class="muted">${escapeHtml(parent.name_en || '')}</span></span>${children.length ? `<span class="category-chevron">${expanded ? '▾' : '▸'}</span>` : ''}</button>`;
+    const childButtons = expanded ? `<div class="category-children">${children.map(child => `<button class="category-item category-child ${String(child.id) === String(State.selectedCategoryId) ? 'active' : ''}" data-category="${child.id}"><strong>${escapeHtml(child.name_zh)}</strong><br><span class="muted">${escapeHtml(child.name_en || '')}</span></button>`).join('')}</div>` : '';
+    return `<div class="category-tree-item">${parentButton}${childButtons}</div>`;
+  }).join('') || '<span class="muted">暂无匹配的大分类</span>';
+
+  document.getElementById('categoryPrevBtn')?.addEventListener('click', () => { State.categoryPage -= 1; render(); });
+  document.getElementById('categoryNextBtn')?.addEventListener('click', () => { State.categoryPage += 1; render(); });
+  document.getElementById('categorySearchInput')?.addEventListener('input', e => { State.categorySearch = e.target.value; State.categoryPage = 1; render(); });
+  document.querySelectorAll('[data-category-toggle]').forEach(button => button.addEventListener('click', () => {
+    const id = String(button.dataset.categoryToggle);
+    const children = childCategories(id);
+    if (!children.length) {
+      State.selectedCategoryId = id;
+      State.selectedTermId = termsByCategory(id)[0]?.id || null;
+    } else {
+      State.expandedCategoryIds[id] = !State.expandedCategoryIds[id];
+    }
+    clearQuiz();
+    render();
+  }));
+  document.querySelectorAll('.category-child[data-category]').forEach(button => button.addEventListener('click', () => {
+    State.selectedCategoryId = String(button.dataset.category);
+    State.selectedTermId = termsByCategory(State.selectedCategoryId)[0]?.id || null;
+    clearQuiz();
+    render();
+  }));
 }
 function renderLogin(message = '') {
   syncRouteHash('login', true);
@@ -260,13 +325,23 @@ function renderRegister() {
 function renderAdmin() {
   if (!['admin','system_admin'].includes(State.user?.role)) { beginNavigation('login'); return renderLogin('请先以管理员身份登录。'); }
   const q = normalize(State.adminFilter);
-  const filtered = terms().filter(t => (State.adminStatus === 'all' || t.reviewStatus === State.adminStatus) && (!q || [t.term.zh,t.term.en,t.term.ru,...t.keywords].map(normalize).some(x => x.includes(q))));
+  const filtered = terms().filter(t => {
+    const category = getCategory(t.categoryId);
+    const parent = category?.parent_id ? getCategory(category.parent_id) : null;
+    const searchable = [t.term.zh, t.term.en, t.term.ru, t.meaning.zh, t.meaning.popular, t.meaning.en, t.contributorName, category?.name_zh, parent?.name_zh, ...t.keywords].map(normalize);
+    return (State.adminStatus === 'all' || t.reviewStatus === State.adminStatus)
+      && (!State.adminCategoryFilter || String(t.categoryId) === String(State.adminCategoryFilter))
+      && (!q || searchable.some(x => x.includes(q)));
+  });
+  const adminPageCount = Math.max(1, Math.ceil(filtered.length / 20));
+  State.adminPage = Math.min(Math.max(State.adminPage, 1), adminPageCount);
+  const visibleTerms = filtered.slice((State.adminPage - 1) * 20, State.adminPage * 20);
   const editing = getTerm(State.editingId);
   const importStatus = importResultHtml();
   const articleRows = articles().map(a => `<tr><td>${a.id}</td><td><strong>${escapeHtml(a.title)}</strong><small>${escapeHtml(a.status)} · ${escapeHtml(a.difficulty)}</small></td><td class="actions"><button class="btn small secondary js-article-edit" data-id="${a.id}">载入编辑</button><button class="btn small danger js-article-delete" data-id="${a.id}">删除</button></td></tr>`).join('');
   const articleEditing = articles().find(a => Number(a.id) === Number(State.editingArticleId));
   const articlePanel = `<div class="card panel admin-content-panel"><div class="section-head"><div><h2>专题文章与分类</h2><p class="muted">维护分类、撰写专题文章并控制发布状态。</p></div></div><div class="form-row-2"><input class="input" id="newCategoryCode" placeholder="分类代码"><input class="input" id="newCategoryName" placeholder="分类名称"><button class="btn secondary" id="createCategoryBtn">新增分类</button></div><form id="articleForm" class="form-grid"><input type="hidden" id="articleId" value="${articleEditing?.id || ''}"><input class="input" id="articleTitle" placeholder="文章标题" value="${escapeHtml(articleEditing?.title || '')}" required><input class="input" id="articleSummary" placeholder="摘要" value="${escapeHtml(articleEditing?.summary || '')}" required><textarea class="textarea tall" id="articleContent" placeholder="正文内容" required>${escapeHtml(articleEditing?.content || '')}</textarea><div class="form-row-2"><select class="select" id="articleDifficulty"><option ${articleEditing?.difficulty==='入门'?'selected':''}>入门</option><option ${articleEditing?.difficulty==='进阶'?'selected':''}>进阶</option><option ${articleEditing?.difficulty==='专业'?'selected':''}>专业</option></select><select class="select" id="articleStatus"><option value="draft" ${articleEditing?.status==='draft'?'selected':''}>草稿</option><option value="approved" ${articleEditing?.status==='approved'?'selected':''}>发布</option></select></div><input class="input" id="articleKeywords" placeholder="关联关键词，用逗号分隔" value="${escapeHtml((articleEditing?.relatedKeywords || []).join(', '))}"><div class="inline-actions"><button class="btn primary" type="submit">${articleEditing?'保存文章':'新增文章'}</button><button class="btn secondary" type="button" id="clearArticleBtn">清空</button></div></form><div class="table-wrap"><table class="table"><thead><tr><th>ID</th><th>文章</th><th>操作</th></tr></thead><tbody>${articleRows || '<tr><td colspan="3" class="muted">暂无文章</td></tr>'}</tbody></table></div></div>`;
-  app.innerHTML = `<div class="page-shell">${topbar('EnerTri 管理后台','词条录入、审核、数据维护与智能能力配置')}<section class="split"><div class="main-stack"><div class="card panel"><div class="section-head"><h2>术语库管理</h2><span class="muted">当前 ${filtered.length} 条</span></div><div class="toolbar"><input class="input" id="adminSearch" placeholder="筛选术语" value="${escapeHtml(State.adminFilter)}"><select class="select" id="adminStatus"><option value="all">全部状态</option><option value="draft">草稿</option><option value="submitted">待审核</option><option value="approved">已通过</option></select><button class="btn primary" id="newTermBtn">新增术语</button><button class="btn secondary" id="refreshBtn">刷新</button></div><div class="table-wrap" style="margin-top:16px"><table class="table"><thead><tr><th>ID</th><th>状态</th><th>分类</th><th>中文</th><th>English</th><th>贡献者</th><th>操作</th></tr></thead><tbody>${filtered.map(t => `<tr><td>${t.id}</td><td>${statusBadge(t.reviewStatus)}</td><td>${escapeHtml(getCategory(t.categoryId)?.name_zh || '')}</td><td>${escapeHtml(t.term.zh)}</td><td>${escapeHtml(t.term.en)}</td><td>${escapeHtml(t.contributorName || '')}</td><td class="actions"><button class="btn small js-edit" data-id="${t.id}">编辑</button><button class="btn small js-approve" data-id="${t.id}">通过</button><button class="btn small danger js-delete" data-id="${t.id}">删除</button></td></tr>`).join('')}</tbody></table></div></div><div class="card panel excel-import-panel"><div class="section-head"><div><h2>Excel 批量导入</h2><p class="muted">选择符合模板表头的 .xlsx 文件，系统会调用 <code>POST /api/import/excel</code> 写入术语库。</p></div></div><div class="import-row"><input class="input" id="excelFileInput" type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"><button class="btn primary" id="importExcelBtn" ${State.importBusy ? 'disabled' : ''}>${State.importBusy ? '导入中...' : '导入 Excel'}</button></div><p class="muted">必需列：中文术语、英文术语。其他列如关键词、解释、参考文献、审核状态会自动映射。</p>${importStatus}</div>${articlePanel}<div class="card panel"><div class="section-head"><h2>新增能力</h2></div><div class="support-tags"><span class="chip primary">专题文章 ${articles().length}</span><span class="chip primary">学习进度</span><span class="chip primary">随堂测验</span><span class="chip primary">收藏夹</span></div></div></div><aside class="card panel admin-form"><div class="section-head"><h2>${editing ? '编辑词条' : '新增词条'}</h2></div><form id="termForm" class="form-grid"><div class="form-row-2"><div><label class="label">分类</label><select class="select" name="categoryId">${categories().map(c => `<option value="${c.id}" ${editing?.categoryId === c.id ? 'selected' : ''}>${escapeHtml(c.name_zh)}</option>`).join('')}</select></div><div><label class="label">状态</label><select class="select" name="reviewStatus"><option value="draft">draft</option><option value="submitted">submitted</option><option value="approved">approved</option></select></div></div><div class="form-row-2"><div><label class="label">中文术语</label><input class="input" name="termZh" required value="${escapeHtml(editing?.term.zh || '')}"></div><div><label class="label">英文术语</label><input class="input" name="termEn" required value="${escapeHtml(editing?.term.en || '')}"></div></div><div><label class="label">俄文术语（可选）</label><input class="input" name="termRu" value="${escapeHtml(editing?.term.ru || '')}"></div><div><label class="label">中文解释（学术版）</label><textarea class="textarea" name="meaningZh">${escapeHtml(editing?.meaning.zh || '')}</textarea></div><div><label class="label">中文解释（通俗版）</label><textarea class="textarea" name="meaningPopular">${escapeHtml(editing?.meaning.popular || '')}</textarea></div><div><label class="label">英文解释（简要）</label><textarea class="textarea" name="meaningEn">${escapeHtml(editing?.meaning.en || '')}</textarea></div><div><label class="label">应用场景</label><textarea class="textarea" name="application">${escapeHtml(editing?.examples.zh || '')}</textarea></div><div><label class="label">公式 / 模型</label><input class="input" name="formulaModel" value="${escapeHtml(editing?.formulaModel || '')}"></div><div class="form-row-2"><div><label class="label">关键词（逗号分隔）</label><input class="input" name="keywords" value="${escapeHtml((editing?.keywords || []).join(', '))}"></div><div><label class="label">相关术语 ID</label><input class="input" name="relatedIds" value="${escapeHtml((editing?.relatedIds || []).join(', '))}"></div></div><div><label class="label">参考文献（用分号或逗号分隔）</label><textarea class="textarea" name="references">${escapeHtml((editing?.references || []).join('；'))}</textarea></div><div class="form-row-2"><div><label class="label">贡献者姓名</label><input class="input" name="contributorName" value="${escapeHtml(editing?.contributorName || '')}"></div><div><label class="label">研究方向</label><input class="input" name="contributorDirection" value="${escapeHtml(editing?.contributorResearchDirection || '')}"></div></div><div><label class="label">视频路径</label><input class="input" name="videoPath" value="${escapeHtml(editing?.media.videoPath || '')}" placeholder="/media/videos/xxx.mp4 或 videos/xxx.mp4"></div><div class="inline-actions"><button class="btn primary" type="submit">保存到数据库</button><button class="btn secondary" type="button" id="clearFormBtn">清空</button></div></form></aside></section></div>`;
+  app.innerHTML = `<div class="page-shell">${topbar('EnerTri 管理后台','词条录入、审核、数据维护与智能能力配置')}<section class="split"><div class="main-stack"><div class="card panel"><div class="section-head"><h2>术语库管理</h2><span class="muted">当前 ${filtered.length} 条</span></div><div class="toolbar"><input class="input" id="adminSearch" placeholder="搜索中文、英文、关键词、解释" value="${escapeHtml(State.adminFilter)}"><select class="select" id="adminStatus"><option value="all">全部状态</option><option value="draft">草稿</option><option value="submitted">待审核</option><option value="approved">已通过</option></select><button class="btn primary" id="newTermBtn">新增术语</button><button class="btn secondary" id="refreshBtn">刷新</button></div><div class="table-wrap" style="margin-top:16px"><table class="table"><thead><tr><th>ID</th><th>状态</th><th>分类</th><th>中文</th><th>English</th><th>贡献者</th><th>操作</th></tr></thead><tbody>${visibleTerms.map(t => `<tr><td>${t.id}</td><td>${statusBadge(t.reviewStatus)}</td><td>${escapeHtml(categoryLabel(getCategory(t.categoryId)))}</td><td>${escapeHtml(t.term.zh)}</td><td>${escapeHtml(t.term.en)}</td><td>${escapeHtml(t.contributorName || '')}</td><td class="actions"><button class="btn small js-edit" data-id="${t.id}">编辑</button><button class="btn small js-approve" data-id="${t.id}">通过</button><button class="btn small danger js-delete" data-id="${t.id}">删除</button></td></tr>`).join('')}</tbody></table></div></div><div class="card panel excel-import-panel"><div class="section-head"><div><h2>Excel 批量导入</h2><p class="muted">选择符合模板表头的 .xlsx 文件，提交前填写大分类和小分类；不存在的分类会自动创建。</p></div></div><div class="import-row"><input class="input" id="excelFileInput" type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"><button class="btn primary" id="importExcelBtn" ${State.importBusy ? 'disabled' : ''}>${State.importBusy ? '导入中...' : '导入 Excel'}</button></div><p class="muted">必需列：中文术语、英文术语。分类留空时使用“未分类”；其他列会自动映射。</p>${importStatus}</div>${articlePanel}<div class="card panel"><div class="section-head"><h2>新增能力</h2></div><div class="support-tags"><span class="chip primary">专题文章 ${articles().length}</span><span class="chip primary">学习进度</span><span class="chip primary">随堂测验</span><span class="chip primary">收藏夹</span></div></div></div><aside class="card panel admin-form"><div class="section-head"><h2>${editing ? '编辑词条' : '新增词条'}</h2></div><form id="termForm" class="form-grid"><div class="form-row-2"><div><label class="label">分类</label><select class="select" name="categoryId">${categories().map(c => `<option value="${c.id}" ${editing?.categoryId === c.id ? 'selected' : ''}>${escapeHtml(categoryLabel(c))}</option>`).join('')}</select></div><div><label class="label">状态</label><select class="select" name="reviewStatus"><option value="draft">draft</option><option value="submitted">submitted</option><option value="approved">approved</option></select></div></div><div class="form-row-2"><div><label class="label">中文术语</label><input class="input" name="termZh" required value="${escapeHtml(editing?.term.zh || '')}"></div><div><label class="label">英文术语</label><input class="input" name="termEn" required value="${escapeHtml(editing?.term.en || '')}"></div></div><div><label class="label">俄文术语（可选）</label><input class="input" name="termRu" value="${escapeHtml(editing?.term.ru || '')}"></div><div><label class="label">中文解释（学术版）</label><textarea class="textarea" name="meaningZh">${escapeHtml(editing?.meaning.zh || '')}</textarea></div><div><label class="label">中文解释（通俗版）</label><textarea class="textarea" name="meaningPopular">${escapeHtml(editing?.meaning.popular || '')}</textarea></div><div><label class="label">英文解释（简要）</label><textarea class="textarea" name="meaningEn">${escapeHtml(editing?.meaning.en || '')}</textarea></div><div><label class="label">应用场景</label><textarea class="textarea" name="application">${escapeHtml(editing?.examples.zh || '')}</textarea></div><div><label class="label">公式 / 模型</label><input class="input" name="formulaModel" value="${escapeHtml(editing?.formulaModel || '')}"></div><div class="form-row-2"><div><label class="label">关键词（逗号分隔）</label><input class="input" name="keywords" value="${escapeHtml((editing?.keywords || []).join(', '))}"></div><div><label class="label">相关术语 ID</label><input class="input" name="relatedIds" value="${escapeHtml((editing?.relatedIds || []).join(', '))}"></div></div><div><label class="label">参考文献（用分号或逗号分隔）</label><textarea class="textarea" name="references">${escapeHtml((editing?.references || []).join('；'))}</textarea></div><div class="form-row-2"><div><label class="label">贡献者姓名</label><input class="input" name="contributorName" value="${escapeHtml(editing?.contributorName || '')}"></div><div><label class="label">研究方向</label><input class="input" name="contributorDirection" value="${escapeHtml(editing?.contributorResearchDirection || '')}"></div></div><div><label class="label">视频路径</label><input class="input" name="videoPath" value="${escapeHtml(editing?.media.videoPath || '')}" placeholder="/media/videos/xxx.mp4 或 videos/xxx.mp4"></div><div class="inline-actions"><button class="btn primary" type="submit">保存到数据库</button><button class="btn secondary" type="button" id="clearFormBtn">清空</button></div></form></aside></section></div>`;
   document.querySelector('select[name="reviewStatus"]').value = editing?.reviewStatus || 'draft';
   document.getElementById('adminStatus').value = State.adminStatus;
   bindCommon(); bindAdmin();
@@ -303,10 +378,10 @@ function bindCommon() {
   document.getElementById('submitQuizBtn')?.addEventListener('click', submitCurrentQuiz);
 }
 function bindAdmin() {
-  document.getElementById('adminSearch').oninput = e => { State.adminFilter = e.target.value; renderAdmin(); };
-  document.getElementById('adminStatus').onchange = e => { State.adminStatus = e.target.value; renderAdmin(); };
+  document.getElementById('adminSearch').oninput = e => { State.adminFilter = e.target.value; State.adminPage = 1; State.adminSelectedIds = {}; renderAdmin(); };
+  document.getElementById('adminStatus').onchange = e => { State.adminStatus = e.target.value; State.adminPage = 1; State.adminSelectedIds = {}; renderAdmin(); };
   document.getElementById('newTermBtn').onclick = () => { State.editingId = null; renderAdmin(); };
-  document.getElementById('refreshBtn').onclick = async () => { await refreshData(); renderAdmin(); };
+  document.getElementById('refreshBtn').onclick = async () => { State.adminSelectedIds = {}; await refreshData(); renderAdmin(); };
   document.getElementById('importExcelBtn').onclick = importExcelFromAdmin;
   ensureExcelCategoryInput();
   document.getElementById('clearFormBtn').onclick = () => { State.editingId = null; renderAdmin(); };
@@ -328,35 +403,236 @@ function bindAdmin() {
     catch (e) { alert(`保存文章失败：${e.message}`); }
   });
   document.querySelectorAll('.js-edit').forEach(b => b.onclick = () => { State.editingId = Number(b.dataset.id); renderAdmin(); });
-  document.querySelectorAll('.js-approve').forEach(b => b.onclick = async () => { await api(`/terms/${b.dataset.id}/review`, {method:'POST', body: JSON.stringify({review_status:'approved', review_comment:'审核通过'})}); await refreshData(); renderAdmin(); });
-  document.querySelectorAll('.js-delete').forEach(b => b.onclick = async () => { if (!confirm('确定删除该词条吗？')) return; await api(`/terms/${b.dataset.id}`, {method:'DELETE'}); await refreshData(); renderAdmin(); });
+  document.querySelectorAll('.js-approve').forEach(b => b.onclick = async () => { await api(`/terms/${b.dataset.id}/review`, {method:'POST', body: JSON.stringify({review_status:'approved', review_comment:'审核通过'})}); delete State.adminSelectedIds[b.dataset.id]; await refreshData(); renderAdmin(); });
+  document.querySelectorAll('.js-delete').forEach(b => b.onclick = async () => { if (!confirm('确定删除该词条吗？')) return; await api(`/terms/${b.dataset.id}`, {method:'DELETE'}); delete State.adminSelectedIds[b.dataset.id]; await refreshData(); renderAdmin(); });
   document.getElementById('termForm').onsubmit = saveTerm;
+  ensureAdminControls();
+  ensureTermCategoryInputs();
 }
+
+function selectedAdminIds() {
+  return Object.keys(State.adminSelectedIds || {}).map(Number).filter(Number.isInteger);
+}
+
+async function bulkReviewSelectedTerms() {
+  const termIds = selectedAdminIds();
+  if (!termIds.length) return;
+  try {
+    const result = await api('/terms/bulk/review', { method: 'POST', body: JSON.stringify({ term_ids: termIds }) });
+    State.adminSelectedIds = {};
+    await refreshData();
+    alert(`已审核通过 ${result.updated || termIds.length} 条术语。`);
+    renderAdmin();
+  } catch (e) {
+    alert(`批量审核失败：${e.message}`);
+  }
+}
+
+async function bulkDeleteSelectedTerms() {
+  const termIds = selectedAdminIds();
+  if (!termIds.length) return;
+  if (!confirm(`确定删除选中的 ${termIds.length} 条术语吗？删除后不可恢复。`)) return;
+  try {
+    const result = await api('/terms/bulk/delete', { method: 'POST', body: JSON.stringify({ term_ids: termIds }) });
+    State.adminSelectedIds = {};
+    await refreshData();
+    alert(`已删除 ${result.deleted || termIds.length} 条术语。`);
+    renderAdmin();
+  } catch (e) {
+    alert(`批量删除失败：${e.message}`);
+  }
+}
+
+function ensureAdminBulkControls() {
+  const tableWrap = document.querySelector('.main-stack > .card.panel .table-wrap');
+  const table = tableWrap?.querySelector('table');
+  const toolbar = document.querySelector('.main-stack > .card.panel .toolbar');
+  if (!table || !toolbar) return;
+  if (!State.adminSelectedIds) State.adminSelectedIds = {};
+
+  const rows = [...table.querySelectorAll('tbody tr')].filter(row => row.querySelector('.js-edit'));
+  const visibleIds = rows.map(row => String(row.querySelector('.js-edit').dataset.id));
+  const allSelected = visibleIds.length > 0 && visibleIds.every(id => !!State.adminSelectedIds[id]);
+
+  const header = table.querySelector('thead tr');
+  let headerCell = header?.querySelector('.admin-select-header');
+  if (header && !headerCell) {
+    headerCell = document.createElement('th');
+    headerCell.className = 'admin-select-header';
+    header.insertBefore(headerCell, header.firstChild);
+  }
+  if (headerCell) {
+    headerCell.innerHTML = '<label class="admin-select-label"><input type="checkbox" id="adminSelectAllHeader" aria-label="全选当前页显示的筛选结果"> <span>选择</span></label>';
+    const headerCheckbox = headerCell.querySelector('input');
+    headerCheckbox.checked = allSelected;
+    headerCheckbox.onchange = event => {
+      visibleIds.forEach(id => { State.adminSelectedIds[id] = event.target.checked; });
+      renderAdmin();
+    };
+  }
+
+  rows.forEach(row => {
+    const id = String(row.querySelector('.js-edit').dataset.id);
+    let cell = row.querySelector('.admin-select-cell');
+    if (!cell) {
+      cell = document.createElement('td');
+      cell.className = 'admin-select-cell';
+      row.insertBefore(cell, row.firstChild);
+    }
+    cell.innerHTML = `<input type="checkbox" class="term-select" data-id="${escapeHtml(id)}" aria-label="选择术语 ${escapeHtml(id)}">`;
+    const checkbox = cell.querySelector('input');
+    checkbox.checked = !!State.adminSelectedIds[id];
+    checkbox.onchange = event => {
+      State.adminSelectedIds[id] = event.target.checked;
+      renderAdmin();
+    };
+  });
+
+  let selectLabel = toolbar.querySelector('.admin-bulk-select-label');
+  if (!selectLabel) {
+    selectLabel = document.createElement('label');
+    selectLabel.className = 'admin-bulk-select-label';
+    toolbar.insertBefore(selectLabel, toolbar.firstChild);
+  }
+  selectLabel.innerHTML = '<input type="checkbox" id="adminSelectAllToolbar" aria-label="全选当前页显示的筛选结果"> 全选当前页';
+  const toolbarCheckbox = selectLabel.querySelector('input');
+  toolbarCheckbox.checked = allSelected;
+  toolbarCheckbox.onchange = event => {
+    visibleIds.forEach(id => { State.adminSelectedIds[id] = event.target.checked; });
+    renderAdmin();
+  };
+
+  let summary = toolbar.querySelector('.admin-bulk-summary');
+  if (!summary) {
+    summary = document.createElement('span');
+    summary.className = 'muted admin-bulk-summary';
+    toolbar.insertBefore(summary, toolbar.querySelector('#newTermBtn') || null);
+  }
+  const selectedCount = selectedAdminIds().length;
+  summary.textContent = selectedCount ? `已选 ${selectedCount} 条` : '未选择术语';
+
+  let approve = toolbar.querySelector('#bulkApproveBtn');
+  if (!approve) {
+    approve = document.createElement('button');
+    approve.id = 'bulkApproveBtn';
+    approve.className = 'btn secondary';
+    approve.textContent = '批量通过';
+    toolbar.insertBefore(approve, toolbar.querySelector('#newTermBtn') || null);
+  }
+  approve.disabled = selectedCount === 0;
+  approve.onclick = bulkReviewSelectedTerms;
+
+  let remove = toolbar.querySelector('#bulkDeleteBtn');
+  if (!remove) {
+    remove = document.createElement('button');
+    remove.id = 'bulkDeleteBtn';
+    remove.className = 'btn danger';
+    remove.textContent = '批量删除';
+    toolbar.insertBefore(remove, toolbar.querySelector('#newTermBtn') || null);
+  }
+  remove.disabled = selectedCount === 0;
+  remove.onclick = bulkDeleteSelectedTerms;
+}
+
 function ensureExcelCategoryInput() {
   const fileInput = document.getElementById('excelFileInput');
   const row = fileInput?.closest('.import-row');
   if (!fileInput || !row) return;
   const panel = fileInput.closest('.excel-import-panel');
   const intro = panel?.querySelector('.section-head p.muted');
-  if (intro) intro.textContent = '选择符合模板表头的 .xlsx 文件，提交前填写分类；不存在的分类会自动创建。';
+  if (intro) intro.textContent = '选择符合模板表头的 .xlsx 文件，提交前填写大分类和小分类；不存在的分类会自动创建。';
   const legacyHint = row.nextElementSibling;
-  if (legacyHint?.classList.contains('muted')) legacyHint.textContent = '必需列：中文术语、英文术语。其他列如关键词、解释、参考文献、审核状态会自动映射。';
-  if (document.getElementById('excelCategoryInput')) return;
-  const input = document.createElement('input');
-  input.className = 'input';
-  input.id = 'excelCategoryInput';
-  input.type = 'text';
-  input.maxLength = 120;
-  input.value = State.importCategory || '';
-  input.placeholder = '分类，例如：航空热防护';
-  input.setAttribute('aria-label', 'Excel 导入分类');
-  input.title = '留空时使用“未分类”';
-  input.addEventListener('input', e => { State.importCategory = e.target.value; });
-  fileInput.insertAdjacentElement('afterend', input);
+  if (legacyHint?.classList.contains('muted')) legacyHint.textContent = '必需列：中文术语、英文术语。分类留空时使用“未分类”；其他列会自动映射。';
+  if (document.getElementById('excelParentCategoryInput')) return;
+  const parentInput = document.createElement('input');
+  parentInput.className = 'input';
+  parentInput.id = 'excelParentCategoryInput';
+  parentInput.type = 'text';
+  parentInput.maxLength = 120;
+  parentInput.value = State.importParentCategory || '';
+  parentInput.placeholder = '大分类，例如：热力学与传热';
+  parentInput.setAttribute('aria-label', 'Excel 导入大分类');
+  parentInput.addEventListener('input', e => { State.importParentCategory = e.target.value; });
+  const childInput = document.createElement('input');
+  childInput.className = 'input';
+  childInput.id = 'excelChildCategoryInput';
+  childInput.type = 'text';
+  childInput.maxLength = 120;
+  childInput.value = State.importChildCategory || '';
+  childInput.placeholder = '小分类，例如：热力学状态量与物性参数';
+  childInput.setAttribute('aria-label', 'Excel 导入小分类');
+  childInput.addEventListener('input', e => { State.importChildCategory = e.target.value; });
+  fileInput.insertAdjacentElement('afterend', parentInput);
+  parentInput.insertAdjacentElement('afterend', childInput);
   const hint = document.createElement('p');
   hint.className = 'muted';
-  hint.textContent = '分类留空时使用“未分类”。重复词条不会重复创建，但会归入本次选择的分类。';
+  hint.textContent = '先填写大分类，再填写小分类；重复词条不会重复创建，但会归入本次选择的小分类。';
   row.insertAdjacentElement('afterend', hint);
+}
+function ensureTermCategoryInputs() {
+  const select = document.querySelector('#termForm select[name="categoryId"]');
+  const wrapper = select?.parentElement;
+  if (!select || !wrapper || document.getElementById('categoryParentNameInput')) return;
+  const current = getCategory(State.editingId ? getTerm(State.editingId)?.categoryId : select.value);
+  const parent = current?.parent_id ? getCategory(current.parent_id) : current;
+  const child = current?.parent_id ? current : null;
+  const label = wrapper.querySelector('.label');
+  if (label) label.textContent = '分类层级';
+  select.style.display = 'none';
+  const parentInput = document.createElement('input');
+  parentInput.className = 'input category-level-input';
+  parentInput.id = 'categoryParentNameInput';
+  parentInput.name = 'categoryParentName';
+  parentInput.maxLength = 120;
+  parentInput.placeholder = '大分类，例如：热力学与传热';
+  parentInput.value = parent?.name_zh || '';
+  parentInput.title = '不存在时会自动创建大分类';
+  const childInput = document.createElement('input');
+  childInput.className = 'input category-level-input';
+  childInput.id = 'categoryChildNameInput';
+  childInput.name = 'categoryChildName';
+  childInput.maxLength = 120;
+  childInput.placeholder = '小分类（可选），例如：热力学状态量与物性参数';
+  childInput.value = child?.name_zh || '';
+  childInput.title = '不存在时会在大分类下自动创建';
+  select.insertAdjacentElement('afterend', parentInput);
+  parentInput.insertAdjacentElement('afterend', childInput);
+}
+function ensureAdminControls() {
+  const status = document.getElementById('adminStatus');
+  if (!status) return;
+  let categorySelect = document.getElementById('adminCategoryFilter');
+  if (!categorySelect) {
+    categorySelect = document.createElement('select');
+    categorySelect.className = 'select';
+    categorySelect.id = 'adminCategoryFilter';
+    status.insertAdjacentElement('afterend', categorySelect);
+  }
+  categorySelect.innerHTML = `<option value="">全部主题</option>${categories().map(category => `<option value="${category.id}">${escapeHtml(categoryLabel(category))}</option>`).join('')}`;
+  categorySelect.value = State.adminCategoryFilter || '';
+  categorySelect.onchange = e => { State.adminCategoryFilter = e.target.value; State.adminPage = 1; State.adminSelectedIds = {}; renderAdmin(); };
+
+  const table = document.querySelector('.main-stack > .card.panel .table-wrap');
+  if (!table) return;
+  let pager = document.getElementById('adminTermPager');
+  if (!pager) {
+    pager = document.createElement('div');
+    pager.id = 'adminTermPager';
+    pager.className = 'admin-term-pager';
+    table.insertAdjacentElement('afterend', pager);
+  }
+  const filteredCount = terms().filter(t => {
+    const category = getCategory(t.categoryId);
+    const parent = category?.parent_id ? getCategory(category.parent_id) : null;
+    const searchable = [t.term.zh, t.term.en, t.term.ru, t.meaning.zh, t.meaning.popular, t.meaning.en, t.contributorName, category?.name_zh, parent?.name_zh, ...t.keywords].map(normalize);
+    return (State.adminStatus === 'all' || t.reviewStatus === State.adminStatus)
+      && (!State.adminCategoryFilter || String(t.categoryId) === String(State.adminCategoryFilter))
+      && (!State.adminFilter || searchable.some(x => x.includes(normalize(State.adminFilter))));
+  }).length;
+  const pageCount = Math.max(1, Math.ceil(filteredCount / 20));
+  pager.innerHTML = `<span class="muted">每页 20 条 · 第 ${State.adminPage}/${pageCount} 页 · 共 ${filteredCount} 条</span><span class="admin-pager-actions"><button class="btn small secondary" data-admin-page="${State.adminPage - 1}" ${State.adminPage <= 1 ? 'disabled' : ''}>上一页</button><button class="btn small secondary" data-admin-page="${State.adminPage + 1}" ${State.adminPage >= pageCount ? 'disabled' : ''}>下一页</button></span>`;
+  pager.querySelectorAll('[data-admin-page]').forEach(button => button.addEventListener('click', () => { State.adminPage = Number(button.dataset.adminPage); State.adminSelectedIds = {}; renderAdmin(); }));
+  ensureAdminBulkControls();
 }
 async function importExcelFromAdmin() {
   const input = document.getElementById('excelFileInput');
@@ -371,14 +647,16 @@ async function importExcelFromAdmin() {
     State.importError = '目前仅支持 .xlsx 格式，请使用 Excel 工作簿文件。';
     return renderAdmin();
   }
-  const category = document.getElementById('excelCategoryInput')?.value.trim() || '';
-  State.importCategory = category;
+  const parentCategory = document.getElementById('excelParentCategoryInput')?.value.trim() || '';
+  const childCategory = document.getElementById('excelChildCategoryInput')?.value.trim() || '';
+  State.importParentCategory = parentCategory;
+  State.importChildCategory = childCategory;
   State.importBusy = true;
   State.importResult = null;
   State.importError = '';
   renderAdmin();
   try {
-    State.importResult = await importExcelApi(file, category);
+    State.importResult = await importExcelApi(file, parentCategory, childCategory);
     await refreshData();
   } catch (e) {
     State.importError = e.message || '导入失败';
@@ -429,7 +707,19 @@ async function doLogin() {
 async function saveTerm(e) {
   e.preventDefault();
   const fd = new FormData(e.target);
-  const item = { categoryId: fd.get('categoryId'), featured: false, reviewStatus: fd.get('reviewStatus'), reviewComment: '', term: { zh: fd.get('termZh').trim(), en: fd.get('termEn').trim(), ru: fd.get('termRu').trim() }, meaning: { zh: fd.get('meaningZh').trim(), popular: fd.get('meaningPopular').trim(), en: fd.get('meaningEn').trim() }, examples: { zh: fd.get('application').trim() }, formulaModel: fd.get('formulaModel').trim(), keywords: splitCsv(fd.get('keywords')), relatedIds: splitCsv(fd.get('relatedIds')).map(Number).filter(Boolean), references: splitCsv(fd.get('references')), contributorName: fd.get('contributorName').trim(), contributorResearchDirection: fd.get('contributorDirection').trim(), media: { videoPath: fd.get('videoPath').trim(), thumbnailLabel: '', thumbnailHint: '', thumbnailStyle: 'linear-gradient(135deg,#2563eb 0%,#0891b2 100%)' } };
+  let categoryId = fd.get('categoryId');
+  const parentName = String(fd.get('categoryParentName') || '').trim();
+  const childName = String(fd.get('categoryChildName') || '').trim();
+  if (parentName || childName) {
+    try {
+      const resolved = await resolveCategoryApi(parentName, childName);
+      categoryId = resolved.id;
+    } catch (error) {
+      alert(`分类创建或复用失败：${error.message}`);
+      return;
+    }
+  }
+  const item = { categoryId, featured: false, reviewStatus: fd.get('reviewStatus'), reviewComment: '', term: { zh: fd.get('termZh').trim(), en: fd.get('termEn').trim(), ru: fd.get('termRu').trim() }, meaning: { zh: fd.get('meaningZh').trim(), popular: fd.get('meaningPopular').trim(), en: fd.get('meaningEn').trim() }, examples: { zh: fd.get('application').trim() }, formulaModel: fd.get('formulaModel').trim(), keywords: splitCsv(fd.get('keywords')), relatedIds: splitCsv(fd.get('relatedIds')).map(Number).filter(Boolean), references: splitCsv(fd.get('references')), contributorName: fd.get('contributorName').trim(), contributorResearchDirection: fd.get('contributorDirection').trim(), media: { videoPath: fd.get('videoPath').trim(), thumbnailLabel: '', thumbnailHint: '', thumbnailStyle: 'linear-gradient(135deg,#2563eb 0%,#0891b2 100%)' } };
   const method = State.editingId ? 'PUT' : 'POST';
   const path = State.editingId ? `/terms/${State.editingId}` : '/terms';
   await api(path, { method, body: JSON.stringify(demoToPayload(item)) });

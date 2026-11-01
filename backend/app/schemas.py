@@ -32,6 +32,7 @@ class TokenOut(BaseModel):
 class CategoryBase(BaseModel):
     code: str
     name_zh: str
+    parent_id: Optional[int] = None
     name_en: Optional[str] = None
     name_ru: Optional[str] = None
     description_zh: Optional[str] = None
@@ -45,6 +46,11 @@ class CategoryCreate(CategoryBase):
 class CategoryOut(CategoryBase):
     model_config = ConfigDict(from_attributes=True)
     id: int
+
+
+class CategoryResolveRequest(BaseModel):
+    parent_name: Optional[str] = Field(default=None, max_length=120)
+    child_name: Optional[str] = Field(default=None, max_length=120)
 
 
 class TermBase(BaseModel):
@@ -85,6 +91,10 @@ class ReviewRequest(BaseModel):
     review_comment: Optional[str] = None
 
 
+class TermBulkRequest(BaseModel):
+    term_ids: List[int] = Field(min_length=1, max_length=200)
+
+
 class TermOut(TermBase):
     model_config = ConfigDict(from_attributes=True)
     id: int
@@ -99,6 +109,7 @@ class ImportResult(BaseModel):
     skipped: int
     categorized: int = 0
     category: Optional[str] = None
+    parent_category: Optional[str] = None
     errors: List[str] = Field(default_factory=list)
 
 
