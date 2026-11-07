@@ -1,12 +1,12 @@
 {
   "name": "EnerTri 网页试用部署准备版",
-  "version": "4.7.0-webprep.27",
+  "version": "4.7.0-webprep.28",
   "api_business_version": "4.7.0",
   "date": "2026-10-24",
   "status": "preparation_candidate_not_public_ready",
-  "database_head": "v4_7_nested_term_categories",
+  "database_head": "v4_7_html_learning_assets",
   "validation": {
-    "isolated_sqlite_tests": 58,
+    "isolated_sqlite_tests": 59,
     "test_modules": 15,
     "python_compile": "passed",
     "javascript_syntax": "passed",
@@ -66,6 +66,7 @@
     ,"表格文本策略增加正文网格、双栏字符碎片网格和整页正文候选拦截；对带表题的无边框表格使用文本块和列锚点提取；旧版本无坐标表格在详情页隐藏并提示重新解析",
     "Excel 导入支持提交前填写分类，自动创建或复用分类，并将重复词条重新归类；兼容关联词汇列",
     "术语分类支持大分类与小分类层级，Excel 和直接录入均可自动创建或复用层级；前台分类导航按大分类分页折叠，管理员术语表按20条分页并支持关键词、状态和主题筛选",
-    "管理员术语表支持当前筛选页全选、批量审核通过和批量删除；批量接口去重术语 ID 并保留单条操作权限"
+    "管理员术语表支持当前筛选页全选、批量审核通过和批量删除；批量接口去重术语 ID 并保留单条操作权限",
+    "未登录访问平台默认进入登录页；登录后默认进入术语库；术语详情支持俄语解释和通俗/学术解释切换；新增 HTML 视频学习与科普文章库，管理员最多一次上传10个 HTML 并按术语名自动关联"
   ]
 }

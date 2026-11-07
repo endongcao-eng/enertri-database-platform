@@ -60,10 +60,13 @@ class TermBase(BaseModel):
     ru: Optional[str] = None
     definition_zh_academic: str
     definition_zh_popular: Optional[str] = None
+    definition_ru: Optional[str] = None
     definition_en: Optional[str] = None
     application_scenario: Optional[str] = None
     formula_model: Optional[str] = None
     has_video: bool = False
+    html_video_available: bool = False
+    html_article_available: bool = False
     featured: bool = False
     review_status: ReviewStatus = Field(default="draft", pattern="^(draft|submitted|approved)$")
     review_comment: Optional[str] = None
@@ -102,6 +105,16 @@ class TermOut(TermBase):
     contributor_id: Optional[int] = None
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
+    html_video_url: Optional[str] = None
+    html_article_url: Optional[str] = None
+
+
+class HtmlLibraryUploadResult(BaseModel):
+    uploaded: int
+    replaced: int = 0
+    matched: int = 0
+    unmatched: List[str] = Field(default_factory=list)
+    files: List[dict] = Field(default_factory=list)
 
 
 class ImportResult(BaseModel):

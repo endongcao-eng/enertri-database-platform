@@ -95,10 +95,13 @@ class Term(Base):
     ru = Column(String(255))
     definition_zh_academic = Column(Text, nullable=False)
     definition_zh_popular = Column(Text)
+    definition_ru = Column(Text)
     definition_en = Column(Text)
     application_scenario = Column(Text)
     formula_model = Column(Text)
     has_video = Column(Boolean, default=False, nullable=False)
+    html_video_available = Column(Boolean, default=False, nullable=False)
+    html_article_available = Column(Boolean, default=False, nullable=False)
     featured = Column(Boolean, default=False, nullable=False)
     review_status = Column(String(20), default="draft", nullable=False, index=True)
     review_comment = Column(Text)
@@ -116,6 +119,7 @@ class Term(Base):
     keywords = relationship("Keyword", secondary=term_keywords)
     references = relationship("TermReference", cascade="all, delete-orphan", back_populates="term")
     media_assets = relationship("MediaAsset", cascade="all, delete-orphan", back_populates="term")
+    html_assets = relationship("HtmlLearningAsset", cascade="all, delete-orphan", back_populates="term")
     outgoing_relations = relationship("TermRelation", foreign_keys="TermRelation.term_id", cascade="all, delete-orphan")
 
 
@@ -148,6 +152,23 @@ class MediaAsset(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     term = relationship("Term", back_populates="media_assets")
     __table_args__ = (CheckConstraint("media_type IN ('video','image','other')", name="ck_media_type"),)
+
+
+class HtmlLearningAsset(Base):
+    __tablename__ = "html_learning_assets"
+    id = Column(Integer, primary_key=True)
+    term_id = Column(Integer, ForeignKey("terms.id", ondelete="SET NULL"), index=True)
+    original_name = Column(String(255), nullable=False, unique=True, index=True)
+    storage_path = Column(Text, nullable=False)
+    asset_kind = Column(String(20), nullable=False, index=True)
+    mime_type = Column(String(100), nullable=False, default="text/html")
+    uploader_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), index=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    __table_args__ = (
+        CheckConstraint("asset_kind IN ('video','article')", name="ck_html_learning_assets_kind"),
+    )
+    term = relationship("Term", back_populates="html_assets")
+    uploader = relationship("User")
 
 
 class UserTermProgress(Base):

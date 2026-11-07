@@ -12,7 +12,7 @@ from sqlalchemy import inspect, text
 from .database import DATABASE_URL, engine
 
 BASELINE_REVISION = "v4_0_baseline"
-HEAD_REVISION = "v4_7_nested_term_categories"
+HEAD_REVISION = "v4_7_html_learning_assets"
 
 # V4.2 refuses to infer a baseline from table names alone. These fields are stable V4.0 fingerprints.
 V4_BASELINE_COLUMNS: dict[str, dict[str, str]] = {

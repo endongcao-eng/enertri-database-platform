@@ -7,7 +7,7 @@ from typing import Iterable
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from .models import Article, Category, Contributor, Keyword, MediaAsset, Term, TermReference, TermRelation, UserTermProgress
+from .models import Article, Category, Contributor, HtmlLearningAsset, Keyword, MediaAsset, Term, TermReference, TermRelation, UserTermProgress
 from .schemas import ArticleOut, ProgressOut, TermCreate, TermOut
 
 
@@ -218,7 +218,7 @@ def apply_term_payload(db: Session, term: Term, payload: TermCreate, user_id: in
     contributor = get_or_create_contributor(db, payload.contributor_name, payload.contributor_research_direction)
     for field in [
         "category_id", "zh", "en", "ru", "definition_zh_academic", "definition_zh_popular",
-        "definition_en", "application_scenario", "formula_model", "has_video", "featured",
+        "definition_ru", "definition_en", "application_scenario", "formula_model", "has_video", "featured",
         "review_status", "review_comment"
     ]:
         setattr(term, field, getattr(payload, field))
@@ -262,6 +262,8 @@ def apply_term_payload(db: Session, term: Term, payload: TermCreate, user_id: in
 
 def term_to_out(term: Term) -> TermOut:
     media = next((item for item in term.media_assets if normalize_video_path(item.path)), None)
+    html_video = next((item for item in getattr(term, "html_assets", []) if item.asset_kind == "video"), None)
+    html_article = next((item for item in getattr(term, "html_assets", []) if item.asset_kind == "article"), None)
     return TermOut(
         id=term.id,
         category_id=term.category_id,
@@ -271,10 +273,13 @@ def term_to_out(term: Term) -> TermOut:
         ru=term.ru,
         definition_zh_academic=term.definition_zh_academic,
         definition_zh_popular=term.definition_zh_popular,
+        definition_ru=term.definition_ru,
         definition_en=term.definition_en,
         application_scenario=term.application_scenario,
         formula_model=term.formula_model,
         has_video=bool(term.has_video or media),
+        html_video_available=bool(term.html_video_available or html_video),
+        html_article_available=bool(term.html_article_available or html_article),
         featured=term.featured,
         review_status=term.review_status,
         review_comment=term.review_comment,
@@ -288,6 +293,8 @@ def term_to_out(term: Term) -> TermOut:
         thumbnail_label=media.thumbnail_label if media else None,
         thumbnail_hint=media.thumbnail_hint if media else None,
         thumbnail_style=media.thumbnail_style if media else None,
+        html_video_url=f"/api/html-library/{html_video.id}/open" if html_video else None,
+        html_article_url=f"/api/html-library/{html_article.id}/open" if html_article else None,
         created_at=term.created_at,
         updated_at=term.updated_at,
     )

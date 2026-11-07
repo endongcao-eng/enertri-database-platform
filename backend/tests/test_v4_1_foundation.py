@@ -350,6 +350,46 @@ class V41FoundationTest(unittest.TestCase):
         with SessionLocal() as db:
             self.assertEqual(db.query(Term).filter(Term.id.in_(created)).count(), 0)
 
+    def test_html_learning_library_links_by_term_name(self):
+        term_response = self.client.post(
+            "/api/terms",
+            headers=self.admin_headers,
+            json={
+                "zh": "HTML资源测试泵",
+                "en": "HTML resource test pump",
+                "definition_zh_academic": "用于验证 HTML 学习资源自动关联。",
+                "definition_zh_popular": "用于测试网页学习内容。",
+                "review_status": "approved",
+            },
+        )
+        self.assertEqual(term_response.status_code, 200, term_response.text)
+        uploaded = self.client.post(
+            "/api/html-library/upload",
+            headers=self.admin_headers,
+            files=[
+                ("files", ("HTML资源测试泵.html", b"<html><body>video</body></html>", "text/html")),
+                ("files", ("HTML资源测试泵科普.html", b"<html><body>article</body></html>", "text/html")),
+            ],
+        )
+        self.assertEqual(uploaded.status_code, 200, uploaded.text)
+        self.assertEqual(uploaded.json()["uploaded"], 2)
+        self.assertGreaterEqual(uploaded.json()["matched"], 2)
+
+        listed = self.client.get("/api/terms?q=HTML资源测试泵", headers=self.admin_headers)
+        self.assertEqual(listed.status_code, 200, listed.text)
+        term = next(item for item in listed.json() if item["zh"] == "HTML资源测试泵")
+        self.assertTrue(term["has_video"])
+        self.assertTrue(term["html_video_available"])
+        self.assertTrue(term["html_article_available"])
+        self.assertTrue(term["html_video_url"])
+        self.assertTrue(term["html_article_url"])
+        video = self.client.get(term["html_video_url"], headers=self.student_headers)
+        self.assertEqual(video.status_code, 200, video.text)
+        self.assertTrue(video.headers.get("content-type", "").startswith("text/html"))
+        self.assertIn("sandbox", video.headers.get("content-security-policy", ""))
+        article = self.client.get(term["html_article_url"], headers=self.student_headers)
+        self.assertEqual(article.status_code, 200, article.text)
+
     def test_excel_import_creates_or_reuses_category_and_reclassifies_duplicates(self):
         excel = _demo_excel_bytes([("流场反演", "Flow-field inversion")])
         response = self.client.post(
@@ -702,7 +742,7 @@ class V41FoundationTest(unittest.TestCase):
 
         migration = self.client.get("/api/admin/migrations", headers=self.admin_headers)
         self.assertEqual(migration.status_code, 200)
-        self.assertEqual(migration.json()["current_revision"], "v4_7_nested_term_categories")
+        self.assertEqual(migration.json()["current_revision"], "v4_7_html_learning_assets")
         self.assertEqual(migration.json()["status"], "succeeded")
 
         users = self.client.get("/api/admin/users", headers=self.admin_headers)

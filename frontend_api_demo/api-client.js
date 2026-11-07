@@ -84,6 +84,11 @@ async function importExcelApi(file, parentCategoryName = '', childCategoryName =
   if (String(childCategoryName || '').trim()) formData.append('category_child', String(childCategoryName).trim());
   return api('/import/excel', { method: 'POST', body: formData });
 }
+async function uploadHtmlLibraryApi(files) {
+  const formData = new FormData();
+  for (const file of files) formData.append('files', file);
+  return api('/html-library/upload', { method: 'POST', body: formData });
+}
 async function resolveCategoryApi(parentName = '', childName = '') {
   return api('/categories/resolve', {
     method: 'POST',
@@ -98,7 +103,7 @@ function termToDemo(t) {
     reviewStatus: t.review_status,
     reviewComment: t.review_comment || '',
     term: { zh: t.zh || '', en: t.en || '', ru: t.ru || '' },
-    meaning: { zh: t.definition_zh_academic || '', popular: t.definition_zh_popular || '', en: t.definition_en || '', ru: '' },
+    meaning: { zh: t.definition_zh_academic || '', popular: t.definition_zh_popular || '', en: t.definition_en || '', ru: t.definition_ru || '' },
     examples: { zh: t.application_scenario || '', en: '', ru: '' },
     formulaModel: t.formula_model || '',
     relatedIds: t.related_term_ids || [],
@@ -113,6 +118,10 @@ function termToDemo(t) {
       thumbnailHint: t.thumbnail_hint || t.application_scenario || '术语示意',
       thumbnailStyle: t.thumbnail_style || 'linear-gradient(135deg,#2563eb 0%,#0891b2 100%)',
     },
+    htmlVideoAvailable: !!t.html_video_available,
+    htmlArticleAvailable: !!t.html_article_available,
+    htmlVideoUrl: t.html_video_url || '',
+    htmlArticleUrl: t.html_article_url || '',
     updatedAt: t.updated_at || new Date().toISOString(),
   };
 }
@@ -137,6 +146,7 @@ function demoToPayload(item) {
     ru: item.term.ru || null,
     definition_zh_academic: item.meaning.zh || '待补充',
     definition_zh_popular: item.meaning.popular || null,
+    definition_ru: item.meaning.ru || null,
     definition_en: item.meaning.en || null,
     application_scenario: item.examples.zh || null,
     formula_model: item.formulaModel || null,

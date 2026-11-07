@@ -4,9 +4,11 @@ function routeFromLocationHash() {
   return value || 'home';
 }
 const initialPathRoute = window.location.pathname === '/login' ? 'login' : window.location.pathname === '/register' ? 'register' : routeFromLocationHash();
-const initialRoute = ['home', 'login', 'register', 'workspace', 'admin', 'template-library'].includes(initialPathRoute)
-  ? initialPathRoute
-  : 'home';
+const savedUserAtStartup = getSavedUser();
+const allowedInitialRoutes = ['home', 'login', 'register', 'workspace', 'admin', 'template-library'];
+const initialRoute = !savedUserAtStartup && !['login', 'register'].includes(initialPathRoute)
+  ? 'login'
+  : (allowedInitialRoutes.includes(initialPathRoute) ? initialPathRoute : 'home');
 const State = {
   loading: true,
   error: '',
@@ -34,6 +36,9 @@ const State = {
   importChildCategory: '',
   importResult: null,
   importError: '',
+  htmlUploadBusy: false,
+  htmlUploadResult: null,
+  htmlUploadError: '',
   editingId: null,
   editingArticleId: null,
   quiz: null,
@@ -71,6 +76,11 @@ function goToRoute(route, options = {}) {
   render();
 }
 async function goHome() {
+  if (!State.user) {
+    beginNavigation('login', { replace: true });
+    render();
+    return;
+  }
   const navigationId = beginNavigation('home');
   clearQuiz();
   render();
@@ -105,13 +115,14 @@ async function boot() {
   try {
     if (getToken()) {
       try { State.user = await api('/auth/me'); saveAuth(getToken(), State.user); }
-      catch (e) { if(e.status !== 401) throw e; State.user = null; }
+      catch (e) { if(e.status !== 401) throw e; State.user = null; saveAuth(null, null); beginNavigation('login', { replace: true }); }
     }
     if (State.user?.must_change_password) { State.loading=false; return renderPasswordChange(); }
     await refreshData();
   }
   catch (e) { State.error = e.message; }
   State.loading = false;
+  if (!State.user && !['login', 'register'].includes(State.route)) State.route = 'login';
   render();
 }
 async function refreshData() {
@@ -144,7 +155,7 @@ function featuredTerms() { return terms().filter(t => t.featured); }
 function termsByCategory(id) { return terms().filter(t => t.categoryId === String(id)); }
 function hasVideo(t) {
   const path = String(t?.media?.videoPath || '').trim();
-  return !!path && !['待上传', '待补充', '暂无', '无', 'none', 'null', 'n/a'].includes(path.toLowerCase());
+  return !!t?.htmlVideoAvailable || (!!path && !['待上传', '待补充', '暂无', '无', 'none', 'null', 'n/a'].includes(path.toLowerCase()));
 }
 function relatedTerms(t) { return (t?.relatedIds || []).map(getTerm).filter(Boolean); }
 function progressFor(termId) { return State.progressMap[Number(termId)] || { term_id: Number(termId), is_favorite: false, learned_at: null, quiz_best_score: 0 }; }
@@ -153,7 +164,7 @@ function learnedTerms() { return terms().filter(t => progressFor(t.id).learned_a
 function searchTerms(q) {
   const n = normalize(q);
   if (!n) return [];
-  return terms().filter(t => [t.term.zh, t.term.en, t.term.ru, t.meaning.zh, t.meaning.popular, t.meaning.en, ...(t.keywords || [])].map(normalize).some(x => x.includes(n)));
+  return terms().filter(t => [t.term.zh, t.term.en, t.term.ru, t.meaning.zh, t.meaning.popular, t.meaning.ru, t.meaning.en, ...(t.keywords || [])].map(normalize).some(x => x.includes(n)));
 }
 function relatedArticles(term) {
   if (!term) return articles();
@@ -179,6 +190,7 @@ function render() {
   if (State.loading) { app.innerHTML = '<div class="page-shell"><div class="card panel">正在连接数据库 API...</div></div>'; return; }
   if (State.error) { app.innerHTML = `<div class="page-shell"><div class="card panel"><h2>无法连接 API</h2><p>${escapeHtml(State.error)}</p><p class="muted">服务暂时不可用，请稍后刷新；持续失败时请联系试用管理员。</p></div></div>`; return; }
   if (State.user?.must_change_password || State.route === 'password') return renderPasswordChange();
+  if (!State.user && !['login', 'register'].includes(State.route)) return renderLogin('请先登录后进入术语库。');
   if (State.route === 'login') return renderLogin();
   if (State.route === 'register') return renderRegister();
   if (State.route === 'admin') return renderAdmin();
@@ -211,14 +223,13 @@ function termCardHtml(term) {
   const learnedText = p.learned_at ? '✓ 已学' : '标记已学';
   const quizScore = p.quiz_best_score ? `<span class="badge success">测验最高 ${p.quiz_best_score} 分</span>` : '';
   const related = relatedTerms(term);
-  return `<article class="card term-card"><div class="term-head"><div><span class="badge primary">${escapeHtml(categoryLabel(getCategory(term.categoryId)) || '未分类')}</span><span class="badge ${term.reviewStatus === 'approved' ? 'success' : 'warning'}">${statusBadge(term.reviewStatus)}</span>${quizScore}<h2>${escapeHtml(term.term.zh)}</h2><p class="muted">${escapeHtml(term.term.en)} ${term.term.ru ? ' · ' + escapeHtml(term.term.ru) : ''}</p></div><div class="inline-actions">${State.user ? `<button class="btn small secondary js-favorite" data-id="${term.id}">${favText}</button><button class="btn small secondary js-learned" data-id="${term.id}">${learnedText}</button>` : '<span class="muted">登录后可收藏、记录进度</span>'}</div></div><div class="definition-grid"><div><h3>学术解释</h3><p>${escapeHtml(term.meaning.zh)}</p></div><div><h3>通俗解释</h3><p>${escapeHtml(term.meaning.popular || '暂无')}</p></div><div><h3>English</h3><p>${escapeHtml(term.meaning.en || 'N/A')}</p></div></div><div class="info-box"><h4>应用场景</h4><p>${escapeHtml(term.examples.zh || '暂无')}</p></div>${term.formulaModel ? `<div class="info-box formula-box"><h4>公式 / 模型</h4><p>${escapeHtml(term.formulaModel)}</p><small class="muted">已预留公式模块，可后续接入 KaTeX/MathJax 渲染。</small></div>` : ''}<div class="support-tags">${(term.keywords || []).map(k => `<span class="chip">${escapeHtml(k)}</span>`).join('')}</div>${related.length ? `<div class="info-box"><h4>相关术语</h4><div class="support-tags">${related.map(t => `<button class="quick-tag" data-term="${t.id}">${escapeHtml(t.term.zh)}</button>`).join('')}</div></div>` : ''}${term.references?.length ? `<div class="info-box"><h4>参考文献</h4><ol>${term.references.map(r => `<li>${escapeHtml(r)}</li>`).join('')}</ol></div>` : ''}</article>`;
+  return `<article class="card term-card"><div class="term-head"><div><span class="badge primary">${escapeHtml(categoryLabel(getCategory(term.categoryId)) || '未分类')}</span><span class="badge ${term.reviewStatus === 'approved' ? 'success' : 'warning'}">${statusBadge(term.reviewStatus)}</span>${quizScore}<h2>${escapeHtml(term.term.zh)}</h2><p class="muted">${escapeHtml(term.term.en)} ${term.term.ru ? ' · ' + escapeHtml(term.term.ru) : ''}</p></div><div class="inline-actions">${State.user ? `<button class="btn small secondary js-favorite" data-id="${term.id}">${favText}</button><button class="btn small secondary js-learned" data-id="${term.id}">${learnedText}</button>` : '<span class="muted">登录后可收藏、记录进度</span>'}</div></div><div class="definition-grid term-definition-grid"><div class="definition-toggle js-definition-toggle" tabindex="0" role="button" aria-label="点击切换通俗解释和学术解释"><h3 class="definition-toggle-title">通俗解释</h3><p class="definition-popular">${escapeHtml(term.meaning.popular || '暂无')}</p><p class="definition-academic" hidden>${escapeHtml(term.meaning.zh || '暂无')}</p><small class="muted">点击切换学术解释</small></div><div><h3>Русское объяснение</h3><p>${escapeHtml(term.meaning.ru || 'Пока нет перевода')}</p></div><div><h3>English</h3><p>${escapeHtml(term.meaning.en || 'N/A')}</p></div></div><div class="info-box"><h4>应用场景</h4><p>${escapeHtml(term.examples.zh || '暂无')}</p></div>${term.formulaModel ? `<div class="info-box formula-box"><h4>公式 / 模型</h4><p>${escapeHtml(term.formulaModel)}</p><small class="muted">已预留公式模块，可后续接入 KaTeX/MathJax 渲染。</small></div>` : ''}<div class="support-tags">${(term.keywords || []).map(k => `<span class="chip">${escapeHtml(k)}</span>`).join('')}</div>${related.length ? `<div class="info-box"><h4>相关术语</h4><div class="support-tags">${related.map(t => `<button class="quick-tag" data-term="${t.id}">${escapeHtml(t.term.zh)}</button>`).join('')}</div></div>` : ''}${term.references?.length ? `<div class="info-box"><h4>参考文献</h4><ol>${term.references.map(r => `<li>${escapeHtml(r)}</li>`).join('')}</ol></div>` : ''}</article>`;
 }
 function videoPanelHtml(term) {
-  if (!hasVideo(term)) {
-    return term?.media?.videoPlanned
-      ? '<div class="empty-box">该术语已标记为有视频，视频文件待管理员上传。</div>'
-      : '<div class="empty-box">该术语暂未关联视频。</div>';
+  if (term?.htmlVideoAvailable && term.htmlVideoUrl) {
+    return `<div class="html-learning-card"><a class="html-video-button" href="${escapeHtml(term.htmlVideoUrl)}" target="_blank" rel="noopener" aria-label="打开 ${escapeHtml(term.term.zh)} 视频学习"><span>▶</span></a><strong>打开视频学习</strong><small>已关联 HTML 教学内容</small></div>`;
   }
+  if (!hasVideo(term)) return '<div class="empty-box">无对应视频</div>';
   const raw = term.media.videoPath;
   const path = raw.startsWith('/media') ? raw : raw.startsWith('videos/') ? `/media/${raw}` : raw;
   return `<div class="video-box"><video controls preload="metadata"><source src="${escapeHtml(path)}" type="video/mp4" />当前浏览器无法直接播放该视频文件。</video></div><div class="thumb-grid"><div class="thumb-card"><div class="thumb-preview" style="background:${escapeHtml(term.media.thumbnailStyle)}">${escapeHtml(term.media.thumbnailLabel)}</div><div class="thumb-meta"><strong>${escapeHtml(term.term.zh)}</strong><span>${escapeHtml(term.media.thumbnailHint)}</span></div></div></div>`;
@@ -226,7 +237,10 @@ function videoPanelHtml(term) {
 function articlesPanelHtml(term) {
   const list = relatedArticles(term).slice(0, 4);
   const selected = getArticle(State.selectedArticleId) || list[0];
-  return `<div class="card panel"><div class="section-head"><h3>专题科普</h3><span class="muted">${articles().length} 篇</span></div><div class="article-list">${list.map(a => `<button class="article-item ${selected?.id === a.id ? 'active' : ''}" data-article="${a.id}"><span class="article-cover">${escapeHtml(a.coverLabel)}</span><strong>${escapeHtml(a.title)}</strong><small>${escapeHtml(a.difficulty)} · ${(a.relatedKeywords || []).slice(0,3).map(escapeHtml).join(' / ')}</small></button>`).join('') || '<span class="muted">暂无专题文章</span>'}</div>${selected ? `<div class="article-detail"><h4>${escapeHtml(selected.title)}</h4><p class="muted">${escapeHtml(selected.summary)}</p><p>${escapeHtml(selected.content)}</p><div class="support-tags">${(selected.relatedKeywords || []).map(k => `<button class="quick-tag js-article-keyword" data-keyword="${escapeHtml(k)}">${escapeHtml(k)}</button>`).join('')}</div></div>` : ''}</div>`;
+  const htmlChoice = term?.htmlArticleAvailable && term.htmlArticleUrl
+    ? `<a class="html-article-choice" href="${escapeHtml(term.htmlArticleUrl)}" target="_blank" rel="noopener">科普文章</a>`
+    : '<span class="empty-box compact-empty">无对应文章</span>';
+  return `<div class="card panel"><div class="section-head"><h3>专题科普</h3><span class="muted">${articles().length} 篇</span></div><div class="html-article-row">${htmlChoice}</div><div class="article-list">${list.map(a => `<button class="article-item ${selected?.id === a.id ? 'active' : ''}" data-article="${a.id}"><span class="article-cover">${escapeHtml(a.coverLabel)}</span><strong>${escapeHtml(a.title)}</strong><small>${escapeHtml(a.difficulty)} · ${(a.relatedKeywords || []).slice(0,3).map(escapeHtml).join(' / ')}</small></button>`).join('') || '<span class="muted">暂无数据库专题文章</span>'}</div>${selected ? `<div class="article-detail"><h4>${escapeHtml(selected.title)}</h4><p class="muted">${escapeHtml(selected.summary)}</p><p>${escapeHtml(selected.content)}</p><div class="support-tags">${(selected.relatedKeywords || []).map(k => `<button class="quick-tag js-article-keyword" data-keyword="${escapeHtml(k)}">${escapeHtml(k)}</button>`).join('')}</div></div>` : ''}</div>`;
 }
 function learningPanelHtml(term) {
   if (!State.user) return `<div class="card panel"><div class="section-head"><h3>我的学习</h3></div><div class="empty-box">登录后可以收藏术语、标记已学并保存测验最高分。</div></div>`;
@@ -299,17 +313,13 @@ function enhanceCategoryNavigation() {
 }
 function renderLogin(message = '') {
   syncRouteHash('login', true);
-  app.innerHTML = `<div class="login-wrap"><section class="login-showcase"><div class="login-brand"><div class="brand-mark">ET</div><div><h1>EnerTri</h1><p>能源专业三语术语、科研与焊接平台</p></div></div><div class="login-intro"><span class="eyebrow">SECURE WORKSPACE</span><h2>从术语学习到科研与生产协同</h2><p>登录后可使用个人学习记录、科研工具、生产分析和任务成果管理。</p><div class="login-feature-list"><span>术语与专题学习</span><span>科研资料与知识库</span><span>焊接生产分析</span></div></div><button class="btn secondary login-home-link" id="loginHomeBtn">浏览能源术语</button></section><section class="login-card-wrap"><div class="card login-card"><span class="eyebrow">ACCOUNT ACCESS</span><h2>账户登录</h2><p>请使用个人试用账号登录。</p>${message ? `<div class="notice">${escapeHtml(message)}</div>` : ''}<div class="form-grid"><div><label class="label" for="loginUser">用户名</label><input class="input" id="loginUser" autocomplete="username"></div><div><label class="label" for="loginPass">密码</label><input class="input" id="loginPass" type="password" autocomplete="current-password"></div><div class="inline-actions"><button class="btn primary" id="loginSubmit">登录</button><button class="btn secondary" id="toRegisterBtn">创建账号</button><button class="btn secondary" id="backHomeBtn">返回能源术语</button></div></div></div></section></div>`;
+  app.innerHTML = `<div class="login-wrap"><section class="login-showcase"><div class="login-brand"><div class="brand-mark">ET</div><div><h1>EnerTri</h1><p>能源专业三语术语、科研与焊接平台</p></div></div><div class="login-intro"><span class="eyebrow">SECURE WORKSPACE</span><h2>从术语学习到科研与生产协同</h2><p>登录后可使用个人学习记录、科研工具、生产分析和任务成果管理。</p><div class="login-feature-list"><span>术语与专题学习</span><span>科研资料与知识库</span><span>焊接生产分析</span></div></div></section><section class="login-card-wrap"><div class="card login-card"><span class="eyebrow">ACCOUNT ACCESS</span><h2>账户登录</h2><p>请使用个人试用账号登录。</p>${message ? `<div class="notice">${escapeHtml(message)}</div>` : ''}<div class="form-grid"><div><label class="label" for="loginUser">用户名</label><input class="input" id="loginUser" autocomplete="username"></div><div><label class="label" for="loginPass">密码</label><input class="input" id="loginPass" type="password" autocomplete="current-password"></div><div class="inline-actions"><button class="btn primary" id="loginSubmit">登录</button><button class="btn secondary" id="toRegisterBtn">创建账号</button></div></div></div></section></div>`;
   document.getElementById('loginSubmit').onclick = doLogin;
   document.getElementById('toRegisterBtn').onclick = () => goToRoute('register');
-  const backHome = () => goHome();
-  document.getElementById('backHomeBtn').onclick = backHome;
-  document.getElementById('loginHomeBtn').onclick = backHome;
 }
 function renderRegister() {
   syncRouteHash('register', true);
-  app.innerHTML = `<div class="login-wrap"><section class="login-showcase"><div class="login-brand"><div class="brand-mark">ET</div><div><h1>EnerTri</h1><p>能源专业三语术语、科研与焊接平台</p></div></div><div class="login-intro"><span class="eyebrow">PERSONAL TRIAL ACCOUNT</span><h2>创建个人试用账号</h2><p>新账号默认仅拥有普通学习权限；科研、生产和管理权限由管理员分配。</p><div class="login-feature-list"><span>个人学习记录</span><span>论文知识库</span><span>任务成果管理</span></div></div><button class="btn secondary login-home-link" id="registerHomeBtn">浏览能源术语</button></section><section class="login-card-wrap"><div class="card login-card"><span class="eyebrow">CREATE ACCOUNT</span><h2>创建账号</h2><p>密码至少 8 位，并且至少包含一个大写字母和一个数字。</p><div id="registerNotice"></div><div class="form-grid"><div><label class="label" for="registerName">显示名称</label><input class="input" id="registerName" autocomplete="name"></div><div><label class="label" for="registerUser">用户名</label><input class="input" id="registerUser" autocomplete="username" pattern="[A-Za-z0-9_.-]+"></div><div><label class="label" for="registerPass">密码</label><input class="input" id="registerPass" type="password" autocomplete="new-password" minlength="8"></div><div><label class="label" for="registerPassConfirm">确认密码</label><input class="input" id="registerPassConfirm" type="password" autocomplete="new-password" minlength="8"></div><div class="inline-actions"><button class="btn primary" id="registerSubmit">创建账号</button><button class="btn secondary" id="backLoginBtn">返回登录</button></div></div></div></section></div>`;
-  document.getElementById('registerHomeBtn').onclick = () => goHome();
+  app.innerHTML = `<div class="login-wrap"><section class="login-showcase"><div class="login-brand"><div class="brand-mark">ET</div><div><h1>EnerTri</h1><p>能源专业三语术语、科研与焊接平台</p></div></div><div class="login-intro"><span class="eyebrow">PERSONAL TRIAL ACCOUNT</span><h2>创建个人试用账号</h2><p>新账号默认仅拥有普通学习权限；科研、生产和管理权限由管理员分配。</p><div class="login-feature-list"><span>个人学习记录</span><span>论文知识库</span><span>任务成果管理</span></div></div></section><section class="login-card-wrap"><div class="card login-card"><span class="eyebrow">CREATE ACCOUNT</span><h2>创建账号</h2><p>密码至少 8 位，并且至少包含一个大写字母和一个数字。</p><div id="registerNotice"></div><div class="form-grid"><div><label class="label" for="registerName">显示名称</label><input class="input" id="registerName" autocomplete="name"></div><div><label class="label" for="registerUser">用户名</label><input class="input" id="registerUser" autocomplete="username" pattern="[A-Za-z0-9_.-]+"></div><div><label class="label" for="registerPass">密码</label><input class="input" id="registerPass" type="password" autocomplete="new-password" minlength="8"></div><div><label class="label" for="registerPassConfirm">确认密码</label><input class="input" id="registerPassConfirm" type="password" autocomplete="new-password" minlength="8"></div><div class="inline-actions"><button class="btn primary" id="registerSubmit">创建账号</button><button class="btn secondary" id="backLoginBtn">返回登录</button></div></div></div></section></div>`;
   document.getElementById('backLoginBtn').onclick = () => goToRoute('login');
   document.getElementById('registerSubmit').onclick = async () => {
     const button = document.getElementById('registerSubmit');
@@ -328,7 +338,7 @@ function renderAdmin() {
   const filtered = terms().filter(t => {
     const category = getCategory(t.categoryId);
     const parent = category?.parent_id ? getCategory(category.parent_id) : null;
-    const searchable = [t.term.zh, t.term.en, t.term.ru, t.meaning.zh, t.meaning.popular, t.meaning.en, t.contributorName, category?.name_zh, parent?.name_zh, ...t.keywords].map(normalize);
+    const searchable = [t.term.zh, t.term.en, t.term.ru, t.meaning.zh, t.meaning.popular, t.meaning.ru, t.meaning.en, t.contributorName, category?.name_zh, parent?.name_zh, ...t.keywords].map(normalize);
     return (State.adminStatus === 'all' || t.reviewStatus === State.adminStatus)
       && (!State.adminCategoryFilter || String(t.categoryId) === String(State.adminCategoryFilter))
       && (!q || searchable.some(x => x.includes(q)));
@@ -372,6 +382,21 @@ function bindCommon() {
   document.getElementById('logoutBtn')?.addEventListener('click', async () => { try { await api('/auth/logout',{method:'POST'}); } catch(e) { if(e.status!==401) { alert('退出失败，请重试'); return; } } saveAuth(null, null); State.user=null; State.progressMap={}; await goHome(); });
   document.querySelectorAll('.js-favorite').forEach(btn => btn.onclick = () => toggleFavorite(Number(btn.dataset.id)));
   document.querySelectorAll('.js-learned').forEach(btn => btn.onclick = () => toggleLearned(Number(btn.dataset.id)));
+  document.querySelectorAll('.js-definition-toggle').forEach(box => {
+    const toggle = () => {
+      const popular = box.querySelector('.definition-popular');
+      const academic = box.querySelector('.definition-academic');
+      const title = box.querySelector('.definition-toggle-title');
+      const hint = box.querySelector('.muted');
+      const showingAcademic = !academic.hidden;
+      popular.hidden = showingAcademic;
+      academic.hidden = !showingAcademic;
+      title.textContent = showingAcademic ? '通俗解释' : '学术解释';
+      hint.textContent = showingAcademic ? '点击切换学术解释' : '点击切换通俗解释';
+    };
+    box.onclick = toggle;
+    box.onkeydown = event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); toggle(); } };
+  });
   document.getElementById('loadQuizBtn')?.addEventListener('click', loadCurrentQuiz);
   document.getElementById('reloadQuizBtn')?.addEventListener('click', loadCurrentQuiz);
   document.querySelectorAll('.quiz-option input').forEach(input => input.onchange = e => { State.quizAnswers[e.target.name] = e.target.value; });
@@ -384,6 +409,8 @@ function bindAdmin() {
   document.getElementById('refreshBtn').onclick = async () => { State.adminSelectedIds = {}; await refreshData(); renderAdmin(); };
   document.getElementById('importExcelBtn').onclick = importExcelFromAdmin;
   ensureExcelCategoryInput();
+  ensureHtmlLibraryInput();
+  document.getElementById('uploadHtmlLibraryBtn').onclick = uploadHtmlLibraryFromAdmin;
   document.getElementById('clearFormBtn').onclick = () => { State.editingId = null; renderAdmin(); };
   document.getElementById('clearArticleBtn')?.addEventListener('click', () => { State.editingArticleId = null; renderAdmin(); });
   document.querySelectorAll('.js-article-edit').forEach(b => b.onclick = () => { State.editingArticleId = Number(b.dataset.id); renderAdmin(); });
@@ -408,6 +435,7 @@ function bindAdmin() {
   document.getElementById('termForm').onsubmit = saveTerm;
   ensureAdminControls();
   ensureTermCategoryInputs();
+  ensureRussianDefinitionInput();
 }
 
 function selectedAdminIds() {
@@ -569,6 +597,56 @@ function ensureExcelCategoryInput() {
   hint.textContent = '先填写大分类，再填写小分类；重复词条不会重复创建，但会归入本次选择的小分类。';
   row.insertAdjacentElement('afterend', hint);
 }
+function ensureHtmlLibraryInput() {
+  const excelPanel = document.querySelector('.excel-import-panel');
+  if (!excelPanel) return;
+  let panel = document.querySelector('.html-library-panel');
+  if (!panel) {
+    panel = document.createElement('div');
+    panel.className = 'card panel html-library-panel';
+    excelPanel.insertAdjacentElement('afterend', panel);
+  }
+  const result = State.htmlUploadBusy
+    ? '<div class="notice import-result">正在上传 HTML 内容，请稍候...</div>'
+    : State.htmlUploadError
+      ? `<div class="notice import-result error">上传失败：${escapeHtml(State.htmlUploadError)}</div>`
+      : State.htmlUploadResult
+        ? `<div class="notice import-result success"><strong>上传完成：</strong>新增 ${State.htmlUploadResult.uploaded || 0} 个，替换 ${State.htmlUploadResult.replaced || 0} 个，已关联 ${State.htmlUploadResult.matched || 0} 个术语。${(State.htmlUploadResult.unmatched || []).length ? `<br>未匹配术语：${State.htmlUploadResult.unmatched.map(escapeHtml).join('、')}` : ''}</div>`
+        : '';
+  panel.innerHTML = `<div class="section-head"><div><h2>HTML 视频与科普库</h2><p class="muted">管理员可一次上传最多 10 个 .html 文件。文件名使用“术语.html”或“术语科普.html”，平台会自动关联对应术语。</p></div></div><div class="import-row"><input class="input" id="htmlLibraryInput" type="file" accept=".html,text/html" multiple><button class="btn primary" id="uploadHtmlLibraryBtn" ${State.htmlUploadBusy ? 'disabled' : ''}>${State.htmlUploadBusy ? '上传中...' : '上传 HTML'}</button></div><p class="muted">例如：离心泵.html 打开视频学习；离心泵科普.html 显示“科普文章”。单次最多选择 10 个文件。</p>${result}`;
+}
+async function uploadHtmlLibraryFromAdmin() {
+  const input = document.getElementById('htmlLibraryInput');
+  const files = [...(input?.files || [])];
+  if (!files.length) {
+    State.htmlUploadResult = null;
+    State.htmlUploadError = '请先选择 HTML 文件。';
+    return renderAdmin();
+  }
+  if (files.length > 10) {
+    State.htmlUploadResult = null;
+    State.htmlUploadError = '一次最多选择 10 个 HTML 文件。';
+    return renderAdmin();
+  }
+  if (files.some(file => !file.name.toLowerCase().endsWith('.html'))) {
+    State.htmlUploadResult = null;
+    State.htmlUploadError = '只能上传 .html 文件。';
+    return renderAdmin();
+  }
+  State.htmlUploadBusy = true;
+  State.htmlUploadResult = null;
+  State.htmlUploadError = '';
+  renderAdmin();
+  try {
+    State.htmlUploadResult = await uploadHtmlLibraryApi(files);
+    await refreshData();
+  } catch (e) {
+    State.htmlUploadError = e.message || 'HTML 上传失败';
+  } finally {
+    State.htmlUploadBusy = false;
+    renderAdmin();
+  }
+}
 function ensureTermCategoryInputs() {
   const select = document.querySelector('#termForm select[name="categoryId"]');
   const wrapper = select?.parentElement;
@@ -598,6 +676,15 @@ function ensureTermCategoryInputs() {
   select.insertAdjacentElement('afterend', parentInput);
   parentInput.insertAdjacentElement('afterend', childInput);
 }
+function ensureRussianDefinitionInput() {
+  const popular = document.querySelector('#termForm textarea[name="meaningPopular"]');
+  if (!popular || document.querySelector('#termForm textarea[name="meaningRu"]')) return;
+  const wrapper = document.createElement('div');
+  wrapper.innerHTML = '<label class="label">俄语解释（Русское объяснение）</label><textarea class="textarea" name="meaningRu" placeholder="可选"></textarea>';
+  popular.closest('div')?.insertAdjacentElement('afterend', wrapper);
+  const editing = getTerm(State.editingId);
+  wrapper.querySelector('textarea').value = editing?.meaning?.ru || '';
+}
 function ensureAdminControls() {
   const status = document.getElementById('adminStatus');
   if (!status) return;
@@ -624,7 +711,7 @@ function ensureAdminControls() {
   const filteredCount = terms().filter(t => {
     const category = getCategory(t.categoryId);
     const parent = category?.parent_id ? getCategory(category.parent_id) : null;
-    const searchable = [t.term.zh, t.term.en, t.term.ru, t.meaning.zh, t.meaning.popular, t.meaning.en, t.contributorName, category?.name_zh, parent?.name_zh, ...t.keywords].map(normalize);
+    const searchable = [t.term.zh, t.term.en, t.term.ru, t.meaning.zh, t.meaning.popular, t.meaning.ru, t.meaning.en, t.contributorName, category?.name_zh, parent?.name_zh, ...t.keywords].map(normalize);
     return (State.adminStatus === 'all' || t.reviewStatus === State.adminStatus)
       && (!State.adminCategoryFilter || String(t.categoryId) === String(State.adminCategoryFilter))
       && (!State.adminFilter || searchable.some(x => x.includes(normalize(State.adminFilter))));
@@ -701,7 +788,7 @@ async function toggleLearned(termId) {
   render();
 }
 async function doLogin() {
-  try { State.user = await loginApi(document.getElementById('loginUser').value.trim(), document.getElementById('loginPass').value); if(State.user.must_change_password) {goToRoute('password');return;} const nextRoute = ['admin','system_admin'].includes(State.user.role) ? 'admin' : 'home'; const navigationId = beginNavigation(nextRoute); await refreshData(); if (isCurrentNavigation(navigationId, nextRoute)) render(); }
+  try { State.user = await loginApi(document.getElementById('loginUser').value.trim(), document.getElementById('loginPass').value); if(State.user.must_change_password) {goToRoute('password');return;} const nextRoute = 'home'; const navigationId = beginNavigation(nextRoute); await refreshData(); if (isCurrentNavigation(navigationId, nextRoute)) render(); }
   catch(e) { renderLogin(e.message); }
 }
 async function saveTerm(e) {
@@ -719,7 +806,7 @@ async function saveTerm(e) {
       return;
     }
   }
-  const item = { categoryId, featured: false, reviewStatus: fd.get('reviewStatus'), reviewComment: '', term: { zh: fd.get('termZh').trim(), en: fd.get('termEn').trim(), ru: fd.get('termRu').trim() }, meaning: { zh: fd.get('meaningZh').trim(), popular: fd.get('meaningPopular').trim(), en: fd.get('meaningEn').trim() }, examples: { zh: fd.get('application').trim() }, formulaModel: fd.get('formulaModel').trim(), keywords: splitCsv(fd.get('keywords')), relatedIds: splitCsv(fd.get('relatedIds')).map(Number).filter(Boolean), references: splitCsv(fd.get('references')), contributorName: fd.get('contributorName').trim(), contributorResearchDirection: fd.get('contributorDirection').trim(), media: { videoPath: fd.get('videoPath').trim(), thumbnailLabel: '', thumbnailHint: '', thumbnailStyle: 'linear-gradient(135deg,#2563eb 0%,#0891b2 100%)' } };
+  const item = { categoryId, featured: false, reviewStatus: fd.get('reviewStatus'), reviewComment: '', term: { zh: fd.get('termZh').trim(), en: fd.get('termEn').trim(), ru: fd.get('termRu').trim() }, meaning: { zh: fd.get('meaningZh').trim(), popular: fd.get('meaningPopular').trim(), ru: String(fd.get('meaningRu') || '').trim(), en: fd.get('meaningEn').trim() }, examples: { zh: fd.get('application').trim() }, formulaModel: fd.get('formulaModel').trim(), keywords: splitCsv(fd.get('keywords')), relatedIds: splitCsv(fd.get('relatedIds')).map(Number).filter(Boolean), references: splitCsv(fd.get('references')), contributorName: fd.get('contributorName').trim(), contributorResearchDirection: fd.get('contributorDirection').trim(), media: { videoPath: fd.get('videoPath').trim(), thumbnailLabel: '', thumbnailHint: '', thumbnailStyle: 'linear-gradient(135deg,#2563eb 0%,#0891b2 100%)' } };
   const method = State.editingId ? 'PUT' : 'POST';
   const path = State.editingId ? `/terms/${State.editingId}` : '/terms';
   await api(path, { method, body: JSON.stringify(demoToPayload(item)) });

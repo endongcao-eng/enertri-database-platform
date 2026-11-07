@@ -31,6 +31,7 @@ from .project_matching_router import router as project_matching_router
 from .development_planning_router import router as development_planning_router
 from .development_execution_router import router as development_execution_router
 from .template_router import router as template_router
+from .html_library_router import router as html_library_router
 from .capability_standard_service import seed_capability_standards
 from .research_profile_service import seed_demo_research_profiles
 from .project_matching_service import seed_demo_project_matching
@@ -65,6 +66,7 @@ app.include_router(project_matching_router)
 app.include_router(development_planning_router)
 app.include_router(development_execution_router)
 app.include_router(template_router)
+app.include_router(html_library_router)
 
 
 @app.on_event("startup")
@@ -388,6 +390,7 @@ def base_term_query():
         selectinload(Term.keywords),
         selectinload(Term.references),
         selectinload(Term.media_assets),
+        selectinload(Term.html_assets),
         selectinload(Term.outgoing_relations),
     )
 
@@ -653,6 +656,8 @@ def import_excel(
         "俄文术语（可选）": "ru",
         "学术版术语解释": "definition_zh_academic",
         "通俗版术语解释": "definition_zh_popular",
+        "俄语版术语解释": "definition_ru",
+        "俄语解释": "definition_ru",
         "简要英文解释": "definition_en",
         "关键词（3–5个，用逗号分隔）": "keywords",
         "关联词汇": "keywords",
@@ -762,6 +767,7 @@ def import_excel(
                 ru=str(data.get("ru") or "").strip() or None,
                 definition_zh_academic=str(data.get("definition_zh_academic") or "待补充").strip(),
                 definition_zh_popular=str(data.get("definition_zh_popular") or "").strip() or None,
+                definition_ru=str(data.get("definition_ru") or "").strip() or None,
                 definition_en=str(data.get("definition_en") or "").strip() or None,
                 application_scenario=str(data.get("application_scenario") or "").strip() or None,
                 formula_model=str(data.get("formula_model") or "").strip() or None,
