@@ -116,6 +116,7 @@ button { cursor: pointer; }
 .html-article-choice:hover { background:#dbeafe; }
 .compact-empty { display:block; padding:8px 0; }
 .html-library-panel { margin-top:18px; }
+.html-bundle-heading { margin-top:22px; }
 .admin-pager-actions { display:flex; gap:8px; }
 .category-level-input { margin-top:7px; }
 .category-item, .term-item {

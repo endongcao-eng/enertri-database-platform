@@ -117,6 +117,14 @@ class HtmlLibraryUploadResult(BaseModel):
     files: List[dict] = Field(default_factory=list)
 
 
+class HtmlBundleUploadResult(BaseModel):
+    uploaded: int
+    replaced: int = 0
+    matched: int = 0
+    unmatched: List[str] = Field(default_factory=list)
+    bundles: List[dict] = Field(default_factory=list)
+
+
 class ImportResult(BaseModel):
     imported: int
     skipped: int

@@ -2,7 +2,7 @@
 
 # EnerTri 科研与焊接智能平台 V4.7
 
-当前数据库目标 revision：`v4_7_html_learning_assets`。
+当前数据库目标 revision：`v4_7_html_learning_bundles`。
 
 ## 科研成长执行闭环
 

@@ -39,6 +39,9 @@ const State = {
   htmlUploadBusy: false,
   htmlUploadResult: null,
   htmlUploadError: '',
+  bundleUploadBusy: false,
+  bundleUploadResult: null,
+  bundleUploadError: '',
   editingId: null,
   editingArticleId: null,
   quiz: null,
@@ -411,6 +414,7 @@ function bindAdmin() {
   ensureExcelCategoryInput();
   ensureHtmlLibraryInput();
   document.getElementById('uploadHtmlLibraryBtn').onclick = uploadHtmlLibraryFromAdmin;
+  document.getElementById('uploadHtmlBundleBtn').onclick = uploadHtmlBundlesFromAdmin;
   document.getElementById('clearFormBtn').onclick = () => { State.editingId = null; renderAdmin(); };
   document.getElementById('clearArticleBtn')?.addEventListener('click', () => { State.editingArticleId = null; renderAdmin(); });
   document.querySelectorAll('.js-article-edit').forEach(b => b.onclick = () => { State.editingArticleId = Number(b.dataset.id); renderAdmin(); });
@@ -613,7 +617,14 @@ function ensureHtmlLibraryInput() {
       : State.htmlUploadResult
         ? `<div class="notice import-result success"><strong>上传完成：</strong>新增 ${State.htmlUploadResult.uploaded || 0} 个，替换 ${State.htmlUploadResult.replaced || 0} 个，已关联 ${State.htmlUploadResult.matched || 0} 个术语。${(State.htmlUploadResult.unmatched || []).length ? `<br>未匹配术语：${State.htmlUploadResult.unmatched.map(escapeHtml).join('、')}` : ''}</div>`
         : '';
-  panel.innerHTML = `<div class="section-head"><div><h2>HTML 视频与科普库</h2><p class="muted">管理员可一次上传最多 10 个 .html 文件。文件名使用“术语.html”或“术语科普.html”，平台会自动关联对应术语。</p></div></div><div class="import-row"><input class="input" id="htmlLibraryInput" type="file" accept=".html,text/html" multiple><button class="btn primary" id="uploadHtmlLibraryBtn" ${State.htmlUploadBusy ? 'disabled' : ''}>${State.htmlUploadBusy ? '上传中...' : '上传 HTML'}</button></div><p class="muted">例如：离心泵.html 打开视频学习；离心泵科普.html 显示“科普文章”。单次最多选择 10 个文件。</p>${result}`;
+  const bundleResult = State.bundleUploadBusy
+    ? '<div class="notice import-result">正在上传科普页面包，请稍候...</div>'
+    : State.bundleUploadError
+      ? `<div class="notice import-result error">页面包上传失败：${escapeHtml(State.bundleUploadError)}</div>`
+      : State.bundleUploadResult
+        ? `<div class="notice import-result success"><strong>页面包上传完成：</strong>新增 ${State.bundleUploadResult.uploaded || 0} 个，替换 ${State.bundleUploadResult.replaced || 0} 个，已关联 ${State.bundleUploadResult.matched || 0} 个术语。${(State.bundleUploadResult.unmatched || []).length ? `<br>未匹配页面：${State.bundleUploadResult.unmatched.map(escapeHtml).join('、')}` : ''}</div>`
+        : '';
+  panel.innerHTML = `<div class="section-head"><div><h2>HTML 视频与科普库</h2><p class="muted">单个 HTML 适合没有外部资源的页面；包含 index.html、其他 HTML、CSS、JS、图片或音频的内容，请上传 ZIP 科普页面包。</p></div></div><div class="import-row"><input class="input" id="htmlLibraryInput" type="file" accept=".html,text/html" multiple><button class="btn primary" id="uploadHtmlLibraryBtn" ${State.htmlUploadBusy ? 'disabled' : ''}>${State.htmlUploadBusy ? '上传中...' : '上传单个 HTML'}</button></div><p class="muted">单个 HTML 文件名使用“术语.html”或“术语科普.html”，一次最多 10 个。</p>${result}<div class="section-head html-bundle-heading"><div><h3>科普页面包</h3><p class="muted">ZIP 内每个包含 index.html 的文件夹会作为一个页面包；页面内部的其他 HTML、CSS、JS、图片和音频会保持相对路径。</p></div></div><div class="import-row"><input class="input" id="htmlBundleInput" type="file" accept=".zip,application/zip" multiple><button class="btn primary" id="uploadHtmlBundleBtn" ${State.bundleUploadBusy ? 'disabled' : ''}>${State.bundleUploadBusy ? '上传中...' : '上传 ZIP 页面包'}</button></div><p class="muted">例如直接上传“11.13科普视频.zip”。每个页面包必须包含 index.html；单次最多 10 个 ZIP，每个 ZIP 最多 10 个页面文件夹。</p>${bundleResult}`;
 }
 async function uploadHtmlLibraryFromAdmin() {
   const input = document.getElementById('htmlLibraryInput');
@@ -644,6 +655,38 @@ async function uploadHtmlLibraryFromAdmin() {
     State.htmlUploadError = e.message || 'HTML 上传失败';
   } finally {
     State.htmlUploadBusy = false;
+    renderAdmin();
+  }
+}
+async function uploadHtmlBundlesFromAdmin() {
+  const input = document.getElementById('htmlBundleInput');
+  const files = [...(input?.files || [])];
+  if (!files.length) {
+    State.bundleUploadResult = null;
+    State.bundleUploadError = '请先选择 ZIP 科普页面包。';
+    return renderAdmin();
+  }
+  if (files.length > 10) {
+    State.bundleUploadResult = null;
+    State.bundleUploadError = '一次最多选择 10 个 ZIP 页面包。';
+    return renderAdmin();
+  }
+  if (files.some(file => !file.name.toLowerCase().endsWith('.zip'))) {
+    State.bundleUploadResult = null;
+    State.bundleUploadError = '页面包只能上传 .zip 文件。';
+    return renderAdmin();
+  }
+  State.bundleUploadBusy = true;
+  State.bundleUploadResult = null;
+  State.bundleUploadError = '';
+  renderAdmin();
+  try {
+    State.bundleUploadResult = await uploadHtmlBundlesApi(files);
+    await refreshData();
+  } catch (e) {
+    State.bundleUploadError = e.message || '科普页面包上传失败';
+  } finally {
+    State.bundleUploadBusy = false;
     renderAdmin();
   }
 }

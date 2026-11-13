@@ -89,6 +89,11 @@ async function uploadHtmlLibraryApi(files) {
   for (const file of files) formData.append('files', file);
   return api('/html-library/upload', { method: 'POST', body: formData });
 }
+async function uploadHtmlBundlesApi(files) {
+  const formData = new FormData();
+  for (const file of files) formData.append('files', file);
+  return api('/html-library/bundles/upload', { method: 'POST', body: formData });
+}
 async function resolveCategoryApi(parentName = '', childName = '') {
   return api('/categories/resolve', {
     method: 'POST',

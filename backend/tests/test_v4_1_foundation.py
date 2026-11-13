@@ -5,6 +5,7 @@ import io
 import tempfile
 import time
 import unittest
+import zipfile
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from unittest.mock import patch
@@ -390,6 +391,46 @@ class V41FoundationTest(unittest.TestCase):
         article = self.client.get(term["html_article_url"], headers=self.student_headers)
         self.assertEqual(article.status_code, 200, article.text)
 
+    def test_html_bundle_preserves_relative_pages_and_assets(self):
+        term_response = self.client.post(
+            "/api/terms",
+            headers=self.admin_headers,
+            json={
+                "zh": "科普页面包测试",
+                "en": "HTML learning bundle test",
+                "definition_zh_academic": "验证目录型 HTML 页面包。",
+                "review_status": "approved",
+            },
+        )
+        self.assertEqual(term_response.status_code, 200, term_response.text)
+        archive = io.BytesIO()
+        with zipfile.ZipFile(archive, "w", zipfile.ZIP_DEFLATED) as bundle:
+            bundle.writestr("9-科普页面包测试/index.html", "<html><head><link rel='stylesheet' href='assets/style.css'></head><body><a href='detail.html'>detail</a></body></html>")
+            bundle.writestr("9-科普页面包测试/detail.html", "<html><body>relative page</body></html>")
+            bundle.writestr("9-科普页面包测试/assets/style.css", "body { color: red; }")
+        uploaded = self.client.post(
+            "/api/html-library/bundles/upload",
+            headers=self.admin_headers,
+            files={"files": ("科普页面包.zip", archive.getvalue(), "application/zip")},
+        )
+        self.assertEqual(uploaded.status_code, 200, uploaded.text)
+        self.assertEqual(uploaded.json()["uploaded"], 1)
+        self.assertNotIn("科普页面包测试", uploaded.json()["unmatched"] or [])
+
+        listed = self.client.get("/api/terms?q=科普页面包测试", headers=self.admin_headers)
+        self.assertEqual(listed.status_code, 200, listed.text)
+        term = next(item for item in listed.json() if item["zh"] == "科普页面包测试")
+        self.assertTrue(term["html_article_available"])
+        index = self.client.get(term["html_article_url"], headers=self.student_headers)
+        self.assertEqual(index.status_code, 200, index.text)
+        self.assertIn("detail.html", index.text)
+        detail_url = term["html_article_url"].replace("index.html", "detail.html")
+        detail = self.client.get(detail_url, headers=self.student_headers)
+        self.assertEqual(detail.status_code, 200, detail.text)
+        css = self.client.get(term["html_article_url"].replace("index.html", "assets/style.css"), headers=self.student_headers)
+        self.assertEqual(css.status_code, 200, css.text)
+        self.assertIn("text/css", css.headers.get("content-type", ""))
+
     def test_excel_import_creates_or_reuses_category_and_reclassifies_duplicates(self):
         excel = _demo_excel_bytes([("流场反演", "Flow-field inversion")])
         response = self.client.post(
@@ -742,7 +783,7 @@ class V41FoundationTest(unittest.TestCase):
 
         migration = self.client.get("/api/admin/migrations", headers=self.admin_headers)
         self.assertEqual(migration.status_code, 200)
-        self.assertEqual(migration.json()["current_revision"], "v4_7_html_learning_assets")
+        self.assertEqual(migration.json()["current_revision"], "v4_7_html_learning_bundles")
         self.assertEqual(migration.json()["status"], "succeeded")
 
         users = self.client.get("/api/admin/users", headers=self.admin_headers)

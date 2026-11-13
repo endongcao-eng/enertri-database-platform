@@ -293,8 +293,8 @@ def term_to_out(term: Term) -> TermOut:
         thumbnail_label=media.thumbnail_label if media else None,
         thumbnail_hint=media.thumbnail_hint if media else None,
         thumbnail_style=media.thumbnail_style if media else None,
-        html_video_url=f"/api/html-library/{html_video.id}/open" if html_video else None,
-        html_article_url=f"/api/html-library/{html_article.id}/open" if html_article else None,
+        html_video_url=(f"/api/html-library/{html_video.id}/bundle/index.html" if html_video and html_video.is_bundle else f"/api/html-library/{html_video.id}/open" if html_video else None),
+        html_article_url=(f"/api/html-library/{html_article.id}/bundle/index.html" if html_article and html_article.is_bundle else f"/api/html-library/{html_article.id}/open" if html_article else None),
         created_at=term.created_at,
         updated_at=term.updated_at,
     )
