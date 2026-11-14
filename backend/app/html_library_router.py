@@ -20,7 +20,7 @@ from sqlalchemy.orm import Session
 from .audit import write_audit
 from .database import get_db
 from .file_service import FILE_STORE_DIR
-from .models import HtmlLearningAsset, Term, User
+from .models import Category, HtmlLearningAsset, Term, User
 from .schemas import HtmlBundleUploadResult, HtmlLibraryUploadResult
 from .security import admin_user, optional_current_user
 from .utils import normalize_term_name
@@ -69,8 +69,21 @@ def _term_name_map(db: Session) -> dict[str, Term]:
     return result
 
 
+def _child_category_name_map(db: Session) -> dict[str, Category]:
+    result: dict[str, Category] = {}
+    for category in db.scalars(select(Category).where(Category.parent_id.is_not(None))).all():
+        key = normalize_term_name(category.name_zh)
+        if key and key not in result:
+            result[key] = category
+    return result
+
+
 def _refresh_term_flags(db: Session) -> dict[str, int]:
     terms = db.scalars(select(Term)).all()
+    terms_by_category: dict[int, list[Term]] = {}
+    for term in terms:
+        if term.category_id:
+            terms_by_category.setdefault(term.category_id, []).append(term)
     name_map: dict[str, Term] = {}
     for term in terms:
         for value in (term.zh, term.en, term.ru):
@@ -81,19 +94,30 @@ def _refresh_term_flags(db: Session) -> dict[str, int]:
         term.html_video_available = False
         term.html_article_available = False
         term.has_video = bool(term.has_video)
-    matched = {"video": 0, "article": 0}
+    category_map = _child_category_name_map(db)
+    matched_ids = {"video": set(), "article": set()}
     for asset in db.scalars(select(HtmlLearningAsset)).all():
         kind, term_label = _asset_label(asset)
-        term = name_map.get(normalize_term_name(term_label))
-        asset.term_id = term.id if term else None
-        if term:
+        asset.term_id = None
+        asset.category_id = None
+        category = category_map.get(normalize_term_name(term_label)) if asset.is_bundle else None
+        terms_for_asset: list[Term] = []
+        if category:
+            asset.category_id = category.id
+            terms_for_asset = terms_by_category.get(category.id, [])
+        else:
+            term = name_map.get(normalize_term_name(term_label))
+            if term:
+                asset.term_id = term.id
+                terms_for_asset = [term]
+        for term in terms_for_asset:
             if kind == "video":
                 term.html_video_available = True
             else:
                 term.html_article_available = True
             term.has_video = True
-            matched[kind] += 1
-    return matched
+            matched_ids[kind].add(term.id)
+    return {kind: len(term_ids) for kind, term_ids in matched_ids.items()}
 
 
 def _asset_to_dict(asset: HtmlLearningAsset) -> dict:
@@ -105,6 +129,8 @@ def _asset_to_dict(asset: HtmlLearningAsset) -> dict:
         "asset_kind": kind,
         "term_label": term_label,
         "term_id": asset.term_id,
+        "category_id": asset.category_id,
+        "category_name": asset.category.name_zh if asset.category else None,
         "is_bundle": bool(asset.is_bundle),
         "bundle_name": asset.bundle_name,
         "open_url": open_url,
@@ -308,6 +334,8 @@ def upload_html_bundles(request: Request, files: list[UploadFile] = File(...), d
                 existing.bundle_name = label
                 existing.original_name = f"{label}.bundle.zip"
                 existing.asset_kind = "article"
+                existing.term_id = None
+                existing.category_id = None
                 existing.mime_type = "text/html"
                 existing.uploader_id = user.id
                 existing.is_bundle = True
@@ -332,8 +360,11 @@ def upload_html_bundles(request: Request, files: list[UploadFile] = File(...), d
     finally:
         for root in staging_roots:
             shutil.rmtree(root, ignore_errors=True)
-    name_map = _term_name_map(db)
-    unmatched = [item["bundle_name"] for item in bundles_result if normalize_term_name(item["term_label"]) not in name_map]
+    unmatched = [
+        item["bundle_name"]
+        for item in bundles_result
+        if not item.get("term_id") and not item.get("category_id")
+    ]
     for item in bundles_result:
         write_audit(db, action="html_library.bundle_uploaded", resource_type="html_learning_asset", resource_id=str(item["id"]), actor=user, details=item, **_audit_meta(request))
     return HtmlBundleUploadResult(uploaded=uploaded, replaced=replaced, matched=matched["article"], unmatched=unmatched, bundles=bundles_result)

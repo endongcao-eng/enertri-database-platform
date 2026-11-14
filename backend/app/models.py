@@ -68,6 +68,7 @@ class Category(Base):
     parent = relationship("Category", remote_side=[id], back_populates="children", foreign_keys=[parent_id])
     children = relationship("Category", back_populates="parent", foreign_keys=[parent_id], cascade="all, delete-orphan", order_by="Category.sort_order, Category.id")
     terms = relationship("Term", back_populates="category")
+    html_assets = relationship("HtmlLearningAsset", back_populates="category")
 
 
 class Contributor(Base):
@@ -158,6 +159,7 @@ class HtmlLearningAsset(Base):
     __tablename__ = "html_learning_assets"
     id = Column(Integer, primary_key=True)
     term_id = Column(Integer, ForeignKey("terms.id", ondelete="SET NULL"), index=True)
+    category_id = Column(Integer, ForeignKey("categories.id", ondelete="SET NULL"), index=True)
     original_name = Column(String(255), nullable=False, unique=True, index=True)
     storage_path = Column(Text, nullable=False)
     asset_kind = Column(String(20), nullable=False, index=True)
@@ -171,6 +173,7 @@ class HtmlLearningAsset(Base):
         CheckConstraint("asset_kind IN ('video','article')", name="ck_html_learning_assets_kind"),
     )
     term = relationship("Term", back_populates="html_assets")
+    category = relationship("Category")
     uploader = relationship("User")
 
 

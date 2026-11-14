@@ -262,8 +262,16 @@ def apply_term_payload(db: Session, term: Term, payload: TermCreate, user_id: in
 
 def term_to_out(term: Term) -> TermOut:
     media = next((item for item in term.media_assets if normalize_video_path(item.path)), None)
-    html_video = next((item for item in getattr(term, "html_assets", []) if item.asset_kind == "video"), None)
-    html_article = next((item for item in getattr(term, "html_assets", []) if item.asset_kind == "article"), None)
+    html_assets = list(getattr(term, "html_assets", []))
+    html_video = next((item for item in html_assets if item.asset_kind == "video"), None)
+    html_article = next((item for item in html_assets if item.asset_kind == "article"), None)
+    if term.category_id:
+        category_assets = [
+            item for item in getattr(term.category, "html_assets", [])
+            if item.is_bundle and item.category_id == term.category_id
+        ] if term.category is not None else []
+        html_video = html_video or next((item for item in category_assets if item.asset_kind == "video"), None)
+        html_article = html_article or next((item for item in category_assets if item.asset_kind == "article"), None)
     return TermOut(
         id=term.id,
         category_id=term.category_id,

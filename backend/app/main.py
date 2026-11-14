@@ -385,7 +385,7 @@ def build_term_quiz(term: Term, all_terms: list[Term]) -> QuizOut:
 
 def base_term_query():
     return select(Term).options(
-        selectinload(Term.category),
+        selectinload(Term.category).selectinload(Category.html_assets),
         selectinload(Term.contributor),
         selectinload(Term.keywords),
         selectinload(Term.references),
