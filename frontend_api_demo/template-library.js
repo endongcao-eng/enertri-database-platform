@@ -72,7 +72,7 @@ function renderTemplateLibrary() {
   bindCommon();
   document.querySelectorAll('[data-template-category]').forEach(btn => btn.onclick = () => { TemplateLibraryUI.category = btn.dataset.templateCategory; openTemplateLibrary(); });
   document.getElementById('templateSearchBtn')?.addEventListener('click', () => { TemplateLibraryUI.query = document.getElementById('templateSearchInput').value; openTemplateLibrary(); });
-  document.getElementById('templateSearchInput')?.addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('templateSearchBtn').click(); });
+  bindImeEnter(document.getElementById('templateSearchInput'), () => document.getElementById('templateSearchBtn').click());
   document.querySelectorAll('.js-template-download').forEach(btn => btn.onclick = async event => { event.stopPropagation(); try { await apiDownload(btn.dataset.url, btn.dataset.name); } catch (e) { alert(`下载失败：${e.message}`); } });
   document.querySelectorAll('.js-template-delete').forEach(btn => btn.onclick = async event => {
     event.stopPropagation();

@@ -317,6 +317,7 @@ function bindKnowledgeSystem() {
       const catalog=await api(`/literature/publications?limit=20&offset=${State.centralLiteratureOffset||0}`); State.publications=catalog.items||[]; State.centralLiteratureTotal=catalog.total||0; renderKnowledgeSystem();
     } catch(e) { State.knowledgeError=e.message; renderKnowledgeSystem(); }
   });
+  bindImeEnter(document.getElementById('literatureQuery'), () => document.getElementById('literatureSearchBtn')?.click());
   document.getElementById('centralPapersPrev')?.addEventListener('click', async()=>{
     try { State.literatureSearchResult=null; State.centralLiteratureOffset=Math.max(0,(State.centralLiteratureOffset||0)-20); const catalog=await api(`/literature/publications?limit=20&offset=${State.centralLiteratureOffset}`); State.publications=catalog.items||[]; State.centralLiteratureTotal=catalog.total||0; State.centralLiteratureStatus={available:true,message:'空间能源平台论文主库已连接'}; renderKnowledgeSystem(); }
     catch(e){State.publications=[];State.centralLiteratureStatus={available:false,message:e.message};renderKnowledgeSystem();}
@@ -347,4 +348,5 @@ function bindKnowledgeSystem() {
     const button=document.getElementById('paperQaBtn'); button.disabled=true; button.textContent='检索证据…';
     try{State.paperQaQuestion=document.getElementById('paperQaQuestion').value.trim();State.paperQaResult=await api(`/knowledge/documents/${State.selectedKnowledgeDocumentId}/qa`,{method:'POST',body:JSON.stringify({question:State.paperQaQuestion})});renderKnowledgeSystem();}catch(e){State.knowledgeError=e.message;renderKnowledgeSystem();}
   });
+  bindImeEnter(document.getElementById('paperQaQuestion'), () => document.getElementById('paperQaBtn')?.click());
 }

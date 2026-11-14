@@ -141,6 +141,25 @@ async function refreshData() {
 function escapeHtml(v) { return String(v ?? '').replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s])); }
 function normalize(v) { return String(v || '').toLowerCase().trim(); }
 function splitCsv(v) { return String(v || '').replace(/；/g, ',').replace(/，/g, ',').split(',').map(s => s.trim()).filter(Boolean); }
+function searchTokens(v) { return String(v || '').trim().split(/[\s,，、；;]+/).map(normalize).filter(Boolean); }
+function matchesSearchable(fields, query) {
+  const raw = normalize(query);
+  if (!raw) return false;
+  const searchable = fields.map(normalize).filter(Boolean);
+  if (searchable.some(value => value.includes(raw))) return true;
+  const tokens = searchTokens(query);
+  return tokens.length > 1 && tokens.some(token => searchable.some(value => value.includes(token)));
+}
+function isImeComposing(event) { return !!(event?.isComposing || event?.keyCode === 229); }
+function bindImeEnter(input, submit) {
+  if (!input) return;
+  let composing = false;
+  input.addEventListener('compositionstart', () => { composing = true; });
+  input.addEventListener('compositionend', () => { composing = false; });
+  input.addEventListener('keydown', event => {
+    if (event.key === 'Enter' && !composing && !isImeComposing(event)) { event.preventDefault(); submit(); }
+  });
+}
 function categories() { return State.categories; }
 function terms() { return State.terms; }
 function articles() { return State.articles; }
@@ -165,9 +184,8 @@ function progressFor(termId) { return State.progressMap[Number(termId)] || { ter
 function favoriteTerms() { return terms().filter(t => progressFor(t.id).is_favorite); }
 function learnedTerms() { return terms().filter(t => progressFor(t.id).learned_at); }
 function searchTerms(q) {
-  const n = normalize(q);
-  if (!n) return [];
-  return terms().filter(t => [t.term.zh, t.term.en, t.term.ru, t.meaning.zh, t.meaning.popular, t.meaning.ru, t.meaning.en, ...(t.keywords || [])].map(normalize).some(x => x.includes(n)));
+  if (!normalize(q)) return [];
+  return terms().filter(t => matchesSearchable([t.term.zh, t.term.en, t.term.ru, t.meaning.zh, t.meaning.popular, t.meaning.ru, t.meaning.en, ...(t.keywords || [])], q));
 }
 function relatedArticles(term) {
   if (!term) return articles();
@@ -294,7 +312,14 @@ function enhanceCategoryNavigation() {
 
   document.getElementById('categoryPrevBtn')?.addEventListener('click', () => { State.categoryPage -= 1; render(); });
   document.getElementById('categoryNextBtn')?.addEventListener('click', () => { State.categoryPage += 1; render(); });
-  document.getElementById('categorySearchInput')?.addEventListener('input', e => { State.categorySearch = e.target.value; State.categoryPage = 1; render(); });
+  const categorySearchInput = document.getElementById('categorySearchInput');
+  categorySearchInput?.addEventListener('compositionstart', () => { categorySearchInput.dataset.composing = 'true'; });
+  categorySearchInput?.addEventListener('compositionend', () => { categorySearchInput.dataset.composing = 'false'; State.categorySearch = categorySearchInput.value; State.categoryPage = 1; });
+  categorySearchInput?.addEventListener('input', e => { State.categorySearch = e.target.value; State.categoryPage = 1; });
+  categorySearchInput?.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !isImeComposing(e) && categorySearchInput.dataset.composing !== 'true') { e.preventDefault(); render(); }
+  });
+  categorySearchInput?.addEventListener('blur', () => { if (categorySearchInput.dataset.composing !== 'true') render(); });
   document.querySelectorAll('[data-category-toggle]').forEach(button => button.addEventListener('click', () => {
     const id = String(button.dataset.categoryToggle);
     const children = childCategories(id);
@@ -344,7 +369,7 @@ function renderAdmin() {
     const searchable = [t.term.zh, t.term.en, t.term.ru, t.meaning.zh, t.meaning.popular, t.meaning.ru, t.meaning.en, t.contributorName, category?.name_zh, parent?.name_zh, ...t.keywords].map(normalize);
     return (State.adminStatus === 'all' || t.reviewStatus === State.adminStatus)
       && (!State.adminCategoryFilter || String(t.categoryId) === String(State.adminCategoryFilter))
-      && (!q || searchable.some(x => x.includes(q)));
+      && (!q || matchesSearchable(searchable, q));
   });
   const adminPageCount = Math.max(1, Math.ceil(filtered.length / 20));
   State.adminPage = Math.min(Math.max(State.adminPage, 1), adminPageCount);
@@ -365,7 +390,7 @@ function bindCommon() {
   document.querySelectorAll('[data-article]').forEach(btn => btn.onclick = () => { State.selectedArticleId = Number(btn.dataset.article); render(); });
   document.querySelectorAll('.js-article-keyword').forEach(btn => btn.onclick = () => { State.searchText = btn.dataset.keyword; const r = searchTerms(State.searchText)[0]; if (r) { State.selectedTermId = r.id; State.selectedCategoryId = r.categoryId; } clearQuiz(); render(); });
   document.getElementById('searchBtn')?.addEventListener('click', () => { State.searchText = document.getElementById('searchInput').value.trim(); const r = searchTerms(State.searchText)[0]; if (r) { State.selectedTermId = r.id; State.selectedCategoryId = r.categoryId; } clearQuiz(); render(); });
-  document.getElementById('searchInput')?.addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('searchBtn').click(); });
+  document.getElementById('searchInput')?.addEventListener('keydown', e => { if (e.key === 'Enter' && !isImeComposing(e)) { e.preventDefault(); document.getElementById('searchBtn').click(); } });
   document.getElementById('toLoginBtn')?.addEventListener('click', () => goToRoute('login'));
   document.getElementById('toRegisterBtn')?.addEventListener('click', () => goToRoute('register'));
   document.getElementById('toAdminBtn')?.addEventListener('click', () => goToRoute('admin'));
@@ -406,7 +431,14 @@ function bindCommon() {
   document.getElementById('submitQuizBtn')?.addEventListener('click', submitCurrentQuiz);
 }
 function bindAdmin() {
-  document.getElementById('adminSearch').oninput = e => { State.adminFilter = e.target.value; State.adminPage = 1; State.adminSelectedIds = {}; renderAdmin(); };
+  const adminSearch = document.getElementById('adminSearch');
+  adminSearch.dataset.composing = 'false';
+  adminSearch.addEventListener('compositionstart', () => { adminSearch.dataset.composing = 'true'; });
+  adminSearch.addEventListener('compositionend', () => { adminSearch.dataset.composing = 'false'; State.adminFilter = adminSearch.value; State.adminPage = 1; State.adminSelectedIds = {}; });
+  adminSearch.addEventListener('input', e => { State.adminFilter = e.target.value; State.adminPage = 1; State.adminSelectedIds = {}; });
+  const submitAdminSearch = () => { if (adminSearch.dataset.composing !== 'true') renderAdmin(); };
+  adminSearch.addEventListener('keydown', e => { if (e.key === 'Enter' && !isImeComposing(e)) { e.preventDefault(); submitAdminSearch(); } });
+  adminSearch.addEventListener('blur', submitAdminSearch);
   document.getElementById('adminStatus').onchange = e => { State.adminStatus = e.target.value; State.adminPage = 1; State.adminSelectedIds = {}; renderAdmin(); };
   document.getElementById('newTermBtn').onclick = () => { State.editingId = null; renderAdmin(); };
   document.getElementById('refreshBtn').onclick = async () => { State.adminSelectedIds = {}; await refreshData(); renderAdmin(); };

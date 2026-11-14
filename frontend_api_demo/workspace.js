@@ -129,6 +129,8 @@ function bindWorkspace() {
   document.querySelectorAll('[data-wstab]').forEach(b => b.onclick = () => { Workspace.tab = b.dataset.wstab; Workspace.result = null; Workspace.error = ''; renderWorkspace(); });
   document.getElementById('litSearchBtn')?.addEventListener('click', runLiteratureSearch);
   document.getElementById('hotspotBtn')?.addEventListener('click', runHotspots);
+  bindImeEnter(document.getElementById('litQuery'), () => document.getElementById('litSearchBtn')?.click());
+  bindImeEnter(document.getElementById('reviewQuery'), () => document.getElementById('paperReviewBtn')?.click());
   document.getElementById('paperAnalyzeBtn')?.addEventListener('click', () => runPaper(false));
   document.getElementById('paperReviewBtn')?.addEventListener('click', () => runPaper(true));
   document.getElementById('writingBtn')?.addEventListener('click', runWriting);
