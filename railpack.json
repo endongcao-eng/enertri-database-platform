@@ -19,6 +19,7 @@
       "tesseract-ocr",
       "tesseract-ocr-eng",
       "tesseract-ocr-chi-sim"
-    ]
+    ], 
+    "startCommand": "bash deploy/railway_start.sh"
   }
 }
