@@ -57,7 +57,7 @@ async function previewTemplate(templateId) {
 }
 
 function renderTemplateLibrary() {
-  const isManager = ['admin', 'system_admin', 'researcher'].includes(State.user?.role);
+  const isManager = ['admin', 'system_admin', 'teacher', 'researcher'].includes(State.user?.role);
   const isAdmin = ['admin', 'system_admin'].includes(State.user?.role);
   const templates = State.templates || [];
   const rows = templates.map(item => `<article class="template-card js-template-preview" data-id="${item.id}"><div class="template-icon template-${escapeHtml(item.category)}">${templateCategoryIcon(item.category)}</div><div class="template-card-main"><div class="template-card-head"><div><span class="badge primary">${escapeHtml(item.category_label)}</span><h3>${escapeHtml(item.title)}</h3></div><div class="inline-actions"><button class="btn secondary small js-template-preview-btn" data-id="${item.id}">预览</button><button class="btn primary small js-template-download" data-url="${escapeHtml(item.download_url)}" data-name="${escapeHtml(item.original_name)}">下载</button>${isAdmin ? `<button class="btn danger small js-template-delete" data-id="${item.id}">删除</button>` : ''}</div></div><p class="muted">${formatBytes(item.size_bytes)} · ${formatTime(item.created_at)}${item.uploader_name ? ` · ${escapeHtml(item.uploader_name)}` : ''}</p></div></article>`).join('');

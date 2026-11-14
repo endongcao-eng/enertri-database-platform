@@ -111,7 +111,7 @@ function renderAuditCenter() {
   const migration = State.migrationStatus || {};
   const rows = (State.auditLogs || []).map(l => `<tr><td>${l.id}</td><td>${formatTime(l.created_at)}</td><td>${l.actor_user_id??'系统'}</td><td><code>${escapeHtml(l.action)}</code></td><td>${escapeHtml(l.resource_type)} #${escapeHtml(l.resource_id||'')}</td><td><span class="badge ${l.outcome==='success'?'success':'danger'}">${escapeHtml(l.outcome)}</span></td><td><small>${escapeHtml(l.ip_address||'—')}</small></td></tr>`).join('');
   const roleOptions = [
-    ['learning_user','普通学习用户'],['researcher','科研用户'],['production_engineer','生产工程师'],
+    ['learning_user','普通学习用户'],['teacher','教师'],['researcher','科研用户'],['production_engineer','生产工程师'],
     ['review_expert','审核专家'],['admin','管理员'],['system_admin','系统管理员']
   ];
   const userRows = (State.adminUsers || []).map(u => {

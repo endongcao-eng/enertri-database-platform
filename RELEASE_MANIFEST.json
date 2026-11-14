@@ -1,10 +1,10 @@
 {
   "name": "EnerTri 网页试用部署准备版",
-  "version": "4.7.0-webprep.31",
+  "version": "4.7.0-webprep.32",
   "api_business_version": "4.7.0",
   "date": "2026-11-14",
   "status": "preparation_candidate_not_public_ready",
-  "database_head": "v4_7_html_category_bundles",
+  "database_head": "v4_7_teacher_role",
   "validation": {
     "isolated_sqlite_tests": 60,
     "test_modules": 15,

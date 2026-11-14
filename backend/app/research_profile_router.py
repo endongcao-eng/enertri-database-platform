@@ -13,10 +13,10 @@ from .audit import write_audit
 from .database import get_db
 from .models import LearningResource, StudentEvidence, User
 from .research_profile_service import build_profile, evidence_out
-from .security import admin_user, current_user
+from .security import current_user
 
 router = APIRouter(prefix="/api/research-profile", tags=["research-profile"])
-ADMIN_ROLES = {"admin", "system_admin"}
+REVIEW_ROLES = {"teacher", "admin", "system_admin"}
 
 
 class EvidencePayload(BaseModel):
@@ -48,7 +48,7 @@ def _meta(request: Request) -> dict[str, str | None]:
 
 def _target_user(db: Session, actor: User, requested_user_id: int | None) -> User:
     target_id = requested_user_id or actor.id
-    if target_id != actor.id and actor.role not in ADMIN_ROLES:
+    if target_id != actor.id and actor.role not in REVIEW_ROLES:
         raise HTTPException(status_code=403, detail="只能查看自己的科研画像")
     target = db.get(User, target_id)
     if not target:
@@ -63,7 +63,9 @@ def _validate_resource_type(resource: LearningResource, evidence_type: str) -> N
 
 
 @router.get("/users")
-def list_profile_users(db: Session = Depends(get_db), _: User = Depends(admin_user)):
+def list_profile_users(db: Session = Depends(get_db), actor: User = Depends(current_user)):
+    if actor.role not in REVIEW_ROLES:
+        raise HTTPException(status_code=403, detail="需要教师或管理员权限")
     rows = db.scalars(select(User).where(User.is_active.is_(True)).order_by(User.display_name, User.id)).all()
     return [{"id": row.id, "username": row.username, "display_name": row.display_name, "role": row.role, "research_direction": row.research_direction} for row in rows]
 
@@ -96,7 +98,7 @@ def create_evidence(payload: EvidencePayload, request: Request, db: Session = De
     _validate_resource_type(resource, payload.evidence_type)
     data = payload.model_dump(exclude={"user_id", "resource_id", "metadata"})
     # Mentor scores are authoritative teacher evidence. Students may submit a project, but cannot self-award a mentor score.
-    if actor.role not in ADMIN_ROLES:
+    if actor.role not in REVIEW_ROLES:
         data["mentor_rating"] = None
     title = data.pop("title") or f"{resource.title} · 个人证据"
     row = StudentEvidence(
@@ -114,7 +116,9 @@ def create_evidence(payload: EvidencePayload, request: Request, db: Session = De
 
 
 @router.patch("/evidence/{evidence_id}/verify")
-def verify_evidence(evidence_id: int, payload: VerificationPayload, request: Request, db: Session = Depends(get_db), actor: User = Depends(admin_user)):
+def verify_evidence(evidence_id: int, payload: VerificationPayload, request: Request, db: Session = Depends(get_db), actor: User = Depends(current_user)):
+    if actor.role not in REVIEW_ROLES:
+        raise HTTPException(status_code=403, detail="需要教师或管理员权限")
     row = db.get(StudentEvidence, evidence_id)
     if not row:
         raise HTTPException(status_code=404, detail="evidence not found")

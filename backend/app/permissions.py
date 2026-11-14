@@ -7,6 +7,12 @@ ROLE_PERMISSIONS: dict[str, set[str]] = {
         "file.own.view", "file.own.download", "file.own.delete", "knowledge.own.manage",
         "template.view", "template.download",
     },
+    "teacher": {
+        "paper.upload", "ai.external", "task.own.view", "task.other.view", "task.own.retry", "task.own.cancel",
+        "file.own.view", "file.other.view", "file.own.download", "file.own.delete", "data.export",
+        "process.approve", "knowledge.own.manage", "knowledge.shared.search",
+        "media.video", "template.view", "template.download", "template.manage",
+    },
     "researcher": {
         "paper.upload", "ai.external", "task.own.view", "task.own.retry", "task.own.cancel",
         "file.own.view", "file.own.download", "file.own.delete", "data.export", "knowledge.own.manage",
@@ -40,6 +46,7 @@ ROLE_PERMISSIONS: dict[str, set[str]] = {
 
 ROLE_LABELS = {
     "learning_user": "普通学习用户",
+    "teacher": "教师",
     "researcher": "科研用户",
     "production_engineer": "生产工程师",
     "review_expert": "审核专家",

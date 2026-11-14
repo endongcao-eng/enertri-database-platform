@@ -22,6 +22,7 @@ from .database import Base
 
 USER_ROLES = (
     "learning_user",
+    "teacher",
     "researcher",
     "production_engineer",
     "review_expert",
