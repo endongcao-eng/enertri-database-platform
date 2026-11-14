@@ -4,7 +4,7 @@
   "api_business_version": "4.7.0",
   "date": "2026-11-14",
   "status": "preparation_candidate_not_public_ready",
-  "database_head": "v4_7_html_learning_category_bundles",
+  "database_head": "v4_7_html_category_bundles",
   "validation": {
     "isolated_sqlite_tests": 60,
     "test_modules": 15,
