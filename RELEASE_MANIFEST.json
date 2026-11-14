@@ -1,6 +1,6 @@
 {
   "name": "EnerTri 网页试用部署准备版",
-  "version": "4.7.0-webprep.32",
+  "version": "4.7.0-webprep.33",
   "api_business_version": "4.7.0",
   "date": "2026-11-14",
   "status": "preparation_candidate_not_public_ready",
@@ -35,6 +35,7 @@
   },
   "prior_manifest": "review/input_release_manifest.json",
   "changes": [
+    "管理员可删除无关联术语、子分类和科普页面的空大分类或小分类",
     "独立登录页与能源术语入口互通",
     "异步页面导航令牌，避免旧请求覆盖当前页面",
     "焊接性、工艺窗口、合金元素、焊材和缺陷结果结构化展示",

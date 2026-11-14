@@ -18,7 +18,7 @@ from sqlalchemy.orm import Session, selectinload
 
 from .database import MEDIA_DIR, SessionLocal, get_db
 from .file_service import FILE_STORE_DIR, cleanup_expired_files
-from .models import Article, Category, Term, User, UserTermProgress, WorkerHeartbeat
+from .models import Article, Category, HtmlLearningAsset, Term, User, UserTermProgress, WorkerHeartbeat
 from .schemas import ArticleCreate, ArticleOut, ArticleUpdate, CategoryCreate, CategoryOut, CategoryResolveRequest, ImportResult, LoginRequest, ProgressOut, ProgressUpdate, QuizOut, QuizSubmitRequest, QuizSubmitResult, ReviewRequest, TermBulkRequest, TermCreate, TermOut, TermUpdate, TokenOut, UserOut
 from .security import admin_user, create_access_token, current_user, hash_password, optional_current_user, verify_password, require_permission
 from .utils import apply_related_term_names, article_to_out, apply_term_payload, bool_video, build_term_name_lookup, get_or_create_category_hierarchy, join_keywords, progress_to_out, seed_defaults, split_list, split_refs, term_to_out
@@ -200,6 +200,21 @@ def create_category(payload: CategoryCreate, db: Session = Depends(get_db), _: U
     db.commit()
     db.refresh(item)
     return item
+
+
+@app.delete("/api/categories/{category_id}", status_code=204)
+def delete_category(category_id: int, db: Session = Depends(get_db), _: User = Depends(admin_user)):
+    item = db.get(Category, category_id)
+    if item is None:
+        raise HTTPException(status_code=404, detail="分类不存在")
+    if db.scalar(select(Category.id).where(Category.parent_id == category_id).limit(1)) is not None:
+        raise HTTPException(status_code=409, detail="请先删除该大分类下的小分类")
+    if db.scalar(select(Term.id).where(Term.category_id == category_id).limit(1)) is not None:
+        raise HTTPException(status_code=409, detail="该分类下仍有术语，不能删除")
+    if db.scalar(select(HtmlLearningAsset.id).where(HtmlLearningAsset.category_id == category_id).limit(1)) is not None:
+        raise HTTPException(status_code=409, detail="该分类下仍有科普页面，不能删除")
+    db.delete(item)
+    db.commit()
 
 
 @app.post("/api/categories/resolve", response_model=CategoryOut)
